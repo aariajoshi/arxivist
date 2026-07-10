@@ -1,0 +1,33 @@
+model:
+  N: 6 
+  d_model: 512 
+  d_ff: 2048 
+  h: 8 
+  d_k: 64 
+  d_v: 64 
+  P_drop: 0.1 
+  vocab_size: 37000 # ASSUMED: Approximate size for WMT En-De subword vocabulary (Confidence < 0.7)
+
+training:
+  optimizer: Adam 
+  beta1: 0.9 
+  beta2: 0.98 
+  eps: 1e-9 
+  warmup_steps: 4000 
+  train_steps: 100000 
+  label_smoothing: 0.1 # ASSUMED: Mentioned in paper section 5.4, standard for this architecture (Confidence < 0.7)
+
+data:
+  dataset: "WMT 2014 English-German"
+  batch_size_tokens: 4096
+  max_length: 256
+
+evaluation:
+  metrics: ["BLEU", "perplexity"]
+  beam_size: 4
+  length_penalty_alpha: 0.6
+
+hardware:
+  device: "cuda"
+  num_workers: 4
+  mixed_precision: true

@@ -1,0 +1,413 @@
+{
+  "communities": {
+    "0": [
+      "src_transformer_models_layers",
+      "src_transformer_models_layers_positionalencoding",
+      "src_transformer_models_layers_positionalencoding_forward",
+      "src_transformer_models_layers_positionalencoding_init",
+      "src_transformer_models_layers_positionalencoding_repr",
+      "src_transformer_models_layers_positionwisefeedforward",
+      "src_transformer_models_layers_positionwisefeedforward_forward",
+      "src_transformer_models_layers_positionwisefeedforward_init",
+      "src_transformer_models_layers_positionwisefeedforward_repr",
+      "src_transformer_models_layers_py_tensor",
+      "src_transformer_models_layers_rationale_1",
+      "src_transformer_models_layers_rationale_12",
+      "src_transformer_models_layers_rationale_33",
+      "src_transformer_models_transformer",
+      "src_transformer_models_transformer_decoder",
+      "src_transformer_models_transformer_decoder_repr",
+      "src_transformer_models_transformer_embeddings",
+      "src_transformer_models_transformer_embeddings_forward",
+      "src_transformer_models_transformer_embeddings_init",
+      "src_transformer_models_transformer_generator",
+      "src_transformer_models_transformer_generator_forward",
+      "src_transformer_models_transformer_generator_init",
+      "src_transformer_models_transformer_make_model",
+      "src_transformer_models_transformer_rationale_1",
+      "src_transformer_models_transformer_rationale_125",
+      "src_transformer_models_transformer_rationale_163",
+      "src_transformer_models_transformer_rationale_97"
+    ],
+    "1": [
+      "module",
+      "src_transformer_models_transformer_clones",
+      "src_transformer_models_transformer_decoder_init",
+      "src_transformer_models_transformer_decoderlayer",
+      "src_transformer_models_transformer_decoderlayer_forward",
+      "src_transformer_models_transformer_decoderlayer_init",
+      "src_transformer_models_transformer_encoder",
+      "src_transformer_models_transformer_encoder_init",
+      "src_transformer_models_transformer_encoder_repr",
+      "src_transformer_models_transformer_encoderlayer",
+      "src_transformer_models_transformer_encoderlayer_forward",
+      "src_transformer_models_transformer_encoderlayer_init",
+      "src_transformer_models_transformer_layernorm",
+      "src_transformer_models_transformer_layernorm_forward",
+      "src_transformer_models_transformer_layernorm_init",
+      "src_transformer_models_transformer_rationale_15",
+      "src_transformer_models_transformer_rationale_19",
+      "src_transformer_models_transformer_rationale_32",
+      "src_transformer_models_transformer_rationale_42",
+      "src_transformer_models_transformer_rationale_46",
+      "src_transformer_models_transformer_rationale_61",
+      "src_transformer_models_transformer_rationale_79",
+      "src_transformer_models_transformer_sublayerconnection",
+      "src_transformer_models_transformer_sublayerconnection_forward",
+      "src_transformer_models_transformer_sublayerconnection_init",
+      "src_transformer_models_transformer_transformer_init"
+    ],
+    "2": [
+      "evaluate",
+      "evaluate_main",
+      "evaluate_rationale_1",
+      "inference",
+      "inference_main",
+      "inference_rationale_1",
+      "src_transformer_utils_config",
+      "src_transformer_utils_config_load_config",
+      "src_transformer_utils_config_rationale_1",
+      "src_transformer_utils_config_rationale_13",
+      "src_transformer_utils_config_rationale_26",
+      "src_transformer_utils_config_set_seed",
+      "train",
+      "train_main",
+      "train_rationale_1"
+    ],
+    "3": [
+      "optimizer",
+      "src_transformer_training_trainer",
+      "src_transformer_training_trainer_noamlrscheduler",
+      "src_transformer_training_trainer_noamlrscheduler_get_lr",
+      "src_transformer_training_trainer_noamlrscheduler_init",
+      "src_transformer_training_trainer_noamlrscheduler_step",
+      "src_transformer_training_trainer_rationale_1",
+      "src_transformer_training_trainer_rationale_10",
+      "src_transformer_training_trainer_rationale_31",
+      "src_transformer_training_trainer_trainer",
+      "src_transformer_training_trainer_trainer_init",
+      "src_transformer_training_trainer_trainer_train",
+      "src_transformer_training_trainer_trainer_train_epoch"
+    ],
+    "4": [
+      "src_transformer_models_attention",
+      "src_transformer_models_attention_multiheadattention",
+      "src_transformer_models_attention_multiheadattention_forward",
+      "src_transformer_models_attention_multiheadattention_init",
+      "src_transformer_models_attention_multiheadattention_repr",
+      "src_transformer_models_attention_py_tensor",
+      "src_transformer_models_attention_rationale_1",
+      "src_transformer_models_attention_rationale_12",
+      "src_transformer_models_attention_rationale_47",
+      "src_transformer_models_attention_scaleddotproductattention",
+      "src_transformer_models_attention_scaleddotproductattention_forward",
+      "src_transformer_models_attention_scaleddotproductattention_init",
+      "src_transformer_models_attention_scaleddotproductattention_repr"
+    ],
+    "5": [
+      "src_transformer_models_transformer_decoder_forward",
+      "src_transformer_models_transformer_encoder_forward",
+      "src_transformer_models_transformer_py_tensor",
+      "src_transformer_models_transformer_rationale_134",
+      "src_transformer_models_transformer_rationale_147",
+      "src_transformer_models_transformer_transformer",
+      "src_transformer_models_transformer_transformer_decode",
+      "src_transformer_models_transformer_transformer_encode",
+      "src_transformer_models_transformer_transformer_forward",
+      "src_transformer_models_transformer_transformer_repr"
+    ],
+    "6": [
+      "dataset",
+      "src_transformer_data_dataset",
+      "src_transformer_data_dataset_rationale_8",
+      "src_transformer_data_dataset_translationdataset",
+      "src_transformer_data_dataset_translationdataset_getitem",
+      "src_transformer_data_dataset_translationdataset_init",
+      "src_transformer_data_dataset_translationdataset_len"
+    ],
+    "7": [
+      "src_transformer_training_losses",
+      "src_transformer_training_losses_labelsmoothingloss",
+      "src_transformer_training_losses_labelsmoothingloss_forward",
+      "src_transformer_training_losses_labelsmoothingloss_init",
+      "src_transformer_training_losses_rationale_1",
+      "src_transformer_training_losses_rationale_10"
+    ],
+    "8": [
+      "src_transformer_evaluation_metrics",
+      "src_transformer_evaluation_metrics_compute_bleu",
+      "src_transformer_evaluation_metrics_compute_perplexity",
+      "src_transformer_evaluation_metrics_rationale_13",
+      "src_transformer_evaluation_metrics_rationale_6"
+    ],
+    "9": [
+      "src_transformer_data_transforms",
+      "src_transformer_data_transforms_rationale_1",
+      "src_transformer_data_transforms_rationale_6",
+      "src_transformer_data_transforms_tokenizertransform"
+    ],
+    "10": [
+      "comparison_benchmark_comparison_bleu_wmt_2014_en_de",
+      "data_readme_data_wmt_2014_english_german",
+      "readme_bleu_wmt_2014_en_de"
+    ],
+    "11": [
+      "data_download",
+      "data_download_main",
+      "data_download_rationale_1"
+    ],
+    "12": [
+      "notebooks_generate_nb",
+      "notebooks_generate_nb_code_cell",
+      "notebooks_generate_nb_markdown_cell"
+    ],
+    "13": [
+      "comparison_benchmark_comparison_bleu_wmt_2014_en_fr",
+      "readme_bleu_wmt_2014_en_fr"
+    ],
+    "14": [
+      "comparison_hallucination_report_vocab_size_37000",
+      "configs_config_model"
+    ],
+    "15": [
+      "readme_attention_is_all_you_need",
+      "readme_transformer"
+    ],
+    "16": [
+      "comparison_hallucination_report_decoder_stack"
+    ],
+    "17": [
+      "comparison_hallucination_report_encoder_stack"
+    ],
+    "18": [
+      "comparison_hallucination_report_multi_head_attention"
+    ],
+    "19": [
+      "comparison_hallucination_report_position_wise_ffn"
+    ],
+    "20": [
+      "comparison_hallucination_report_positional_encoding"
+    ],
+    "21": [
+      "comparison_verification_log_arxivist_sir"
+    ],
+    "22": [
+      "docker_docker_compose_train"
+    ],
+    "23": [
+      "readme_attention_masking"
+    ],
+    "24": [
+      "readme_noamlrscheduler"
+    ],
+    "25": [
+      "readme_token_based_batching"
+    ],
+    "26": [
+      "setup"
+    ],
+    "27": [
+      "src_transformer_data_init"
+    ],
+    "28": [
+      "src_transformer_evaluation_init"
+    ],
+    "29": [
+      "src_transformer_init"
+    ],
+    "30": [
+      "src_transformer_models_init"
+    ],
+    "31": [
+      "src_transformer_training_init"
+    ],
+    "32": [
+      "src_transformer_utils_init"
+    ],
+    "33": [
+      "test_detect"
+    ]
+  },
+  "cohesion": {
+    "0": 0.1168091168091168,
+    "1": 0.10461538461538461,
+    "2": 0.23809523809523808,
+    "3": 0.16666666666666666,
+    "4": 0.19230769230769232,
+    "5": 0.28888888888888886,
+    "6": 0.2857142857142857,
+    "7": 0.3333333333333333,
+    "8": 0.4,
+    "9": 0.5,
+    "10": 0.6666666666666666,
+    "11": 0.6666666666666666,
+    "12": 0.6666666666666666,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0,
+    "20": 1.0,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0,
+    "30": 1.0,
+    "31": 1.0,
+    "32": 1.0,
+    "33": 1.0
+  },
+  "gods": [
+    {
+      "id": "src_transformer_models_attention_multiheadattention",
+      "label": "MultiHeadAttention",
+      "degree": 16
+    },
+    {
+      "id": "src_transformer_models_layers_positionwisefeedforward",
+      "label": "PositionwiseFeedForward",
+      "degree": 16
+    },
+    {
+      "id": "src_transformer_models_layers_positionalencoding",
+      "label": "PositionalEncoding",
+      "degree": 16
+    },
+    {
+      "id": "src_transformer_models_transformer_make_model",
+      "label": "make_model()",
+      "degree": 12
+    },
+    {
+      "id": "src_transformer_models_transformer_transformer",
+      "label": "Transformer",
+      "degree": 11
+    },
+    {
+      "id": "src_transformer_models_transformer_layernorm",
+      "label": "LayerNorm",
+      "degree": 10
+    },
+    {
+      "id": "src_transformer_models_transformer_encoder",
+      "label": "Encoder",
+      "degree": 10
+    },
+    {
+      "id": "src_transformer_models_transformer_decoder",
+      "label": "Decoder",
+      "degree": 10
+    },
+    {
+      "id": "src_transformer_models_transformer_sublayerconnection",
+      "label": "SublayerConnection",
+      "degree": 9
+    },
+    {
+      "id": "src_transformer_models_transformer_encoderlayer",
+      "label": "EncoderLayer",
+      "degree": 8
+    }
+  ],
+  "surprises": [
+    {
+      "source": "BLEU WMT 2014 English-German test",
+      "target": "BLEU WMT 2014 English-German",
+      "source_files": [
+        "comparison/benchmark_comparison.md",
+        "README.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "WMT 2014 English-German dataset",
+      "target": "BLEU WMT 2014 English-German",
+      "source_files": [
+        "data/README_data.md",
+        "README.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "BLEU WMT 2014 English-French test",
+      "target": "BLEU WMT 2014 English-French",
+      "source_files": [
+        "comparison/benchmark_comparison.md",
+        "README.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "vocab_size 37000",
+      "target": "Model Configuration",
+      "source_files": [
+        "comparison/hallucination_report.md",
+        "configs/config.yaml"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "main()",
+      "target": "set_seed()",
+      "source_files": [
+        "inference.py",
+        "src/transformer/utils/config.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `main()` unexpectedly reaches hub `set_seed()`"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `MultiHeadAttention` connect `Community 4` to `Community 0`, `Community 1`, `Community 5`?",
+      "why": "High betweenness centrality (0.056) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `Transformer` connect `Community 5` to `Community 0`, `Community 1`, `Community 4`?",
+      "why": "High betweenness centrality (0.038) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `PositionalEncoding` connect `Community 0` to `Community 1`, `Community 5`?",
+      "why": "High betweenness centrality (0.038) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 9 inferred relationships involving `MultiHeadAttention` (e.g. with `Decoder` and `DecoderLayer`) actually correct?",
+      "why": "`MultiHeadAttention` has 9 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 9 inferred relationships involving `PositionwiseFeedForward` (e.g. with `Decoder` and `DecoderLayer`) actually correct?",
+      "why": "`PositionwiseFeedForward` has 9 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 9 inferred relationships involving `PositionalEncoding` (e.g. with `Decoder` and `DecoderLayer`) actually correct?",
+      "why": "`PositionalEncoding` has 9 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 4 inferred relationships involving `Transformer` (e.g. with `MultiHeadAttention` and `PositionalEncoding`) actually correct?",
+      "why": "`Transformer` has 4 INFERRED edges - model-reasoned connections that need verification."
+    }
+  ]
+}

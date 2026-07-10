@@ -1,0 +1,3761 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {
+    "hyperedges": [
+      {
+        "id": "transformer_architecture_components",
+        "label": "Transformer Architecture Components",
+        "nodes": [
+          "comparison_hallucination_report_encoder_stack",
+          "comparison_hallucination_report_decoder_stack",
+          "comparison_hallucination_report_multi_head_attention",
+          "comparison_hallucination_report_position_wise_ffn",
+          "comparison_hallucination_report_positional_encoding"
+        ],
+        "relation": "form",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "comparison/hallucination_report.md"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "label": "download.py",
+      "file_type": "code",
+      "source_file": "data/download.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "data_download",
+      "community": 11,
+      "norm_label": "download.py"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "data/download.py",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "data_download_main",
+      "community": 11,
+      "norm_label": "main()"
+    },
+    {
+      "label": "Download script for the WMT 2014 dataset.",
+      "file_type": "rationale",
+      "source_file": "data/download.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "data_download_rationale_1",
+      "community": 11,
+      "norm_label": "download script for the wmt 2014 dataset."
+    },
+    {
+      "label": "evaluate.py",
+      "file_type": "code",
+      "source_file": "evaluate.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "evaluate",
+      "community": 2,
+      "norm_label": "evaluate.py"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "evaluate.py",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "evaluate_main",
+      "community": 2,
+      "norm_label": "main()"
+    },
+    {
+      "label": "Compute BLEU and perplexity on test sets using beam search.",
+      "file_type": "rationale",
+      "source_file": "evaluate.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "evaluate_rationale_1",
+      "community": 2,
+      "norm_label": "compute bleu and perplexity on test sets using beam search."
+    },
+    {
+      "label": "inference.py",
+      "file_type": "code",
+      "source_file": "inference.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "inference",
+      "community": 2,
+      "norm_label": "inference.py"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "inference.py",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "inference_main",
+      "community": 2,
+      "norm_label": "main()"
+    },
+    {
+      "label": "Translate single sentences from the command line.",
+      "file_type": "rationale",
+      "source_file": "inference.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "inference_rationale_1",
+      "community": 2,
+      "norm_label": "translate single sentences from the command line."
+    },
+    {
+      "label": "generate_nb.py",
+      "file_type": "code",
+      "source_file": "notebooks/generate_nb.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "notebooks_generate_nb",
+      "community": 12,
+      "norm_label": "generate_nb.py"
+    },
+    {
+      "label": "markdown_cell()",
+      "file_type": "code",
+      "source_file": "notebooks/generate_nb.py",
+      "source_location": "L4",
+      "_origin": "ast",
+      "id": "notebooks_generate_nb_markdown_cell",
+      "community": 12,
+      "norm_label": "markdown_cell()"
+    },
+    {
+      "label": "code_cell()",
+      "file_type": "code",
+      "source_file": "notebooks/generate_nb.py",
+      "source_location": "L11",
+      "_origin": "ast",
+      "id": "notebooks_generate_nb_code_cell",
+      "community": 12,
+      "norm_label": "code_cell()"
+    },
+    {
+      "label": "setup.py",
+      "file_type": "code",
+      "source_file": "setup.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "setup",
+      "community": 26,
+      "norm_label": "setup.py"
+    },
+    {
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "src/transformer/__init__.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_init",
+      "community": 29,
+      "norm_label": "__init__.py"
+    },
+    {
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "src/transformer/data/__init__.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_data_init",
+      "community": 27,
+      "norm_label": "__init__.py"
+    },
+    {
+      "label": "dataset.py",
+      "file_type": "code",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_data_dataset",
+      "community": 6,
+      "norm_label": "dataset.py"
+    },
+    {
+      "label": "TranslationDataset",
+      "file_type": "code",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L7",
+      "_origin": "ast",
+      "id": "src_transformer_data_dataset_translationdataset",
+      "community": 6,
+      "norm_label": "translationdataset"
+    },
+    {
+      "label": "Dataset",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "dataset",
+      "community": 6,
+      "norm_label": "dataset"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "src_transformer_data_dataset_translationdataset_init",
+      "community": 6,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".__len__()",
+      "file_type": "code",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L16",
+      "_origin": "ast",
+      "id": "src_transformer_data_dataset_translationdataset_len",
+      "community": 6,
+      "norm_label": ".__len__()"
+    },
+    {
+      "label": ".__getitem__()",
+      "file_type": "code",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "src_transformer_data_dataset_translationdataset_getitem",
+      "community": 6,
+      "norm_label": ".__getitem__()"
+    },
+    {
+      "label": "STUB: Translation dataset.     SIR ambiguity: Handling variable sequence lengths",
+      "file_type": "rationale",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "src_transformer_data_dataset_rationale_8",
+      "community": 6,
+      "norm_label": "stub: translation dataset.     sir ambiguity: handling variable sequence lengths"
+    },
+    {
+      "label": "transforms.py",
+      "file_type": "code",
+      "source_file": "src/transformer/data/transforms.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_data_transforms",
+      "community": 9,
+      "norm_label": "transforms.py"
+    },
+    {
+      "label": "TokenizerTransform",
+      "file_type": "code",
+      "source_file": "src/transformer/data/transforms.py",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "src_transformer_data_transforms_tokenizertransform",
+      "community": 9,
+      "norm_label": "tokenizertransform"
+    },
+    {
+      "label": "Data transformations and tokenization.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/data/transforms.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_data_transforms_rationale_1",
+      "community": 9,
+      "norm_label": "data transformations and tokenization."
+    },
+    {
+      "label": "STUB: Tokenization transformations.     Replace this stub before training.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/data/transforms.py",
+      "source_location": "L6",
+      "_origin": "ast",
+      "id": "src_transformer_data_transforms_rationale_6",
+      "community": 9,
+      "norm_label": "stub: tokenization transformations.     replace this stub before training."
+    },
+    {
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "src/transformer/evaluation/__init__.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_evaluation_init",
+      "community": 28,
+      "norm_label": "__init__.py"
+    },
+    {
+      "label": "metrics.py",
+      "file_type": "code",
+      "source_file": "src/transformer/evaluation/metrics.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_evaluation_metrics",
+      "community": 8,
+      "norm_label": "metrics.py"
+    },
+    {
+      "label": "compute_bleu()",
+      "file_type": "code",
+      "source_file": "src/transformer/evaluation/metrics.py",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "src_transformer_evaluation_metrics_compute_bleu",
+      "community": 8,
+      "norm_label": "compute_bleu()"
+    },
+    {
+      "label": "compute_perplexity()",
+      "file_type": "code",
+      "source_file": "src/transformer/evaluation/metrics.py",
+      "source_location": "L12",
+      "_origin": "ast",
+      "id": "src_transformer_evaluation_metrics_compute_perplexity",
+      "community": 8,
+      "norm_label": "compute_perplexity()"
+    },
+    {
+      "label": "STUB: Compute corpus BLEU score.     Replace this stub before training.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/evaluation/metrics.py",
+      "source_location": "L6",
+      "_origin": "ast",
+      "id": "src_transformer_evaluation_metrics_rationale_6",
+      "community": 8,
+      "norm_label": "stub: compute corpus bleu score.     replace this stub before training."
+    },
+    {
+      "label": "Compute perplexity from cross-entropy loss.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/evaluation/metrics.py",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "src_transformer_evaluation_metrics_rationale_13",
+      "community": 8,
+      "norm_label": "compute perplexity from cross-entropy loss."
+    },
+    {
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "src/transformer/models/__init__.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_models_init",
+      "community": 30,
+      "norm_label": "__init__.py"
+    },
+    {
+      "label": "attention.py",
+      "file_type": "code",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention",
+      "community": 4,
+      "norm_label": "attention.py"
+    },
+    {
+      "label": "ScaledDotProductAttention",
+      "file_type": "code",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L11",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_scaleddotproductattention",
+      "community": 4,
+      "norm_label": "scaleddotproductattention"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L18",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_scaleddotproductattention_init",
+      "community": 4,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_scaleddotproductattention_forward",
+      "community": 4,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_py_tensor",
+      "community": 4,
+      "norm_label": "tensor"
+    },
+    {
+      "label": ".__repr__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L43",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_scaleddotproductattention_repr",
+      "community": 4,
+      "norm_label": ".__repr__()"
+    },
+    {
+      "label": "MultiHeadAttention",
+      "file_type": "code",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L46",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_multiheadattention",
+      "community": 4,
+      "norm_label": "multiheadattention"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L53",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_multiheadattention_init",
+      "community": 4,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L70",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_multiheadattention_forward",
+      "community": 4,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": ".__repr__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L90",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_multiheadattention_repr",
+      "community": 4,
+      "norm_label": ".__repr__()"
+    },
+    {
+      "label": "Attention mechanisms. Paper Sections: 3.2.1, 3.2.2",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_rationale_1",
+      "community": 4,
+      "norm_label": "attention mechanisms. paper sections: 3.2.1, 3.2.2"
+    },
+    {
+      "label": "Scaled Dot-Product Attention.     Paper Reference: Section 3.2.1, Equation 1",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L12",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_rationale_12",
+      "community": 4,
+      "norm_label": "scaled dot-product attention.     paper reference: section 3.2.1, equation 1"
+    },
+    {
+      "label": "Multi-Head Attention.     Paper Reference: Section 3.2.2          MultiHead(Q, K",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L47",
+      "_origin": "ast",
+      "id": "src_transformer_models_attention_rationale_47",
+      "community": 4,
+      "norm_label": "multi-head attention.     paper reference: section 3.2.2          multihead(q, k"
+    },
+    {
+      "label": "layers.py",
+      "file_type": "code",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers",
+      "community": 0,
+      "norm_label": "layers.py"
+    },
+    {
+      "label": "PositionwiseFeedForward",
+      "file_type": "code",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L11",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_positionwisefeedforward",
+      "community": 0,
+      "norm_label": "positionwisefeedforward"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L18",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_positionwisefeedforward_init",
+      "community": 0,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L24",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_positionwisefeedforward_forward",
+      "community": 0,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_py_tensor",
+      "community": 0,
+      "norm_label": "tensor"
+    },
+    {
+      "label": ".__repr__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L29",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_positionwisefeedforward_repr",
+      "community": 0,
+      "norm_label": ".__repr__()"
+    },
+    {
+      "label": "PositionalEncoding",
+      "file_type": "code",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L32",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_positionalencoding",
+      "community": 0,
+      "norm_label": "positionalencoding"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L37",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_positionalencoding_init",
+      "community": 0,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L56",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_positionalencoding_forward",
+      "community": 0,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": ".__repr__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L62",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_positionalencoding_repr",
+      "community": 0,
+      "norm_label": ".__repr__()"
+    },
+    {
+      "label": "Feed-forward networks and positional encodings. Paper Sections: 3.3, 3.5",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_rationale_1",
+      "community": 0,
+      "norm_label": "feed-forward networks and positional encodings. paper sections: 3.3, 3.5"
+    },
+    {
+      "label": "Position-wise Feed-Forward Network.     Paper Reference: Section 3.3, Equation 2",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L12",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_rationale_12",
+      "community": 0,
+      "norm_label": "position-wise feed-forward network.     paper reference: section 3.3, equation 2"
+    },
+    {
+      "label": "Positional Encoding using sine and cosine functions.     Paper Reference: Sectio",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L33",
+      "_origin": "ast",
+      "id": "src_transformer_models_layers_rationale_33",
+      "community": 0,
+      "norm_label": "positional encoding using sine and cosine functions.     paper reference: sectio"
+    },
+    {
+      "label": "transformer.py",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer",
+      "community": 0,
+      "norm_label": "transformer.py"
+    },
+    {
+      "label": "clones()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_clones",
+      "community": 1,
+      "norm_label": "clones()"
+    },
+    {
+      "label": "LayerNorm",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L18",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_layernorm",
+      "community": 1,
+      "norm_label": "layernorm"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L20",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_layernorm_init",
+      "community": 1,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L26",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_layernorm_forward",
+      "community": 1,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": "SublayerConnection",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_sublayerconnection",
+      "community": 1,
+      "norm_label": "sublayerconnection"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L36",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_sublayerconnection_init",
+      "community": 1,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_sublayerconnection_forward",
+      "community": 1,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": "EncoderLayer",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L45",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_encoderlayer",
+      "community": 1,
+      "norm_label": "encoderlayer"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L49",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_encoderlayer_init",
+      "community": 1,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L56",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_encoderlayer_forward",
+      "community": 1,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": "DecoderLayer",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L60",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_decoderlayer",
+      "community": 1,
+      "norm_label": "decoderlayer"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L64",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_decoderlayer_init",
+      "community": 1,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L72",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_decoderlayer_forward",
+      "community": 1,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": "Encoder",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L78",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_encoder",
+      "community": 1,
+      "norm_label": "encoder"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L82",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_encoder_init",
+      "community": 1,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L87",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_encoder_forward",
+      "community": 5,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_py_tensor",
+      "community": 5,
+      "norm_label": "tensor"
+    },
+    {
+      "label": ".__repr__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L93",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_encoder_repr",
+      "community": 1,
+      "norm_label": ".__repr__()"
+    },
+    {
+      "label": "Decoder",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L96",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_decoder",
+      "community": 0,
+      "norm_label": "decoder"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L100",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_decoder_init",
+      "community": 1,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L105",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_decoder_forward",
+      "community": 5,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": ".__repr__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L112",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_decoder_repr",
+      "community": 0,
+      "norm_label": ".__repr__()"
+    },
+    {
+      "label": "Embeddings",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L115",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_embeddings",
+      "community": 0,
+      "norm_label": "embeddings"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L116",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_embeddings_init",
+      "community": 0,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L121",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_embeddings_forward",
+      "community": 0,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": "Generator",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L124",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_generator",
+      "community": 0,
+      "norm_label": "generator"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L126",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_generator_init",
+      "community": 0,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L130",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_generator_forward",
+      "community": 0,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": "Transformer",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L133",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_transformer",
+      "community": 5,
+      "norm_label": "transformer"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L138",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_transformer_init",
+      "community": 1,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": "Module",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "module",
+      "community": 1,
+      "norm_label": "module"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L146",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_transformer_forward",
+      "community": 5,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": ".encode()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L153",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_transformer_encode",
+      "community": 5,
+      "norm_label": ".encode()"
+    },
+    {
+      "label": ".decode()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L156",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_transformer_decode",
+      "community": 5,
+      "norm_label": ".decode()"
+    },
+    {
+      "label": ".__repr__()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L159",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_transformer_repr",
+      "community": 5,
+      "norm_label": ".__repr__()"
+    },
+    {
+      "label": "make_model()",
+      "file_type": "code",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L162",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_make_model",
+      "community": 0,
+      "norm_label": "make_model()"
+    },
+    {
+      "label": "Primary Transformer model and encoder/decoder stacks. Paper Section: 3.1",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_1",
+      "community": 0,
+      "norm_label": "primary transformer model and encoder/decoder stacks. paper section: 3.1"
+    },
+    {
+      "label": "Produce N identical layers.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_15",
+      "community": 1,
+      "norm_label": "produce n identical layers."
+    },
+    {
+      "label": "Construct a layernorm module.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_19",
+      "community": 1,
+      "norm_label": "construct a layernorm module."
+    },
+    {
+      "label": "A residual connection followed by a layer norm.     Note for code simplicity the",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L32",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_32",
+      "community": 1,
+      "norm_label": "a residual connection followed by a layer norm.     note for code simplicity the"
+    },
+    {
+      "label": "Apply residual connection to any sublayer with the same size.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L42",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_42",
+      "community": 1,
+      "norm_label": "apply residual connection to any sublayer with the same size."
+    },
+    {
+      "label": "Encoder is made up of self-attn and feed forward.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L46",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_46",
+      "community": 1,
+      "norm_label": "encoder is made up of self-attn and feed forward."
+    },
+    {
+      "label": "Decoder is made of self-attn, src-attn, and feed forward.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L61",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_61",
+      "community": 1,
+      "norm_label": "decoder is made of self-attn, src-attn, and feed forward."
+    },
+    {
+      "label": "Core encoder is a stack of N layers",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L79",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_79",
+      "community": 1,
+      "norm_label": "core encoder is a stack of n layers"
+    },
+    {
+      "label": "Generic N layer decoder with masking.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L97",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_97",
+      "community": 0,
+      "norm_label": "generic n layer decoder with masking."
+    },
+    {
+      "label": "Define standard linear + softmax generation step.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L125",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_125",
+      "community": 0,
+      "norm_label": "define standard linear + softmax generation step."
+    },
+    {
+      "label": "A standard Encoder-Decoder architecture.     Paper Reference: Section 3.1",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L134",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_134",
+      "community": 5,
+      "norm_label": "a standard encoder-decoder architecture.     paper reference: section 3.1"
+    },
+    {
+      "label": "Take in and process masked src and target sequences.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L147",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_147",
+      "community": 5,
+      "norm_label": "take in and process masked src and target sequences."
+    },
+    {
+      "label": "Helper: Construct a model from hyperparameters.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L163",
+      "_origin": "ast",
+      "id": "src_transformer_models_transformer_rationale_163",
+      "community": 0,
+      "norm_label": "helper: construct a model from hyperparameters."
+    },
+    {
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "src/transformer/training/__init__.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_training_init",
+      "community": 31,
+      "norm_label": "__init__.py"
+    },
+    {
+      "label": "losses.py",
+      "file_type": "code",
+      "source_file": "src/transformer/training/losses.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_training_losses",
+      "community": 7,
+      "norm_label": "losses.py"
+    },
+    {
+      "label": "LabelSmoothingLoss",
+      "file_type": "code",
+      "source_file": "src/transformer/training/losses.py",
+      "source_location": "L9",
+      "_origin": "ast",
+      "id": "src_transformer_training_losses_labelsmoothingloss",
+      "community": 7,
+      "norm_label": "labelsmoothingloss"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/training/losses.py",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "src_transformer_training_losses_labelsmoothingloss_init",
+      "community": 7,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".forward()",
+      "file_type": "code",
+      "source_file": "src/transformer/training/losses.py",
+      "source_location": "L23",
+      "_origin": "ast",
+      "id": "src_transformer_training_losses_labelsmoothingloss_forward",
+      "community": 7,
+      "norm_label": ".forward()"
+    },
+    {
+      "label": "Loss functions. Paper Section: 5.4",
+      "file_type": "rationale",
+      "source_file": "src/transformer/training/losses.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_training_losses_rationale_1",
+      "community": 7,
+      "norm_label": "loss functions. paper section: 5.4"
+    },
+    {
+      "label": "Label smoothing loss.     Paper Reference: Section 5.4",
+      "file_type": "rationale",
+      "source_file": "src/transformer/training/losses.py",
+      "source_location": "L10",
+      "_origin": "ast",
+      "id": "src_transformer_training_losses_rationale_10",
+      "community": 7,
+      "norm_label": "label smoothing loss.     paper reference: section 5.4"
+    },
+    {
+      "label": "trainer.py",
+      "file_type": "code",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer",
+      "community": 3,
+      "norm_label": "trainer.py"
+    },
+    {
+      "label": "NoamLRScheduler",
+      "file_type": "code",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L9",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer_noamlrscheduler",
+      "community": 3,
+      "norm_label": "noamlrscheduler"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer_noamlrscheduler_init",
+      "community": 3,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": "Optimizer",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "optimizer",
+      "community": 3,
+      "norm_label": "optimizer"
+    },
+    {
+      "label": ".step()",
+      "file_type": "code",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L21",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer_noamlrscheduler_step",
+      "community": 3,
+      "norm_label": ".step()"
+    },
+    {
+      "label": ".get_lr()",
+      "file_type": "code",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L27",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer_noamlrscheduler_get_lr",
+      "community": 3,
+      "norm_label": ".get_lr()"
+    },
+    {
+      "label": "Trainer",
+      "file_type": "code",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L30",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer_trainer",
+      "community": 3,
+      "norm_label": "trainer"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L36",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer_trainer_init",
+      "community": 3,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".train()",
+      "file_type": "code",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L45",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer_trainer_train",
+      "community": 3,
+      "norm_label": ".train()"
+    },
+    {
+      "label": ".train_epoch()",
+      "file_type": "code",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L48",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer_trainer_train_epoch",
+      "community": 3,
+      "norm_label": ".train_epoch()"
+    },
+    {
+      "label": "Training loop and custom learning rate scheduler. Paper Section: 5.3",
+      "file_type": "rationale",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer_rationale_1",
+      "community": 3,
+      "norm_label": "training loop and custom learning rate scheduler. paper section: 5.3"
+    },
+    {
+      "label": "Custom learning rate scheduler from Section 5.3.          lrate = d_model^{-0.5}",
+      "file_type": "rationale",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L10",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer_rationale_10",
+      "community": 3,
+      "norm_label": "custom learning rate scheduler from section 5.3.          lrate = d_model^{-0.5}"
+    },
+    {
+      "label": "STUB: This component implements the training loop.     SIR ambiguity: Handling v",
+      "file_type": "rationale",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "src_transformer_training_trainer_rationale_31",
+      "community": 3,
+      "norm_label": "stub: this component implements the training loop.     sir ambiguity: handling v"
+    },
+    {
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "src/transformer/utils/__init__.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_utils_init",
+      "community": 32,
+      "norm_label": "__init__.py"
+    },
+    {
+      "label": "config.py",
+      "file_type": "code",
+      "source_file": "src/transformer/utils/config.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_utils_config",
+      "community": 2,
+      "norm_label": "config.py"
+    },
+    {
+      "label": "set_seed()",
+      "file_type": "code",
+      "source_file": "src/transformer/utils/config.py",
+      "source_location": "L12",
+      "_origin": "ast",
+      "id": "src_transformer_utils_config_set_seed",
+      "community": 2,
+      "norm_label": "set_seed()"
+    },
+    {
+      "label": "load_config()",
+      "file_type": "code",
+      "source_file": "src/transformer/utils/config.py",
+      "source_location": "L25",
+      "_origin": "ast",
+      "id": "src_transformer_utils_config_load_config",
+      "community": 2,
+      "norm_label": "load_config()"
+    },
+    {
+      "label": "Configuration loading and seeding utilities. Implements reproducibility requirem",
+      "file_type": "rationale",
+      "source_file": "src/transformer/utils/config.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_transformer_utils_config_rationale_1",
+      "community": 2,
+      "norm_label": "configuration loading and seeding utilities. implements reproducibility requirem"
+    },
+    {
+      "label": "Set seed for reproducibility across Python, NumPy, and PyTorch.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/utils/config.py",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "src_transformer_utils_config_rationale_13",
+      "community": 2,
+      "norm_label": "set seed for reproducibility across python, numpy, and pytorch."
+    },
+    {
+      "label": "Load YAML configuration file.",
+      "file_type": "rationale",
+      "source_file": "src/transformer/utils/config.py",
+      "source_location": "L26",
+      "_origin": "ast",
+      "id": "src_transformer_utils_config_rationale_26",
+      "community": 2,
+      "norm_label": "load yaml configuration file."
+    },
+    {
+      "label": "test_detect.py",
+      "file_type": "code",
+      "source_file": "test_detect.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "test_detect",
+      "community": 33,
+      "norm_label": "test_detect.py"
+    },
+    {
+      "label": "train.py",
+      "file_type": "code",
+      "source_file": "train.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "train",
+      "community": 2,
+      "norm_label": "train.py"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "train.py",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "train_main",
+      "community": 2,
+      "norm_label": "main()"
+    },
+    {
+      "label": "Main training script for the Transformer model.",
+      "file_type": "rationale",
+      "source_file": "train.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "train_rationale_1",
+      "community": 2,
+      "norm_label": "main training script for the transformer model."
+    },
+    {
+      "label": "Transformer",
+      "file_type": "concept",
+      "source_file": "README.md",
+      "id": "readme_transformer",
+      "community": 15,
+      "norm_label": "transformer"
+    },
+    {
+      "label": "Attention Is All You Need",
+      "file_type": "paper",
+      "source_file": "README.md",
+      "id": "readme_attention_is_all_you_need",
+      "community": 15,
+      "norm_label": "attention is all you need"
+    },
+    {
+      "label": "Attention Masking",
+      "file_type": "rationale",
+      "source_file": "README.md",
+      "id": "readme_attention_masking",
+      "community": 23,
+      "norm_label": "attention masking"
+    },
+    {
+      "label": "NoamLRScheduler",
+      "file_type": "concept",
+      "source_file": "README.md",
+      "id": "readme_noamlrscheduler",
+      "community": 24,
+      "norm_label": "noamlrscheduler"
+    },
+    {
+      "label": "Token-based Batching",
+      "file_type": "rationale",
+      "source_file": "README.md",
+      "id": "readme_token_based_batching",
+      "community": 25,
+      "norm_label": "token-based batching"
+    },
+    {
+      "label": "BLEU WMT 2014 English-German",
+      "file_type": "concept",
+      "source_file": "README.md",
+      "id": "readme_bleu_wmt_2014_en_de",
+      "community": 10,
+      "norm_label": "bleu wmt 2014 english-german"
+    },
+    {
+      "label": "BLEU WMT 2014 English-French",
+      "file_type": "concept",
+      "source_file": "README.md",
+      "id": "readme_bleu_wmt_2014_en_fr",
+      "community": 13,
+      "norm_label": "bleu wmt 2014 english-french"
+    },
+    {
+      "label": "BLEU WMT 2014 English-German test",
+      "file_type": "concept",
+      "source_file": "comparison/benchmark_comparison.md",
+      "id": "comparison_benchmark_comparison_bleu_wmt_2014_en_de",
+      "community": 10,
+      "norm_label": "bleu wmt 2014 english-german test"
+    },
+    {
+      "label": "BLEU WMT 2014 English-French test",
+      "file_type": "concept",
+      "source_file": "comparison/benchmark_comparison.md",
+      "id": "comparison_benchmark_comparison_bleu_wmt_2014_en_fr",
+      "community": 13,
+      "norm_label": "bleu wmt 2014 english-french test"
+    },
+    {
+      "label": "Encoder Stack",
+      "file_type": "concept",
+      "source_file": "comparison/hallucination_report.md",
+      "id": "comparison_hallucination_report_encoder_stack",
+      "community": 17,
+      "norm_label": "encoder stack"
+    },
+    {
+      "label": "Decoder Stack",
+      "file_type": "concept",
+      "source_file": "comparison/hallucination_report.md",
+      "id": "comparison_hallucination_report_decoder_stack",
+      "community": 16,
+      "norm_label": "decoder stack"
+    },
+    {
+      "label": "Multi-Head Attention",
+      "file_type": "concept",
+      "source_file": "comparison/hallucination_report.md",
+      "id": "comparison_hallucination_report_multi_head_attention",
+      "community": 18,
+      "norm_label": "multi-head attention"
+    },
+    {
+      "label": "Position-wise FFN",
+      "file_type": "concept",
+      "source_file": "comparison/hallucination_report.md",
+      "id": "comparison_hallucination_report_position_wise_ffn",
+      "community": 19,
+      "norm_label": "position-wise ffn"
+    },
+    {
+      "label": "Positional Encoding",
+      "file_type": "concept",
+      "source_file": "comparison/hallucination_report.md",
+      "id": "comparison_hallucination_report_positional_encoding",
+      "community": 20,
+      "norm_label": "positional encoding"
+    },
+    {
+      "label": "vocab_size 37000",
+      "file_type": "rationale",
+      "source_file": "comparison/hallucination_report.md",
+      "id": "comparison_hallucination_report_vocab_size_37000",
+      "community": 14,
+      "norm_label": "vocab_size 37000"
+    },
+    {
+      "label": "ArXivist SIR",
+      "file_type": "concept",
+      "source_file": "comparison/verification_log.md",
+      "id": "comparison_verification_log_arxivist_sir",
+      "community": 21,
+      "norm_label": "arxivist sir"
+    },
+    {
+      "label": "Model Configuration",
+      "file_type": "concept",
+      "source_file": "configs/config.yaml",
+      "id": "configs_config_model",
+      "community": 14,
+      "norm_label": "model configuration"
+    },
+    {
+      "label": "WMT 2014 English-German dataset",
+      "file_type": "concept",
+      "source_file": "data/README_data.md",
+      "id": "data_readme_data_wmt_2014_english_german",
+      "community": 10,
+      "norm_label": "wmt 2014 english-german dataset"
+    },
+    {
+      "label": "Train Service",
+      "file_type": "concept",
+      "source_file": "docker/docker-compose.yml",
+      "id": "docker_docker_compose_train",
+      "community": 22,
+      "norm_label": "train service"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "data/download.py",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "data_download",
+      "target": "data_download_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "data/download.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "data_download_rationale_1",
+      "target": "data_download",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "evaluate.py",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "evaluate",
+      "target": "evaluate_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "evaluate.py",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "evaluate",
+      "target": "src_transformer_utils_config",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "evaluate.py",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "evaluate",
+      "target": "src_transformer_utils_config_load_config",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "evaluate.py",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "evaluate",
+      "target": "src_transformer_utils_config_set_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "evaluate.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "evaluate_rationale_1",
+      "target": "evaluate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "evaluate.py",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "evaluate_main",
+      "target": "src_transformer_utils_config_load_config",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "evaluate.py",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "evaluate_main",
+      "target": "src_transformer_utils_config_set_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "inference.py",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "inference",
+      "target": "inference_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "inference.py",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "inference",
+      "target": "src_transformer_utils_config",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "inference.py",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "inference",
+      "target": "src_transformer_utils_config_load_config",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "inference.py",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "inference",
+      "target": "src_transformer_utils_config_set_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "inference.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "inference_rationale_1",
+      "target": "inference",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "inference.py",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "inference_main",
+      "target": "src_transformer_utils_config_set_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notebooks/generate_nb.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "notebooks_generate_nb",
+      "target": "notebooks_generate_nb_code_cell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notebooks/generate_nb.py",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "notebooks_generate_nb",
+      "target": "notebooks_generate_nb_markdown_cell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_transformer_data_dataset",
+      "target": "src_transformer_data_dataset_translationdataset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_transformer_data_dataset_rationale_8",
+      "target": "src_transformer_data_dataset_translationdataset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_transformer_data_dataset_translationdataset",
+      "target": "dataset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "src_transformer_data_dataset_translationdataset",
+      "target": "src_transformer_data_dataset_translationdataset_getitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "src_transformer_data_dataset_translationdataset",
+      "target": "src_transformer_data_dataset_translationdataset_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/data/dataset.py",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "src_transformer_data_dataset_translationdataset",
+      "target": "src_transformer_data_dataset_translationdataset_len",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/data/transforms.py",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_transformer_data_transforms",
+      "target": "src_transformer_data_transforms_tokenizertransform",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/data/transforms.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_transformer_data_transforms_rationale_1",
+      "target": "src_transformer_data_transforms",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/data/transforms.py",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_transformer_data_transforms_rationale_6",
+      "target": "src_transformer_data_transforms_tokenizertransform",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/evaluation/metrics.py",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_transformer_evaluation_metrics",
+      "target": "src_transformer_evaluation_metrics_compute_bleu",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/evaluation/metrics.py",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_transformer_evaluation_metrics",
+      "target": "src_transformer_evaluation_metrics_compute_perplexity",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/evaluation/metrics.py",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_transformer_evaluation_metrics_rationale_6",
+      "target": "src_transformer_evaluation_metrics_compute_bleu",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/evaluation/metrics.py",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "src_transformer_evaluation_metrics_rationale_13",
+      "target": "src_transformer_evaluation_metrics_compute_perplexity",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention",
+      "target": "src_transformer_models_attention_scaleddotproductattention",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_rationale_1",
+      "target": "src_transformer_models_attention",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_attention",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L67",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_multiheadattention_init",
+      "target": "src_transformer_models_attention_scaleddotproductattention",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_rationale_12",
+      "target": "src_transformer_models_attention_scaleddotproductattention",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_scaleddotproductattention",
+      "target": "src_transformer_models_attention_scaleddotproductattention_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_scaleddotproductattention",
+      "target": "src_transformer_models_attention_scaleddotproductattention_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_scaleddotproductattention",
+      "target": "src_transformer_models_attention_scaleddotproductattention_repr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_scaleddotproductattention_init",
+      "target": "src_transformer_models_attention_multiheadattention_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_scaleddotproductattention_forward",
+      "target": "src_transformer_models_attention_py_tensor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_multiheadattention_forward",
+      "target": "src_transformer_models_attention_py_tensor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_multiheadattention",
+      "target": "src_transformer_models_attention_multiheadattention_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_multiheadattention",
+      "target": "src_transformer_models_attention_multiheadattention_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L90",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_multiheadattention",
+      "target": "src_transformer_models_attention_multiheadattention_repr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/attention.py",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "src_transformer_models_attention_rationale_47",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L11",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_decoder",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L11",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_decoderlayer",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L11",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_embeddings",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L11",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_encoder",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L11",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_encoderlayer",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L11",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_generator",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L11",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_layernorm",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L167",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_make_model",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L11",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_sublayerconnection",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L11",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_transformer",
+      "target": "src_transformer_models_attention_multiheadattention",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_rationale_1",
+      "target": "src_transformer_models_layers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_layers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_positionwisefeedforward",
+      "target": "src_transformer_models_layers_positionwisefeedforward_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_positionwisefeedforward",
+      "target": "src_transformer_models_layers_positionwisefeedforward_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_positionwisefeedforward",
+      "target": "src_transformer_models_layers_positionwisefeedforward_repr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_rationale_12",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_decoder",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_decoderlayer",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_embeddings",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_encoder",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_encoderlayer",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_generator",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_layernorm",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L168",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_make_model",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_sublayerconnection",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_transformer",
+      "target": "src_transformer_models_layers_positionwisefeedforward",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_positionwisefeedforward_init",
+      "target": "src_transformer_models_layers_positionalencoding_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_positionwisefeedforward_forward",
+      "target": "src_transformer_models_layers_py_tensor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_positionalencoding_forward",
+      "target": "src_transformer_models_layers_py_tensor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_positionalencoding",
+      "target": "src_transformer_models_layers_positionalencoding_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_positionalencoding",
+      "target": "src_transformer_models_layers_positionalencoding_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L62",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_positionalencoding",
+      "target": "src_transformer_models_layers_positionalencoding_repr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/layers.py",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "src_transformer_models_layers_rationale_33",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_decoder",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_decoderlayer",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_embeddings",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_encoder",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_encoderlayer",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_generator",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_layernorm",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L169",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_make_model",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_sublayerconnection",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L12",
+      "weight": 0.8,
+      "source": "src_transformer_models_transformer_transformer",
+      "target": "src_transformer_models_layers_positionalencoding",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_transformer_clones",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L96",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_transformer_decoder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_transformer_decoderlayer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L115",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_transformer_embeddings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L78",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_transformer_encoder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_transformer_encoderlayer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L124",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_transformer_generator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_transformer_layernorm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L162",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_transformer_make_model",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_transformer_sublayerconnection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L133",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer",
+      "target": "src_transformer_models_transformer_transformer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_1",
+      "target": "src_transformer_models_transformer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L102",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_decoder_init",
+      "target": "src_transformer_models_transformer_clones",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_decoderlayer_init",
+      "target": "src_transformer_models_transformer_clones",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_encoder_init",
+      "target": "src_transformer_models_transformer_clones",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_encoderlayer_init",
+      "target": "src_transformer_models_transformer_clones",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_15",
+      "target": "src_transformer_models_transformer_clones",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L103",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_decoder_init",
+      "target": "src_transformer_models_transformer_layernorm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_encoder_init",
+      "target": "src_transformer_models_transformer_layernorm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_layernorm",
+      "target": "src_transformer_models_transformer_layernorm_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "context": "argument",
+      "source": "src_transformer_models_transformer_layernorm_init",
+      "target": "src_transformer_models_transformer_layernorm",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_19",
+      "target": "src_transformer_models_transformer_layernorm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_sublayerconnection_init",
+      "target": "src_transformer_models_transformer_layernorm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_layernorm_init",
+      "target": "src_transformer_models_transformer_transformer_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_decoderlayer_init",
+      "target": "src_transformer_models_transformer_sublayerconnection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_encoderlayer_init",
+      "target": "src_transformer_models_transformer_sublayerconnection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_32",
+      "target": "src_transformer_models_transformer_sublayerconnection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_sublayerconnection",
+      "target": "src_transformer_models_transformer_sublayerconnection_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L37",
+      "weight": 1.0,
+      "context": "argument",
+      "source": "src_transformer_models_transformer_sublayerconnection_init",
+      "target": "src_transformer_models_transformer_sublayerconnection",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_sublayerconnection_init",
+      "target": "src_transformer_models_transformer_transformer_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_42",
+      "target": "src_transformer_models_transformer_sublayerconnection_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_encoderlayer",
+      "target": "src_transformer_models_transformer_encoderlayer_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L50",
+      "weight": 1.0,
+      "context": "argument",
+      "source": "src_transformer_models_transformer_encoderlayer_init",
+      "target": "src_transformer_models_transformer_encoderlayer",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L172",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_make_model",
+      "target": "src_transformer_models_transformer_encoderlayer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_46",
+      "target": "src_transformer_models_transformer_encoderlayer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_encoderlayer_init",
+      "target": "src_transformer_models_transformer_transformer_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L72",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_decoderlayer",
+      "target": "src_transformer_models_transformer_decoderlayer_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L65",
+      "weight": 1.0,
+      "context": "argument",
+      "source": "src_transformer_models_transformer_decoderlayer_init",
+      "target": "src_transformer_models_transformer_decoderlayer",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L173",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_make_model",
+      "target": "src_transformer_models_transformer_decoderlayer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_61",
+      "target": "src_transformer_models_transformer_decoderlayer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L65",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_decoderlayer_init",
+      "target": "src_transformer_models_transformer_transformer_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_encoder",
+      "target": "src_transformer_models_transformer_encoder_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L83",
+      "weight": 1.0,
+      "context": "argument",
+      "source": "src_transformer_models_transformer_encoder_init",
+      "target": "src_transformer_models_transformer_encoder",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_encoder",
+      "target": "src_transformer_models_transformer_encoder_repr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L172",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_make_model",
+      "target": "src_transformer_models_transformer_encoder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L79",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_79",
+      "target": "src_transformer_models_transformer_encoder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L138",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer_init",
+      "target": "src_transformer_models_transformer_encoder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_encoder_init",
+      "target": "src_transformer_models_transformer_transformer_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_encoder_forward",
+      "target": "src_transformer_models_transformer_py_tensor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L105",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_decoder_forward",
+      "target": "src_transformer_models_transformer_py_tensor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L156",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer_decode",
+      "target": "src_transformer_models_transformer_py_tensor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L153",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer_encode",
+      "target": "src_transformer_models_transformer_py_tensor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L146",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer_forward",
+      "target": "src_transformer_models_transformer_py_tensor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L105",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_decoder",
+      "target": "src_transformer_models_transformer_decoder_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L101",
+      "weight": 1.0,
+      "context": "argument",
+      "source": "src_transformer_models_transformer_decoder_init",
+      "target": "src_transformer_models_transformer_decoder",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L112",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_decoder",
+      "target": "src_transformer_models_transformer_decoder_repr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L173",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_make_model",
+      "target": "src_transformer_models_transformer_decoder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L97",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_97",
+      "target": "src_transformer_models_transformer_decoder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L138",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer_init",
+      "target": "src_transformer_models_transformer_decoder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L101",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_decoder_init",
+      "target": "src_transformer_models_transformer_transformer_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L121",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_embeddings",
+      "target": "src_transformer_models_transformer_embeddings_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L117",
+      "weight": 1.0,
+      "context": "argument",
+      "source": "src_transformer_models_transformer_embeddings_init",
+      "target": "src_transformer_models_transformer_embeddings",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L174",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_make_model",
+      "target": "src_transformer_models_transformer_embeddings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L117",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_embeddings_init",
+      "target": "src_transformer_models_transformer_transformer_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L130",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_generator",
+      "target": "src_transformer_models_transformer_generator_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L127",
+      "weight": 1.0,
+      "context": "argument",
+      "source": "src_transformer_models_transformer_generator_init",
+      "target": "src_transformer_models_transformer_generator",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L176",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_make_model",
+      "target": "src_transformer_models_transformer_generator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L125",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_125",
+      "target": "src_transformer_models_transformer_generator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L127",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_generator_init",
+      "target": "src_transformer_models_transformer_transformer_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L171",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_make_model",
+      "target": "src_transformer_models_transformer_transformer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L134",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_134",
+      "target": "src_transformer_models_transformer_transformer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L156",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer",
+      "target": "src_transformer_models_transformer_transformer_decode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L153",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer",
+      "target": "src_transformer_models_transformer_transformer_encode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L146",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer",
+      "target": "src_transformer_models_transformer_transformer_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L139",
+      "weight": 1.0,
+      "context": "argument",
+      "source": "src_transformer_models_transformer_transformer_init",
+      "target": "src_transformer_models_transformer_transformer",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L159",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer",
+      "target": "src_transformer_models_transformer_transformer_repr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L138",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer_init",
+      "target": "module",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L147",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_147",
+      "target": "src_transformer_models_transformer_transformer_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L150",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer_forward",
+      "target": "src_transformer_models_transformer_transformer_decode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L150",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_transformer_forward",
+      "target": "src_transformer_models_transformer_transformer_encode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/models/transformer.py",
+      "source_location": "L163",
+      "weight": 1.0,
+      "source": "src_transformer_models_transformer_rationale_163",
+      "target": "src_transformer_models_transformer_make_model",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/losses.py",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_transformer_training_losses",
+      "target": "src_transformer_training_losses_labelsmoothingloss",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/losses.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_transformer_training_losses_rationale_1",
+      "target": "src_transformer_training_losses",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/losses.py",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "src_transformer_training_losses_labelsmoothingloss",
+      "target": "src_transformer_training_losses_labelsmoothingloss_forward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
+      "source_file": "src/transformer/training/losses.py",
+      "source_location": "L15",
+      "weight": 1.0,
+      "context": "argument",
+      "source": "src_transformer_training_losses_labelsmoothingloss_init",
+      "target": "src_transformer_training_losses_labelsmoothingloss",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/losses.py",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "src_transformer_training_losses_rationale_10",
+      "target": "src_transformer_training_losses_labelsmoothingloss",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer",
+      "target": "src_transformer_training_trainer_noamlrscheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer",
+      "target": "src_transformer_training_trainer_trainer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer_rationale_1",
+      "target": "src_transformer_training_trainer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer_noamlrscheduler",
+      "target": "src_transformer_training_trainer_noamlrscheduler_get_lr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer_noamlrscheduler",
+      "target": "src_transformer_training_trainer_noamlrscheduler_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer_noamlrscheduler",
+      "target": "src_transformer_training_trainer_noamlrscheduler_step",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer_rationale_10",
+      "target": "src_transformer_training_trainer_noamlrscheduler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer_noamlrscheduler_init",
+      "target": "optimizer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer_noamlrscheduler_step",
+      "target": "src_transformer_training_trainer_noamlrscheduler_get_lr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer_rationale_31",
+      "target": "src_transformer_training_trainer_trainer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer_trainer",
+      "target": "src_transformer_training_trainer_trainer_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer_trainer",
+      "target": "src_transformer_training_trainer_trainer_train",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/training/trainer.py",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "src_transformer_training_trainer_trainer",
+      "target": "src_transformer_training_trainer_trainer_train_epoch",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/utils/config.py",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "src_transformer_utils_config",
+      "target": "src_transformer_utils_config_load_config",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/utils/config.py",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_transformer_utils_config",
+      "target": "src_transformer_utils_config_set_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/utils/config.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_transformer_utils_config_rationale_1",
+      "target": "src_transformer_utils_config",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "train.py",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "train",
+      "target": "src_transformer_utils_config",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/utils/config.py",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "src_transformer_utils_config_rationale_13",
+      "target": "src_transformer_utils_config_set_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "train.py",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "train",
+      "target": "src_transformer_utils_config_set_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "train.py",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "train_main",
+      "target": "src_transformer_utils_config_set_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/transformer/utils/config.py",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "src_transformer_utils_config_rationale_26",
+      "target": "src_transformer_utils_config_load_config",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "train.py",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "train",
+      "target": "src_transformer_utils_config_load_config",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "train.py",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "train_main",
+      "target": "src_transformer_utils_config_load_config",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "train.py",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "train",
+      "target": "train_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "train.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "train_rationale_1",
+      "target": "train",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "cites",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source": "readme_transformer",
+      "target": "readme_attention_is_all_you_need"
+    },
+    {
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "comparison/benchmark_comparison.md",
+      "source": "comparison_benchmark_comparison_bleu_wmt_2014_en_de",
+      "target": "readme_bleu_wmt_2014_en_de"
+    },
+    {
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "data/README_data.md",
+      "source": "data_readme_data_wmt_2014_english_german",
+      "target": "readme_bleu_wmt_2014_en_de"
+    },
+    {
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "comparison/benchmark_comparison.md",
+      "source": "comparison_benchmark_comparison_bleu_wmt_2014_en_fr",
+      "target": "readme_bleu_wmt_2014_en_fr"
+    },
+    {
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "comparison/hallucination_report.md",
+      "source": "comparison_hallucination_report_vocab_size_37000",
+      "target": "configs_config_model"
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "transformer_architecture_components",
+      "label": "Transformer Architecture Components",
+      "nodes": [
+        "comparison_hallucination_report_encoder_stack",
+        "comparison_hallucination_report_decoder_stack",
+        "comparison_hallucination_report_multi_head_attention",
+        "comparison_hallucination_report_position_wise_ffn",
+        "comparison_hallucination_report_positional_encoding"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "comparison/hallucination_report.md"
+    }
+  ]
+}

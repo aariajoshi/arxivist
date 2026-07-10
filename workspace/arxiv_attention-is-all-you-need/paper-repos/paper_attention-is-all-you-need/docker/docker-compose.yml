@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  train:
+    build: .
+    volumes:
+      - .:/workspace
+      - ./data:/workspace/data
+      - ./checkpoints:/workspace/checkpoints
+      - ./results:/workspace/results
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: python train.py --config configs/config.yaml
+  
+  notebook:
+    build: .
+    volumes:
+      - .:/workspace
+    ports:
+      - "8888:8888"
+    command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token=''
