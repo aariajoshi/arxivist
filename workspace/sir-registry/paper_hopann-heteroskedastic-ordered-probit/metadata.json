@@ -1,0 +1,30 @@
+{
+  "paper_id": "paper_hopann-heteroskedastic-ordered-probit",
+  "stage": "01_paper_parser",
+  "stage_status": "complete",
+  "parsed_at": "2026-07-16T09:07:58Z",
+  "arxivist_version": "1.0",
+  "has_comparison_report": true,
+  "human_review_required": false,
+  "overall_sir_confidence": 0.76,
+  "source": {
+    "type": "pdf",
+    "origin": "F:\\Econometrics Research Paper\\Econometrics 2\\Econometrics Assignments\\Critical review Paper Assignments\\Paper 3.pdf",
+    "paper_title": "Heteroskedastic Ordered Probit Models with an Artificial Neural Network",
+    "journal": "Computational Economics (Springer)",
+    "year": 2024,
+    "doi": "10.1007/s10614-024 (Springer Computational Economics)"
+  },
+  "output_files": {
+    "sir_json": "sir-registry/sir.json",
+    "metadata_json": "sir-registry/metadata.json"
+  },
+  "key_warnings": [
+    "Training pipeline confidence LOW (0.52): batch size, learning rate, epoch count, lr schedule all unspecified in paper.",
+    "HOPANN variance network architecture is ambiguous: linear vs. shallow ANN unclear.",
+    "Day dummy feature count is ambiguous; total K (input dimension) is uncertain.",
+    "Cutting point ordering enforcement mechanism not described in paper.",
+    "Exact numerical results tables not fully parseable from PDF text."
+  ],
+  "next_stage": "02_sir_registry"
+}

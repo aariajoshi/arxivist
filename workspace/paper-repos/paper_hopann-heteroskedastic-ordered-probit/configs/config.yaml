@@ -1,0 +1,84 @@
+# =============================================================================
+# HOPANN — Heteroskedastic Ordered Probit ANN
+# Main configuration file
+#
+# All hyperparameters are documented with their SIR confidence scores.
+# ASSUMED values are marked with [ASSUMED, conf=X.XX].
+# =============================================================================
+
+run_name: "hopann_experiment"
+device: "auto"           # 'auto' = CUDA if available, else CPU
+
+# ---------------------------------------------------------------------------
+# Model architecture
+# ---------------------------------------------------------------------------
+model:
+  hidden_dim: 16          # Q — hidden nodes in MeanNetwork & VarianceNetworkANN
+                          # [ASSUMED, conf=0.52]; searched over [8, 16, 32, 64]
+  variance_type: "ann"    # Variance network type: 'ann' or 'linear'
+                          # [ASSUMED, conf=0.62]; make swappable by changing this
+  dropout_rate: 0.0       # Dropout on hidden layer [ASSUMED: 0.0; not in paper]
+
+# ---------------------------------------------------------------------------
+# Data loading and splitting
+# ---------------------------------------------------------------------------
+data:
+  data_path: ""           # REQUIRED: absolute path to preprocessed Amazon review CSV
+                          # Example: "/data/amazon_software_reviews.csv"
+  train_frac: 0.70        # [ASSUMED, conf=0.52]; paper says time-ordered split
+  val_frac: 0.15          # [ASSUMED, conf=0.52]
+                          # Test fraction = 1 - train_frac - val_frac = 0.15
+  date_col: "reviewTime"  # [ASSUMED]: column used for time-ordering
+  rating_col: "overall"   # [ASSUMED]: star rating column (Ni et al. 2019 format)
+  experiment_ids:         # Which experiments to run (1-4)
+    - 1
+    - 2
+    - 3
+    - 4
+
+# ---------------------------------------------------------------------------
+# Training loop
+# ---------------------------------------------------------------------------
+training:
+  batch_size: 64          # [ASSUMED, conf=0.52]
+  lr: 0.001               # [ASSUMED, conf=0.52]; 1e-3
+  max_epochs: 200         # [ASSUMED]: reasonable upper bound
+  patience: 15            # Early stopping patience [ASSUMED, conf=0.52]
+  log_every_n_steps: 50   # Log training metrics every N batch steps
+  save_every_n_epochs: 10 # Save periodic checkpoint every N epochs
+  monitor_metric: "val_nll"
+
+  # Hyperparameter search grid (run_experiments.py uses these)
+  run_hyperparameter_search: true
+  search_hidden_dims:
+    - 8
+    - 16
+    - 32
+    - 64
+  search_lrs:
+    - 0.01
+    - 0.001
+    - 0.0001
+  search_max_epochs: 50   # Epochs per configuration during grid search
+
+# ---------------------------------------------------------------------------
+# Evaluation
+# ---------------------------------------------------------------------------
+evaluation:
+  metrics:
+    - f1_macro
+    - accuracy
+    - pr_auc
+    - mse
+    - mae
+    - cohen_kappa
+    - roc_auc
+  output_dir: "outputs"
+
+# ---------------------------------------------------------------------------
+# Reproducibility
+# ---------------------------------------------------------------------------
+reproducibility:
+  seed: 42
+  deterministic: false    # Set true for exact reproducibility (may slow training)
+  cudnn_benchmark: true   # Set false when deterministic=true
