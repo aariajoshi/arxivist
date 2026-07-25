@@ -1,0 +1,50 @@
+{
+  "paper_id": "arxiv_2607_18340",
+  "title": "Quantum Cryptanalysis on IBM Quantum Hardware: Extending Even-Mansour Period Recovery from N=4 to N=10",
+  "authors": [
+    "Taebong Kim",
+    "Youngsik Hong",
+    "Minsik Kim",
+    "Sunyoung Choi",
+    "Jaewon Jang",
+    "Junghoon Shin",
+    "Minseo Kim"
+  ],
+  "domain": "Other",
+  "arxiv_id": "2607.18340",
+  "version": 1,
+  "created_at": "2026-07-22T08:58:13Z",
+  "last_updated": "2026-07-22T10:30:00Z",
+  "sir_confidence": 0.58,
+  "stages_with_data": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "has_comparison_report": true,
+  "repo_path": "paper-repos/arxiv_2607_18340/",
+  "update_history": [
+    {
+      "version": 1,
+      "timestamp": "2026-07-22T08:58:13Z",
+      "reason": "initial commit (Stage 1 Paper Parser output)",
+      "changed_sections": [
+        "all"
+      ]
+    },
+    {
+      "version": 1,
+      "timestamp": "2026-07-22T10:30:00Z",
+      "reason": "Stage 3-6 complete: architecture plan, full repo (16/16 clean attack recoveries), notebooks, comparison report (reproducibility_score=0.704, medium confidence)",
+      "changed_sections": [
+        "architecture_plan",
+        "repo",
+        "notebooks",
+        "comparison"
+      ]
+    }
+  ]
+}
