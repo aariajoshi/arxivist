@@ -1,0 +1,13 @@
+# DiscDiff reproduction. Absorb-Escape + structural LDM verification need only torch/numpy.
+torch>=2.0
+numpy>=1.23
+scipy>=1.9
+pyyaml>=6.0
+tqdm>=4.64
+pytest>=7.0
+
+# Real generation metrics (S-FID / full CorTATA on EPD-GenDNA) additionally need:
+#   datasets>=2.14         # HuggingFace EPD-GenDNA (Zehui127/*)
+#   transformers>=4.30     # fine-tuned Hyena for Absorb-Escape
+#   a Sei genomic embedder # for S-FID
+#   trained DiscDiff weights (author repo: github.com/Zehui127/Latent-DNA-Diffusion)

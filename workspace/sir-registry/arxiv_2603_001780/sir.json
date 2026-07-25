@@ -1,0 +1,108 @@
+{
+  "paper_id": "arxiv_2603_001780",
+  "sir_version": 1,
+  "provenance": {
+    "title": "D3LM: A Discrete DNA Diffusion Language Model for Bidirectional DNA Understanding and Generation",
+    "authors": ["Zhao Yang", "Hengchang Liu", "Chuan Cao", "Bing Su"],
+    "affiliations": ["Gaoling School of Artificial Intelligence, Renmin University of China", "Zhongguancun Academy"],
+    "arxiv_id": "2603.01780",
+    "doi": null,
+    "submission_date": "2026-03-02",
+    "abstract": "D3LM (Discrete DNA Diffusion Language Model) unifies bidirectional representation learning and DNA generation through masked diffusion in discrete DNA space. It adopts the Nucleotide Transformer (NT) v2 architecture but reformulates the training objective as masked diffusion (variable masking ratio, 1/t-weighted cross-entropy on masked tokens), enabling both bidirectional understanding and generation within one model. Two variants: D3LM (initialized from pretrained NT-v2 weights) and D3LM-R (random init). Compared to NT-v2 of the same size, D3LM improves downstream understanding; on regulatory-element generation it reaches SFID 10.92 (D3LM-R), close to real DNA (7.85) and far better than autoregressive (HyenaDNA 29.16) and continuous latent-diffusion (DiscDiff 62.74) baselines. Published at MLGenX 2026; weights released on HuggingFace.",
+    "domain": "Multimodal",
+    "key_claims": [
+      "Masked diffusion (variable mask ratio) unifies bidirectional DNA understanding AND generation in one model, unlike BERT-style (fixed 15% mask, non-generative) or autoregressive (causal, unidirectional) models",
+      "D3LM-R reaches SFID 10.92 on 2048bp regulatory-element generation, approaching real DNA (7.85) and beating HyenaDNA (29.16), DiscDiff (62.74), Evo (1359.98), DPLM (95.34)",
+      "D3LM (NT-v2 initialized) matches or improves NT-v2 on downstream understanding (e.g. splice donor MCC 0.959 vs 0.915), showing the diffusion objective does not degrade representation quality",
+      "Non-overlapping 6-mer tokenization is optimal (SFID 10.92 vs 1-mer 15.77, 3-mer 29.31, 9-mer 32.01)",
+      "Random unmasking order beats confidence-based (MaskGit/entropy/top-k) sampling for DNA, reflecting non-local regulatory dependencies; T=50 steps and temperature 1.1 are optimal"
+    ],
+    "parsed_at": "2026-07-25T00:00:00Z",
+    "arxivist_version": "1.0"
+  },
+  "architecture": {
+    "primary_variant": "D3LM-R (50M): NT-v2 backbone (ESM encoder + RoPE + SwiGLU), 12 layers, hidden 512, 16 heads, non-overlap 6-mer, masked-diffusion training",
+    "modules": [
+      {"name": "SixMerTokenizer", "operation_type": "tokenization", "input_shape": "[B] raw DNA str", "output_shape": "[B, L] int64", "parameters": {"scheme": "non-overlapping 6-mer", "vocab_size": 4105, "kmers": 4096, "special_tokens": 9, "includes": "[MASK], [PAD], [CLS], [SEP], [UNK], + control"}, "paper_section": "Sec 2.2, 3.1", "confidence": 0.9, "notes": "4096 6-mers (4^6) + 9 special incl. mask [M]. HF config may report 4107 (a couple extra reserved)."},
+      {"name": "TokenEmbedding", "operation_type": "embedding", "input_shape": "[B, L]", "output_shape": "[B, L, D]", "parameters": {"D": 512, "vocab": 4105}, "paper_section": "Sec 2.2", "confidence": 0.9, "notes": null},
+      {"name": "RoPE", "operation_type": "positional_encoding", "input_shape": "[B, L, D]", "output_shape": "[B, L, D]", "parameters": {"type": "Rotary Position Embedding (Su et al.)"}, "paper_section": "Sec 2.2 (NT-v2 improvements)", "confidence": 0.9, "notes": "NT-v2 uses RoPE + SwiGLU over NT-v1."},
+      {"name": "ESMEncoderLayer", "operation_type": "transformer_encoder", "input_shape": "[B, L, D]", "output_shape": "[B, L, D]", "parameters": {"n_layer": 12, "n_heads": 16, "hidden": 512, "attention": "bidirectional (non-causal)", "activation": "SwiGLU"}, "paper_section": "Sec 2.2, 3.1", "confidence": 0.9, "notes": "NT-v2-50m-multi-species backbone. Bidirectional attention is essential (vs causal AR models)."},
+      {"name": "MaskPredictorHead", "operation_type": "linear", "input_shape": "[B, L, D]", "output_shape": "[B, L, vocab]", "parameters": {"vocab": 4105}, "paper_section": "Sec 2.1, Eq 2", "confidence": 0.9, "notes": "Predicts clean tokens at masked positions; CE loss weighted by 1/t (masking ratio)."}
+    ],
+    "connections": [
+      {"from": "SixMerTokenizer", "to": "TokenEmbedding", "tensor_name": "token_ids"},
+      {"from": "TokenEmbedding", "to": "ESMEncoderLayer", "tensor_name": "hidden"},
+      {"from": "ESMEncoderLayer", "to": "MaskPredictorHead", "tensor_name": "hidden"}
+    ],
+    "variants": [
+      {"name": "D3LM (from NT-v2)", "differences": {"init": "pretrained NT-v2-50m-multi-species weights", "params": "50M", "layers": 12, "hidden": 512, "heads": 16, "best_for": "understanding tasks"}},
+      {"name": "D3LM-R (scratch)", "differences": {"init": "random (NT-v2 architecture)", "params": "50M", "best_for": "generation (SFID 10.92)"}},
+      {"name": "D3LM scaling", "differences": {"sizes": "50M / 100M / 250M / 500M (NT-v2 configs); SFID stable 10.92-11.69 from 50M-250M"}}
+    ]
+  },
+  "mathematical_spec": [
+    {"name": "Masked diffusion training loss (1/t-weighted CE on masked tokens)", "latex": "\\mathcal{L}(\\theta) = -\\mathbb{E}_{t,x_0,x_t}\\left[\\frac{1}{t}\\sum_{i=1}^{L} \\mathbb{1}[x_t^i = [M]] \\log p_\\theta(x_0^i \\mid x_t)\\right]", "role": "loss", "used_in": "training", "hyperparameters": [{"symbol": "t", "value": "~ U[0,1] masking ratio"}], "undefined_symbols": [], "paper_section": "Sec 2.1, Eq 2", "confidence": 0.95},
+    {"name": "Forward masking process", "latex": "x_t^i = [M] \\text{ w.p. } t, \\quad x_0^i \\text{ w.p. } 1-t", "role": "other", "used_in": "training", "hyperparameters": [], "undefined_symbols": [], "paper_section": "Sec 2.1", "confidence": 0.95},
+    {"name": "NLL upper bound (ELBO)", "latex": "-\\mathbb{E}_{x_0 \\sim q(x)}[\\log p_\\theta(x_0)] \\leq \\mathcal{L}(\\theta)", "role": "objective", "used_in": "training", "hyperparameters": [], "undefined_symbols": [], "paper_section": "Sec 2.1, Eq 3", "confidence": 0.9},
+    {"name": "Reverse denoising step (iterative unmasking)", "latex": "x_{t-1}^i = \\begin{cases} \\text{sample } p_\\theta(x_0^i|x_t) & i \\in U_t \\\\ [M] & i \\in M_t \\setminus U_t \\\\ x_t^i & \\text{else} \\end{cases}", "role": "other", "used_in": "inference", "hyperparameters": [{"symbol": "T", "value": 50}], "undefined_symbols": ["U_t = subset to unmask"], "paper_section": "Sec 2.3, Eq 4", "confidence": 0.9},
+    {"name": "Temperature-scaled sampling", "latex": "p_\\theta^{temp}(x_0^i|x_t) \\propto p_\\theta(x_0^i|x_t)^{1/\\tau}", "role": "other", "used_in": "inference", "hyperparameters": [{"symbol": "tau", "value": 1.1}], "undefined_symbols": [], "paper_section": "Sec 2.3, Eq 5", "confidence": 0.9}
+  ],
+  "tensor_semantics": [
+    {"name": "input_ids", "shape_notation": "[B, L]", "dtype": "int64", "tensor_type": "input", "module": "TokenEmbedding", "confidence": 0.9},
+    {"name": "hidden", "shape_notation": "[B, L, 512]", "dtype": "bfloat16", "tensor_type": "intermediate", "module": "ESMEncoderLayer", "confidence": 0.9},
+    {"name": "logits", "shape_notation": "[B, L, 4105]", "dtype": "float32", "tensor_type": "output", "module": "MaskPredictorHead", "confidence": 0.9}
+  ],
+  "training_pipeline": {
+    "optimizer": {"name": "AdamW", "learning_rate": 8e-5, "beta1": 0.9, "beta2": 0.95, "weight_decay": 0.01, "confidence": 0.95},
+    "lr_schedule": {"type": "cosine decay + linear warmup (first 5% steps)", "warmup_steps": "5% of total", "total_steps": null, "confidence": 0.9},
+    "batch_size": 32,
+    "effective_batch_size": "32 sequences (~65,536 bp/step)",
+    "training_steps": null,
+    "epochs": null,
+    "mixed_precision": "bf16",
+    "gradient_clipping": 1.0,
+    "data_augmentation": ["variable masking ratio t ~ U[0,1] per sequence"],
+    "curriculum": "Masked-diffusion pretraining on EPD-GenDNA mammalian subset (~80k sequences, 2048bp). D3LM starts from NT-v2 weights; D3LM-R from scratch. Trained on NVIDIA A800 (BF16).",
+    "confidence": 0.9
+  },
+  "evaluation_protocol": {
+    "datasets": [
+      {"name": "EPD-GenDNA (Li et al. 2024, DiscDiff dataset), mammalian subset", "split": "8:1:1 train/val/test", "size": "~80k sequences (of 160k), 2048bp", "publicly_available": true},
+      {"name": "NT downstream benchmark suite (revised, HuggingFace)", "split": "per NT", "size": "18 tasks", "publicly_available": true}
+    ],
+    "metrics": ["SFID (Sei Frechet Inception Distance)", "Diversity (avg pairwise Levenshtein)", "Novelty", "GC ratio (Chargaff parity)", "MCC (understanding tasks)"],
+    "reported_results": [
+      {"metric": "sfid", "dataset": "EPD-GenDNA/2048bp_generation (D3LM-R)", "split": "test", "value": 10.92, "is_primary": true},
+      {"metric": "sfid", "dataset": "EPD-GenDNA/2048bp_generation (D3LM)", "split": "test", "value": 25.21, "is_primary": false},
+      {"metric": "sfid", "dataset": "EPD-GenDNA/256bp_generation (D3LM-R)", "split": "test", "value": 74.14, "is_primary": false},
+      {"metric": "gc_ratio", "dataset": "EPD-GenDNA/2048bp (D3LM-R)", "split": "test", "value": 1.07, "is_primary": false},
+      {"metric": "mcc", "dataset": "NT/splice_donor (D3LM)", "split": "test", "value": 0.959, "is_primary": false},
+      {"metric": "mcc", "dataset": "NT/promoter_all (D3LM)", "split": "test", "value": 0.764, "is_primary": false},
+      {"metric": "mcc", "dataset": "NT/H3K4me3 (D3LM)", "split": "test", "value": 0.634, "is_primary": false}
+    ],
+    "baselines": ["Truth (real DNA, SFID 7.85)", "Random", "HyenaDNA (29.16)", "Evo (1359.98)", "DPLM (95.34)", "DiscDiff (62.74)", "NT-MSv2-50M", "DNABERT-2", "Enformer"],
+    "compute": "Generative training on a cluster of NVIDIA A800 GPUs (BF16). Downstream fine-tuning via HuggingFace Trainer + LoRA (r=1, alpha=32), up to 1000 steps, cosine LR, early stop patience 4.",
+    "special_conditions": ["1000 generated sequences vs held-out reference for SFID", "SFID uses Sei encoder (20k chromatin profiles) -> Frechet distance", "random unmasking order (not confidence-based)", "T=50 denoising steps, temperature 1.1", "downstream: MCC, mean-pool for sequence-level tasks"],
+    "confidence": 0.92
+  },
+  "implementation_assumptions": [
+    {"assumption": "Load official D3LM/D3LM-R weights from HuggingFace (Hengchang-Liu/D3LM-from-nt, D3LM-scratch) via AutoModelForMaskedLM(trust_remote_code=True) rather than pretraining", "basis": "generative pretraining on A800 cluster is infeasible to reproduce; weights + custom diffusion_generate code are public", "confidence": 0.9, "alternatives": ["pretrain from scratch (infeasible)"], "affects_section": "architecture"},
+    {"assumption": "Generation uses the model's bundled diffusion_generate() + MDMGenerationConfig (steps, temperature, top_p, unmasking algorithm)", "basis": "HF model card shows this API", "confidence": 0.85, "alternatives": ["re-implement the reverse denoising loop"], "affects_section": "architecture"},
+    {"assumption": "SFID needs the pretrained Sei model (Chen et al. 2022, 20k chromatin profiles) to embed sequences; the metric is a Frechet distance in that space", "basis": "Sec 3.2 / Appendix B.2", "confidence": 0.85, "alternatives": ["approximate with a lighter embedder for a proxy metric"], "affects_section": "evaluation"},
+    {"assumption": "Non-overlap 6-mer tokenizer bundled with the weights (vocab ~4105)", "basis": "Sec 2.2 / 3.1", "confidence": 0.9, "alternatives": [], "affects_section": "data"}
+  ],
+  "ambiguities": [
+    {"location": "Exact vocab size", "description": "Paper says 4105 (4096 + 9 special); HF config may report 4107. Minor.", "primary_assumption": "read vocab from the released tokenizer/config at load time", "alternatives": ["4105", "4107"], "confidence": 0.8},
+    {"location": "SFID reproduction cost", "description": "SFID requires running Sei on 1000 generated + reference sequences; Sei is a large genomic CNN.", "primary_assumption": "reproduce SFID only if Sei is loadable; else verify generation qualitatively (GC ratio, motif, diversity) which are cheap", "alternatives": ["full SFID", "GC/diversity proxy"], "confidence": 0.7},
+    {"location": "Training data exact subset", "description": "'mammalian subset ~80k of 160k'; exact species list not fully enumerated in main text.", "primary_assumption": "use EPD-GenDNA mammalian sequences per DiscDiff release", "alternatives": [], "confidence": 0.75}
+  ],
+  "confidence_annotations": {
+    "architecture": 0.9,
+    "mathematical_spec": 0.93,
+    "tensor_semantics": 0.9,
+    "training_pipeline": 0.9,
+    "evaluation_protocol": 0.9,
+    "implementation_assumptions": 0.87,
+    "overall_sir_confidence": 0.9
+  }
+}

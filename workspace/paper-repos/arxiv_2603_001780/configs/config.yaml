@@ -1,0 +1,33 @@
+# D3LM reproduction config — unconditional DNA generation (Sec 2.3, 3.2)
+#
+# Loads the official D3LM-R weights and generates 2048bp regulatory-element
+# sequences via masked diffusion, then evaluates with GC ratio / diversity /
+# novelty / motif correlation (and SFID if a Sei embedder is available).
+
+model:
+  variant: "D3LM-R"          # D3LM-R (generation, SFID 10.92) | D3LM (understanding)
+  k: 6                       # non-overlapping 6-mer tokenization (paper-optimal)
+
+generation:
+  n_samples: 1000            # paper evaluates 1000 generated vs held-out reference
+  steps: 50                  # T=50 denoising steps (paper-optimal, Table 4)
+  temperature: 1.1           # tau=1.1 (paper-optimal, Table 5)
+  top_p: 1.0
+  unmask_order: "random"     # random beats confidence-based for DNA (Table 3)
+
+data:
+  dataset: "epd_gendna"
+  subset: "mammalian"
+  data_dir: "data/"
+  length: 2048               # EPD-GenDNA-large (2048bp); use 256 for -small
+
+evaluation:
+  metrics: ["gc_ratio", "diversity", "novelty", "motif_corr", "sfid"]
+  n_eval: 1000
+  sfid_if_available: true    # SFID needs the Sei genomic CNN; skipped if absent
+
+hardware:
+  device: "auto"
+  num_workers: 2
+  seed: 42
+  deterministic: false

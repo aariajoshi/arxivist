@@ -1,0 +1,17 @@
+{
+  "paper_id": "arxiv_2503_001161",
+  "title": "Split Gibbs Discrete Diffusion Posterior Sampling",
+  "authors": ["Wenda Chu", "Zihui Wu", "Yifan Chen", "Yang Song", "Yisong Yue"],
+  "affiliations": ["Caltech", "New York University", "OpenAI"],
+  "venue": "NeurIPS 2025",
+  "arxiv": "https://arxiv.org/abs/2503.01161",
+  "arxiv_version": "v3 (1 Nov 2025)",
+  "official_code": "https://github.com/chuwd19/Split-Gibbs-Discrete-Diffusion-Posterior-Sampling",
+  "domain": "Multimodal",
+  "paper_type": "algorithm (plug-and-play posterior sampling)",
+  "contribution_one_line": "A plug-and-play split-Gibbs posterior sampler for DISCRETE diffusion models (reward guidance + inverse problems), with an O(1/K) convergence guarantee.",
+  "reproduction_approach": "Verify the sampler mechanically on the paper's synthetic controlled-posterior study (exact ground truth, CPU, no weights); document real-data tasks as SEDD-90M-gated.",
+  "reproduction_score": 0.80,
+  "pipeline_complete": true,
+  "created_at": "2026-07-26T00:00:00Z"
+}

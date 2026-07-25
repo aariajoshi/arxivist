@@ -1,0 +1,14 @@
+torch>=2.1
+# D3LM ships custom diffusion_generate() remote code (NT/ESM lineage); pin transformers
+# below the tie_weights() API changes that break older custom modeling code.
+transformers>=4.38,<4.46
+accelerate>=0.30
+datasets>=2.14
+huggingface_hub>=0.19
+python-Levenshtein>=0.21
+scikit-learn>=1.3
+scipy>=1.10
+numpy>=1.24
+pandas>=2.0
+pyyaml>=6.0
+tqdm>=4.66

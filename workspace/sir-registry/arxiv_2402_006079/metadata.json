@@ -1,0 +1,19 @@
+{
+  "paper_id": "arxiv_2402_006079",
+  "title": "DiscDiff: Latent Diffusion Model for DNA Sequence Generation",
+  "authors": ["Zehui Li", "Yuhao Ni", "William A V Beardall", "Guoxuan Xia", "Akashaditya Das", "Tim August B. Huygelen", "Guy-Bart Stan", "Yiren Zhao"],
+  "affiliations": ["Imperial College London", "University College London"],
+  "venue": "ICML 2024 (AI4Science)",
+  "arxiv": "https://arxiv.org/abs/2402.06079",
+  "arxiv_version": "v2 (17 Apr 2024)",
+  "official_code": "https://github.com/Zehui127/Latent-DNA-Diffusion",
+  "dataset": "EPD-GenDNA (introduced by this paper; HuggingFace Zehui127/*)",
+  "domain": "Multimodal",
+  "paper_type": "model (latent diffusion) + algorithm (Absorb-Escape) + dataset (EPD-GenDNA)",
+  "contribution_one_line": "First latent diffusion model for DNA (two-stage VAE + latent U-Net) + Absorb-Escape refinement (~15-20x S-FID drop) + the EPD-GenDNA multi-species dataset.",
+  "reproduction_approach": "Fully reproduce + verify Absorb-Escape on CPU (no weights); build & structurally verify the DiscDiff LDM; document generation metrics (S-FID/CorTATA) as weight/Sei/data-gated (Colab).",
+  "reproduction_score": 0.83,
+  "pipeline_complete": true,
+  "related": ["arxiv_2603_001780 (D3LM — evaluates on this paper's EPD-GenDNA dataset)"],
+  "created_at": "2026-07-26T00:00:00Z"
+}
