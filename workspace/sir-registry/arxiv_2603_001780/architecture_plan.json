@@ -1,0 +1,159 @@
+{
+  "paper_id": "arxiv_2603_001780",
+  "plan_version": 1,
+  "created_at": "2026-07-25T00:00:00Z",
+  "framework": {
+    "primary": "pytorch",
+    "python_version": "3.10+",
+    "cuda_required": false,
+    "cuda_min_version": "11.8",
+    "use_huggingface": true,
+    "config_library": "yaml",
+    "reasoning": "D3LM is released on the HuggingFace Hub (Hengchang-Liu/D3LM-from-nt = D3LM, Hengchang-Liu/D3LM-scratch = D3LM-R), both 50M, built on the NT-v2 (ESM encoder + RoPE + SwiGLU) architecture. It loads via AutoModelForMaskedLM(trust_remote_code=True) and ships a custom diffusion_generate() + MDMGenerationConfig, so generation and understanding both run off the official weights (like Caduceus/DNAGPT). The masked-diffusion ALGORITHM (variable-ratio forward masking, 1/t-weighted CE on masked tokens, iterative reverse unmasking with temperature/random order) is the paper's contribution and is re-implemented from scratch in plain PyTorch so it is CPU-unit-testable without weights. Generation quality is checked with cheap REAL metrics (GC ratio / Chargaff parity, Diversity=avg pairwise Levenshtein, Novelty) that need no extra model; SFID (which needs the pretrained Sei genomic CNN) is computed only if Sei loads. No custom CUDA kernels, so cuda_required=false; GPU only speeds up generation."
+  },
+  "module_hierarchy": [
+    {
+      "path": "src/d3lm/models/masked_diffusion.py",
+      "description": "From-scratch reference for the masked-diffusion objective + sampler: forward masking (each token -> [M] w.p. t), the 1/t-weighted cross-entropy loss (Eq 2), and the iterative reverse unmasking loop (Eq 4) with temperature scaling and pluggable unmasking order (random/confidence). CPU-testable; the real forward pass uses the official ESM/NT-v2 backbone.",
+      "sir_modules_mapped": ["MaskPredictorHead"],
+      "classes": [
+        {"name": "MaskedDiffusion", "base_class": "object", "public_methods": [
+          {"name": "forward_mask", "signature": "forward_mask(self, x0: torch.Tensor, t: float, mask_id: int) -> torch.Tensor", "returns": "xt with ~t fraction masked"},
+          {"name": "loss", "signature": "loss(self, logits: torch.Tensor, x0: torch.Tensor, xt: torch.Tensor, t: float, mask_id: int) -> torch.Tensor", "returns": "1/t-weighted CE on masked positions (Eq 2)"},
+          {"name": "generate", "signature": "generate(self, predictor, length: int, steps: int, temperature: float, order: str) -> torch.Tensor", "returns": "generated token ids via iterative unmasking"}
+        ]}
+      ]
+    },
+    {
+      "path": "src/d3lm/models/d3lm.py",
+      "description": "Loads the official D3LM / D3LM-R backbone from the HF Hub (AutoModelForMaskedLM, trust_remote_code) and exposes unconditional generation via the bundled diffusion_generate(), plus a mean-pool + linear head for downstream understanding tasks.",
+      "sir_modules_mapped": ["TokenEmbedding", "RoPE", "ESMEncoderLayer", "MaskPredictorHead"],
+      "classes": [
+        {"name": "D3LMGenerator", "base_class": "object", "public_methods": [
+          {"name": "from_pretrained", "signature": "from_pretrained(cls, model_name: str, device: str) -> 'D3LMGenerator'", "returns": "loaded model + tokenizer"},
+          {"name": "generate", "signature": "generate(self, n: int, length: int, steps: int, temperature: float) -> List[str]", "returns": "n generated DNA strings"}
+        ]},
+        {"name": "D3LMClassifier", "base_class": "nn.Module", "public_methods": [
+          {"name": "forward", "signature": "forward(self, input_ids, attention_mask) -> torch.Tensor", "returns": "logits [B, num_classes]"}
+        ]}
+      ]
+    },
+    {
+      "path": "src/d3lm/data/tokenizer.py",
+      "description": "Non-overlapping 6-mer DNA tokenizer (vocab ~4105); wraps the official tokenizer when the weights are present, else a faithful built-in 6-mer vocab.",
+      "sir_modules_mapped": ["SixMerTokenizer"],
+      "classes": [{"name": "SixMerTokenizer", "base_class": "object", "public_methods": [
+        {"name": "encode", "signature": "encode(self, seq: str) -> List[int]", "returns": "non-overlap 6-mer ids"},
+        {"name": "decode", "signature": "decode(self, ids: List[int]) -> str", "returns": "DNA string"}
+      ]}]
+    },
+    {
+      "path": "src/d3lm/data/epd_gendna.py",
+      "description": "EPD-GenDNA loader (DiscDiff dataset, mammalian subset, 2048/256 bp). Downloads via the released dataset when available; else a synthetic promoter-like generator (clearly labeled) so the pipeline/tests run.",
+      "sir_modules_mapped": [],
+      "classes": [{"name": "EPDGenDNADataset", "base_class": "torch.utils.data.Dataset", "public_methods": [{"name": "__getitem__", "signature": "__getitem__(self, idx: int) -> str", "returns": "a DNA sequence"}]}]
+    },
+    {
+      "path": "src/d3lm/evaluation/metrics.py",
+      "description": "Generation metrics: GC ratio (Chargaff parity, #G/#C), Diversity (avg pairwise Levenshtein), Novelty (min edit distance to train set), and SFID (Sei-based Frechet distance) if the Sei model is available.",
+      "sir_modules_mapped": [],
+      "classes": []
+    },
+    {
+      "path": "src/d3lm/evaluation/motif.py",
+      "description": "Motif frequency distributions (TATA-box, Initiator, GC-box, CCAAT-box) along the sequence + Pearson correlation to natural DNA (CorTATA etc.), as used by DiscDiff/D3LM figures.",
+      "sir_modules_mapped": [],
+      "classes": []
+    },
+    {
+      "path": "src/d3lm/utils/config.py",
+      "description": "YAML config loader + seeding + model registry (D3LM / D3LM-R HF ids, generation defaults T=50 tau=1.1).",
+      "sir_modules_mapped": [],
+      "classes": []
+    }
+  ],
+  "tensor_flows": [
+    {
+      "name": "Unconditional generation (masked diffusion)",
+      "input": {"name": "fully_masked", "shape": "[B, L]", "dtype": "int64"},
+      "output": {"name": "generated_ids", "shape": "[B, L]", "dtype": "int64"},
+      "steps": [
+        "start from an all-[M] sequence of length L",
+        "for T steps: predict p(x0|xt) at all masked positions (bidirectional ESM/NT-v2 forward)",
+        "select a subset U_t to unmask (random order), sample with temperature tau=1.1",
+        "keep unmasked tokens, re-mask the rest, until t reaches 0",
+        "decode 6-mer ids -> DNA string"
+      ]
+    },
+    {
+      "name": "Masked-diffusion training step (reference)",
+      "input": {"name": "x0", "shape": "[B, L]", "dtype": "int64"},
+      "output": {"name": "loss", "shape": "scalar", "dtype": "float32"},
+      "steps": [
+        "sample t ~ U[0,1]; mask each token independently w.p. t -> xt",
+        "predictor(xt) -> logits [B, L, vocab]",
+        "CE on masked positions only, weighted by 1/t (Eq 2)"
+      ]
+    }
+  ],
+  "config_schema": {
+    "model": {"model_name": "Hengchang-Liu/D3LM-scratch", "variant": "D3LM-R", "seq_len": 2048, "k": 6},
+    "generation": {"n_samples": 1000, "steps": 50, "temperature": 1.1, "top_p": 1.0, "unmask_order": "random"},
+    "data": {"dataset": "epd_gendna", "subset": "mammalian", "data_dir": "data/", "length": 2048},
+    "evaluation": {"metrics": ["gc_ratio", "diversity", "novelty", "sfid"], "n_eval": 1000, "sfid_if_available": true},
+    "hardware": {"device": "auto", "num_workers": 2, "seed": 42, "deterministic": false}
+  },
+  "dependencies": {
+    "runtime": [
+      {"package": "torch", "version": ">=2.1", "reason": "core framework"},
+      {"package": "transformers", "version": ">=4.38,<4.46", "reason": "AutoModelForMaskedLM + trust_remote_code for D3LM custom diffusion code (pin: NT/ESM remote code vs newer transformers)"},
+      {"package": "accelerate", "version": ">=0.30", "reason": "device placement"},
+      {"package": "datasets", "version": ">=2.14", "reason": "EPD-GenDNA / NT tasks"},
+      {"package": "huggingface_hub", "version": ">=0.19", "reason": "weights download"},
+      {"package": "python-Levenshtein", "version": ">=0.21", "reason": "Diversity / Novelty edit distances"},
+      {"package": "scikit-learn", "version": ">=1.3", "reason": "MCC for understanding tasks; Frechet distance helpers"},
+      {"package": "scipy", "version": ">=1.10", "reason": "Frechet distance (SFID) matrix sqrt / Pearson (motif corr)"},
+      {"package": "numpy", "version": ">=1.24", "reason": "arrays/seeding"},
+      {"package": "pandas", "version": ">=2.0", "reason": "data handling"},
+      {"package": "pyyaml", "version": ">=6.0", "reason": "config"},
+      {"package": "tqdm", "version": ">=4.66", "reason": "progress bars"}
+    ],
+    "dev": [
+      {"package": "pytest", "version": ">=7.4"},
+      {"package": "ruff", "version": ">=0.1"},
+      {"package": "jupyter", "version": ">=1.0"}
+    ]
+  },
+  "entrypoints": [
+    {"filename": "generate.py", "purpose": "Generate DNA sequences with D3LM (unconditional, masked diffusion)", "cli_args": [
+      {"flag": "--config", "type": "str", "required": true, "default": "configs/config.yaml", "help": "YAML config"},
+      {"flag": "--n", "type": "int", "required": false, "default": 1000, "help": "number of sequences"},
+      {"flag": "--length", "type": "int", "required": false, "default": 2048, "help": "sequence length (bp)"},
+      {"flag": "--steps", "type": "int", "required": false, "default": 50, "help": "denoising steps T"},
+      {"flag": "--temperature", "type": "float", "required": false, "default": 1.1, "help": "sampling temperature"},
+      {"flag": "--out", "type": "str", "required": false, "default": "results/generated.fasta", "help": "output FASTA"}
+    ]},
+    {"filename": "evaluate.py", "purpose": "Evaluate generated sequences (GC ratio, diversity, novelty, SFID)", "cli_args": [
+      {"flag": "--config", "type": "str", "required": true, "default": "configs/config.yaml", "help": "config"},
+      {"flag": "--generated", "type": "str", "required": true, "default": null, "help": "generated FASTA to score"},
+      {"flag": "--reference", "type": "str", "required": false, "default": null, "help": "reference FASTA (real DNA)"}
+    ]},
+    {"filename": "data/download.py", "purpose": "Download D3LM weights (HF) and/or EPD-GenDNA data", "cli_args": [
+      {"flag": "--weights", "type": "str", "required": false, "default": "D3LM-R", "help": "D3LM | D3LM-R"},
+      {"flag": "--data", "type": "str", "required": false, "default": null, "help": "epd_gendna"},
+      {"flag": "--data-dir", "type": "str", "required": false, "default": "data/", "help": "output dir"}
+    ]}
+  ],
+  "docker_spec": {
+    "base_image": "pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime",
+    "system_deps": ["git", "wget", "curl"],
+    "workdir": "/workspace",
+    "default_cmd": "python generate.py --help"
+  },
+  "risk_assessment": [
+    {"severity": "Medium", "description": "SFID (the paper's headline metric) needs the pretrained Sei genomic CNN (20k chromatin profiles); it may be large/awkward to load in Colab, so exact SFID reproduction is not guaranteed.", "source": "sir.ambiguities / evaluation_protocol", "mitigation": "Compute cheap REAL metrics that need no extra model first (GC ratio ~1.0 Chargaff parity, Diversity, Novelty, motif Pearson corr); attempt SFID only if Sei loads. GC ratio alone strongly discriminates good vs collapsed generation (paper: D3LM-R 1.07 vs Evo 0.86, P2-collapse 12.7)."},
+    {"severity": "Medium", "description": "D3LM ships custom diffusion_generate() remote code; very new transformers can break older custom modeling code (as seen with Caduceus/DNAGPT).", "source": "sir.implementation_assumptions", "mitigation": "Pin transformers >=4.38,<4.46; provide a from-scratch reverse-unmasking loop as a fallback that drives the model's plain masked-LM forward directly."},
+    {"severity": "Low", "description": "EPD-GenDNA full dataset is large; mammalian subset extraction is nontrivial.", "source": "sir.evaluation_protocol", "mitigation": "download.py fetches the released dataset; a clearly-labeled synthetic fallback keeps the pipeline + tests runnable without it."},
+    {"severity": "Low", "description": "Exact vocab (4105 vs 4107) differs between paper and HF config.", "source": "sir.ambiguities", "mitigation": "read vocab from the released tokenizer at load; never hardcode."}
+  ]
+}

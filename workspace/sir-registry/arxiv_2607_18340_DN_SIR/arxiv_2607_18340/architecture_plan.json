@@ -1,0 +1,534 @@
+{
+  "paper_id": "arxiv_2607_18340",
+  "plan_version": 1,
+  "created_at": "2026-07-22T09:30:00Z",
+  "framework": {
+    "primary": "pytorch",
+    "python_version": "3.10+",
+    "cuda_required": false,
+    "cuda_min_version": null,
+    "use_huggingface": false,
+    "config_library": "yaml",
+    "reasoning": "SCHEMA NOTE: this schema's framework.primary enum (pytorch/jax/tensorflow) assumes a neural-network paper and has no quantum-computing option. 'pytorch' above is a placeholder to satisfy the schema only -- it is NOT what this repo actually uses. The ACTUAL implementation framework is Qiskit + Qiskit Aer (with numpy for classical GF(2)/cipher reference code), matching the paper's explicit statement that it used 'the Qiskit framework [10, 11]' on real IBM hardware (Section 3.2). Qiskit Aer's statevector simulator stands in for the paper's proprietary 'QuantumOS on NVIDIA B200' simulator (Section 3.3), which is not publicly available. See requirements.txt / README.md for the real dependency set (qiskit, qiskit-aer, qiskit-ibm-runtime)."
+  },
+  "module_hierarchy": [
+    {
+      "path": "src/quantum_cryptanalysis/oracles/bernstein_vazirani.py",
+      "description": "Builds the BV oracle circuit for f(x) = a.x (mod 2).",
+      "sir_modules_mapped": [
+        "bv_oracle_and_circuit"
+      ],
+      "classes": [
+        {
+          "name": "BVOracle",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "build_circuit",
+              "signature": "build_circuit(self, secret: str) -> qiskit.QuantumCircuit",
+              "returns": "an (n+1)-qubit oracle circuit implementing f(x)=a.x"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/quantum_cryptanalysis/oracles/grover_spn.py",
+      "description": "Builds a Grover oracle marking the key matching a known plaintext/ciphertext pair under a small generic SPN cipher (SIR ambiguities[3]: exact SPN unspecified in paper; a toy substitute SPN is defined here and clearly labeled as such).",
+      "sir_modules_mapped": [
+        "grover_spn_oracle_and_circuit"
+      ],
+      "classes": [
+        {
+          "name": "ToySPNCipher",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "encrypt",
+              "signature": "encrypt(self, key: int, plaintext: int) -> int",
+              "returns": "ciphertext int"
+            }
+          ]
+        },
+        {
+          "name": "GroverSPNOracle",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "build_circuit",
+              "signature": "build_circuit(self, plaintext: int, ciphertext: int, n_bits: int) -> qiskit.QuantumCircuit",
+              "returns": "n-qubit Grover oracle marking the matching key"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/quantum_cryptanalysis/oracles/simon_even_mansour.py",
+      "description": "Builds the Even-Mansour Simon-reduction oracle: E(x) = P(x XOR k1) XOR k2.",
+      "sir_modules_mapped": [
+        "simon_even_mansour_oracle_and_circuit"
+      ],
+      "classes": [
+        {
+          "name": "EvenMansourOracle",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "build_circuit",
+              "signature": "build_circuit(self, k1: int, permutation: callable, n: int) -> qiskit.QuantumCircuit",
+              "returns": "2n-qubit Simon oracle circuit"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/quantum_cryptanalysis/oracles/simon_cbc_mac.py",
+      "description": "Builds the CBC-MAC forgery oracle f(x) = Ek(x XOR c.a) XOR Ek(x XOR c.b).",
+      "sir_modules_mapped": [
+        "simon_cbcmac_forgery_oracle_and_circuit"
+      ],
+      "classes": [
+        {
+          "name": "CBCMACForgeryOracle",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "build_circuit",
+              "signature": "build_circuit(self, block_cipher: callable, key: int, a: int, b: int, n: int) -> qiskit.QuantumCircuit",
+              "returns": "2n-qubit Simon oracle circuit"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/quantum_cryptanalysis/oracles/simon_feistel.py",
+      "description": "Builds the 3-round Feistel oracle f(b,x) = LeftHalf(E(x,alpha_b)) XOR alpha_b = F2(x XOR F1(alpha_b)).",
+      "sir_modules_mapped": [
+        "simon_feistel_oracle_and_circuit"
+      ],
+      "classes": [
+        {
+          "name": "FeistelOracle",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "build_circuit",
+              "signature": "build_circuit(self, f1: callable, f2: callable, alpha0: int, alpha1: int, m: int) -> qiskit.QuantumCircuit",
+              "returns": "(1+4m)-qubit Simon oracle circuit"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/quantum_cryptanalysis/algorithms/bv_circuit.py",
+      "description": "Full Bernstein-Vazirani circuit assembly (Hadamards + oracle + Hadamards) and single-shot secret readout.",
+      "sir_modules_mapped": [
+        "bv_oracle_and_circuit"
+      ],
+      "classes": [
+        {
+          "name": "BernsteinVazirani",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "run",
+              "signature": "run(self, oracle_circuit: qiskit.QuantumCircuit, n: int, backend) -> str",
+              "returns": "recovered secret bitstring a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/quantum_cryptanalysis/algorithms/grover_circuit.py",
+      "description": "Grover amplitude-amplification circuit assembly using (pi/4)*sqrt(2^n) iterations.",
+      "sir_modules_mapped": [
+        "grover_spn_oracle_and_circuit"
+      ],
+      "classes": [
+        {
+          "name": "GroverSearch",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "run",
+              "signature": "run(self, oracle_circuit: qiskit.QuantumCircuit, n: int, backend, shots: int = 4096) -> int",
+              "returns": "recovered key as integer"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/quantum_cryptanalysis/algorithms/simon_circuit.py",
+      "description": "Generic Simon's-algorithm circuit assembly (Hadamards + oracle + Hadamards, repeated measurement) shared by the Even-Mansour, CBC-MAC, and Feistel attacks, plus the GF(2) linear solver that turns collected orthogonal-to-s measurement vectors into the hidden period s.",
+      "sir_modules_mapped": [
+        "simon_even_mansour_oracle_and_circuit",
+        "simon_cbcmac_forgery_oracle_and_circuit",
+        "simon_feistel_oracle_and_circuit"
+      ],
+      "classes": [
+        {
+          "name": "SimonAlgorithm",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "collect_measurements",
+              "signature": "collect_measurements(self, oracle_circuit: qiskit.QuantumCircuit, n: int, backend, shots: int = 4096) -> list[str]",
+              "returns": "list of measured n-bit strings, each orthogonal to the hidden period s"
+            },
+            {
+              "name": "solve_period",
+              "signature": "solve_period(self, measurements: list[str], n: int) -> str | None",
+              "returns": "recovered period s (or None if insufficient independent equations)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/quantum_cryptanalysis/postprocessing/gf2_solver.py",
+      "description": "GF(2) Gaussian elimination utilities: build null-space basis from a set of linear constraint vectors.",
+      "sir_modules_mapped": [],
+      "classes": []
+    },
+    {
+      "path": "src/quantum_cryptanalysis/postprocessing/hybrid_ranking.py",
+      "description": "Best-effort substitute for the paper's WITHHELD hardware-scaling technique (SIR ambiguities[0], confidence 0.05/0.45 for our substitute). Implements a top-K candidate-narrowing + classical-verification heuristic: rank candidate keys by how well they satisfy the collected (possibly noisy) Simon linear constraints, and report the true key's rank in that ordering. Explicitly NOT a reproduction of the paper's actual method, which is undisclosed.",
+      "sir_modules_mapped": [
+        "withheld_hardware_scaling_technique"
+      ],
+      "classes": [
+        {
+          "name": "TopKHybridRanker",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "rank_candidates",
+              "signature": "rank_candidates(self, measurements: list[str], n: int, true_key: int, top_k: int) -> dict",
+              "returns": "{'rank': int, 'total_candidates': int, 'top_k_candidates': list[int]}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/quantum_cryptanalysis/backend/execution.py",
+      "description": "Backend abstraction: Qiskit Aer simulator by default (noiseless or noisy), optional real-IBM-backend hook.",
+      "sir_modules_mapped": [
+        "statevector_simulator_backend"
+      ],
+      "classes": [
+        {
+          "name": "BackendFactory",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "get_backend",
+              "signature": "get_backend(self, mode: str = 'aer_simulator', noise_model=None, ibm_backend_name: str | None = None)",
+              "returns": "a Qiskit-compatible backend object"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/quantum_cryptanalysis/backend/mitigation.py",
+      "description": "Readout error-mitigation wrapper using Qiskit's published measurement-mitigation utilities (Nation et al. method, as cited). Standard/public technique only -- does NOT include the paper's withheld conditioning/post-selection technique.",
+      "sir_modules_mapped": [
+        "readout_error_mitigation_stack"
+      ],
+      "classes": [
+        {
+          "name": "ReadoutMitigator",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "mitigate",
+              "signature": "mitigate(self, raw_counts: dict, backend) -> dict",
+              "returns": "mitigated measurement-count distribution"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/quantum_cryptanalysis/evaluation/metrics.py",
+      "description": "Rank computation, birthday-bound comparison, and qubit-count/memory-ceiling utilities for reporting.",
+      "sir_modules_mapped": [],
+      "classes": []
+    },
+    {
+      "path": "src/quantum_cryptanalysis/utils/config.py",
+      "description": "YAML config loading and RNG seeding for reproducible synthetic-key generation.",
+      "sir_modules_mapped": [],
+      "classes": []
+    }
+  ],
+  "tensor_flows": [
+    {
+      "name": "Simon's algorithm end-to-end (Even-Mansour / CBC-MAC / Feistel)",
+      "input": {
+        "name": "oracle_circuit, n",
+        "shape": "2n (or 1+4m) qubits",
+        "dtype": "quantum circuit"
+      },
+      "output": {
+        "name": "recovered period s (or ranked candidates + true-key rank for the noisy hybrid regime)",
+        "shape": "n-bit string / int",
+        "dtype": "binary"
+      },
+      "steps": [
+        "circuit = H^n |0> -> apply oracle_circuit -> H^n on input register        # Simon circuit skeleton",
+        "measurements = [] ; repeat shots times: sample circuit on backend -> collect measured bitstring y (y . s = 0)",
+        "IF noiseless/clean: solve_period(measurements, n) via GF(2) Gaussian elimination -> s directly (rank-1)",
+        "IF noisy hybrid regime (paper's n=6-10 real-hardware case): TopKHybridRanker.rank_candidates(...) -> {'rank': true_key_rank, ...}    # SIR ambiguities[0]/[2]: best-effort substitute for withheld technique",
+        "return s (clean) OR rank dict (hybrid)"
+      ]
+    },
+    {
+      "name": "Bernstein-Vazirani single-query readout",
+      "input": {
+        "name": "oracle_circuit, n",
+        "shape": "n+1 qubits",
+        "dtype": "quantum circuit"
+      },
+      "output": {
+        "name": "secret a",
+        "shape": "n-bit string",
+        "dtype": "binary"
+      },
+      "steps": [
+        "prepare |0>^n |1>, apply H^(n+1)",
+        "apply oracle_circuit (f(x)=a.x via CNOTs into ancilla)",
+        "apply H^n on input register, measure -> a directly (single shot suffices, noiseless)"
+      ]
+    },
+    {
+      "name": "Grover SPN key search",
+      "input": {
+        "name": "oracle_circuit, n, known plaintext/ciphertext",
+        "shape": "n qubits",
+        "dtype": "quantum circuit"
+      },
+      "output": {
+        "name": "recovered key",
+        "shape": "n-bit int",
+        "dtype": "integer"
+      },
+      "steps": [
+        "prepare uniform superposition H^n|0>",
+        "repeat floor((pi/4)*sqrt(2^n)) times: apply oracle (phase-flip marked key) + diffuser",
+        "measure -> most frequent outcome = recovered key"
+      ]
+    }
+  ],
+  "config_schema": {
+    "experiment": {
+      "backend_mode": "aer_simulator_noiseless",
+      "backend_mode_note": "ASSUMED: paper's real ibm_kingston hardware access is not available in this environment; defaults to Qiskit Aer's noiseless statevector simulator. Set to 'aer_simulator_noisy' for a synthetic noise model, or 'ibm_real' + ibm_backend_name if the user has IBM Quantum credentials configured.",
+      "shots": 4096,
+      "shots_note": "ASSUMED: paper's actual per-job shot counts are unrecoverable placeholders in the provided PDF (SIR ambiguities[1], confidence 0.4).",
+      "seed": 42
+    },
+    "even_mansour": {
+      "n_values": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "n_values_note": "n=9,10 (30 qubits) are feasible on Aer statevector but slow on CPU; included but off by default for runtime (see README).",
+      "top_k_by_n": {
+        "6": 16,
+        "7": 16,
+        "8": 32,
+        "9": 64,
+        "10": 128
+      },
+      "hybrid_ranking_note": "ASSUMED best-effort substitute for the paper's withheld hardware-scaling technique (SIR ambiguities[0], confidence 0.05 for the real method / 0.45 for our substitute)."
+    },
+    "feistel": {
+      "block_sizes": [
+        4,
+        6,
+        8,
+        10,
+        12
+      ]
+    },
+    "cbc_mac": {
+      "n_values": [
+        4,
+        6
+      ]
+    },
+    "bernstein_vazirani": {
+      "n_values": [
+        8,
+        16
+      ]
+    },
+    "grover_spn": {
+      "n_values": [
+        6,
+        8
+      ],
+      "spn_construction_note": "ASSUMED: paper never specifies the SPN's S-box/rounds/key schedule (SIR ambiguities[3], confidence 0.4); a small toy SPN is defined in oracles/grover_spn.py as a labeled stand-in."
+    }
+  },
+  "dependencies": {
+    "runtime": [
+      {
+        "package": "qiskit",
+        "version": "1.1.1",
+        "reason": "Core circuit construction/execution framework; matches the paper's stated use of Qiskit."
+      },
+      {
+        "package": "qiskit-aer",
+        "version": "0.14.2",
+        "reason": "Noiseless/noisy statevector simulator backend, standing in for the paper's proprietary 'QuantumOS' simulator."
+      },
+      {
+        "package": "qiskit-ibm-runtime",
+        "version": "0.24.1",
+        "reason": "Optional real-hardware execution hook (requires user-supplied IBM Quantum credentials; not used by default)."
+      },
+      {
+        "package": "numpy",
+        "version": "1.26.4",
+        "reason": "GF(2) linear algebra, classical cipher (Feistel/SPN) reference implementations."
+      },
+      {
+        "package": "pyyaml",
+        "version": "6.0.1",
+        "reason": "Config loading."
+      },
+      {
+        "package": "matplotlib",
+        "version": "3.8.4",
+        "reason": "Complexity-separation and rank plots (Figures 2-5 style)."
+      },
+      {
+        "package": "tqdm",
+        "version": "4.66.4",
+        "reason": "Progress bars for shot-count loops."
+      }
+    ],
+    "dev": [
+      {
+        "package": "pytest",
+        "version": "8.2.0"
+      },
+      {
+        "package": "jupyter",
+        "version": "1.0.0"
+      },
+      {
+        "package": "nbformat",
+        "version": "5.10.4"
+      }
+    ]
+  },
+  "entrypoints": [
+    {
+      "filename": "run_attack.py",
+      "purpose": "Run any of the five attacks (bv, grover, simon_em, simon_cbcmac, simon_feistel) against synthetic cipher instances.",
+      "cli_args": [
+        {
+          "flag": "--config",
+          "type": "str",
+          "required": false,
+          "default": "configs/config.yaml",
+          "help": "Path to config YAML"
+        },
+        {
+          "flag": "--attack",
+          "type": "str",
+          "required": true,
+          "default": null,
+          "help": "One of: bv, grover, simon_em, simon_cbcmac, simon_feistel"
+        },
+        {
+          "flag": "--n",
+          "type": "int",
+          "required": false,
+          "default": null,
+          "help": "Override the security parameter / block size for this run"
+        },
+        {
+          "flag": "--backend-mode",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "help": "Override config experiment.backend_mode"
+        }
+      ]
+    },
+    {
+      "filename": "run_benchmark.py",
+      "purpose": "Reproduce Table 1/Table 2-style output: run all five attacks across their validated sizes and print a summary table.",
+      "cli_args": [
+        {
+          "flag": "--config",
+          "type": "str",
+          "required": false,
+          "default": "configs/config.yaml"
+        },
+        {
+          "flag": "--output",
+          "type": "str",
+          "required": false,
+          "default": "results/benchmark_table.json"
+        }
+      ]
+    }
+  ],
+  "docker_spec": {
+    "base_image": "python:3.10-slim",
+    "system_deps": [
+      "git",
+      "build-essential"
+    ],
+    "workdir": "/workspace",
+    "default_cmd": "python run_benchmark.py"
+  },
+  "risk_assessment": [
+    {
+      "severity": "High",
+      "description": "The paper's core real-hardware noise-scaling technique (enabling N=6-10 Even-Mansour recovery) is explicitly withheld pending an IP decision.",
+      "source": "SIR ambiguities[0]",
+      "mitigation": "Implemented a clearly-labeled best-effort substitute (TopKHybridRanker) and defaulted execution to a NOISELESS simulator, where the standard algorithms recover periods cleanly (rank-1) by construction -- this validates algorithmic correctness but explicitly does NOT reproduce the paper's noisy-hardware N=6-10 claim. README states this limitation prominently."
+    },
+    {
+      "severity": "Medium",
+      "description": "Real IBM hardware (ibm_kingston) is not accessible from this environment.",
+      "source": "Architecture Planner (practical constraint)",
+      "mitigation": "backend/execution.py defaults to Qiskit Aer; a real-backend code path exists (qiskit-ibm-runtime) but requires the user to supply their own IBM Quantum API token."
+    },
+    {
+      "severity": "Medium",
+      "description": "The Grover attack's target SPN construction is undefined in the paper (no S-box/rounds/key schedule).",
+      "source": "SIR ambiguities[3]",
+      "mitigation": "Defined a small toy SPN cipher in oracles/grover_spn.py, clearly labeled as an assumed stand-in, not the paper's actual (unspecified) construction."
+    },
+    {
+      "severity": "Low",
+      "description": "Per-job shot counts are unrecoverable ('[measurement]' placeholders in the provided PDF).",
+      "source": "SIR ambiguities[1]",
+      "mitigation": "Defaulted to 4096 shots (a common Qiskit default), configurable via config.yaml."
+    },
+    {
+      "severity": "Low",
+      "description": "Simulating n=9,10 (27,30 qubits) via Aer statevector on CPU can be slow/memory-heavy.",
+      "source": "Architecture Planner (practical constraint)",
+      "mitigation": "n=9,10 are included in config but off by default; README documents expected runtime/memory and how to enable them."
+    }
+  ]
+}

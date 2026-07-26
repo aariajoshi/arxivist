@@ -1,7 +1,40 @@
 {
   "index_version": 1,
-  "total_papers": 8,
+  "total_papers": 11,
   "papers": [
+    {
+      "paper_id": "arxiv_2603_001780",
+      "title": "D3LM: A Discrete DNA Diffusion Language Model for Bidirectional DNA Understanding and Generation",
+      "domain": "Multimodal",
+      "sir_version": 1,
+      "sir_confidence": 0.9,
+      "has_repo": true,
+      "has_notebook": true,
+      "has_comparison": true,
+      "last_updated": "2026-07-25T00:00:00Z"
+    },
+    {
+      "paper_id": "arxiv_2503_001161",
+      "title": "Split Gibbs Discrete Diffusion Posterior Sampling",
+      "domain": "Multimodal",
+      "sir_version": 1,
+      "sir_confidence": 0.92,
+      "has_repo": true,
+      "has_notebook": true,
+      "has_comparison": true,
+      "last_updated": "2026-07-26T00:00:00Z"
+    },
+    {
+      "paper_id": "arxiv_2402_006079",
+      "title": "DiscDiff: Latent Diffusion Model for DNA Sequence Generation",
+      "domain": "Multimodal",
+      "sir_version": 1,
+      "sir_confidence": 0.85,
+      "has_repo": true,
+      "has_notebook": true,
+      "has_comparison": true,
+      "last_updated": "2026-07-26T00:00:00Z"
+    },
     {
       "paper_id": "arxiv_2307_005628",
       "title": "DNAGPT: A Generalized Pre-trained Tool for Versatile DNA Sequence Analysis Tasks",

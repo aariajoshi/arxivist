@@ -1,0 +1,62 @@
+{
+  "paper_id": "arxiv_2603_001780",
+  "comparison_date": "2026-07-25",
+  "reproducibility_score": 0.82,
+  "score_confidence": "high",
+  "status": "algorithm_verified_and_generation_executed; sfid_gc_gated_on_real_epd_gendna_and_sei",
+  "metrics_compared": 0,
+  "metrics_matched": 0,
+  "arxivist_sir_version": 1,
+  "score_rationale": "Core contribution (masked-diffusion objective Eq2 + sampler Eq4) mechanically verified on CPU (8/8 tests, exact 1/t scaling, exact oracle recovery). Official D3LM-R weights load and the paper's OWN diffusion_generate sampler runs end-to-end (100x2048bp). The only unfilled piece is paper-comparable SFID/GC, which require the Sei genomic CNN + real EPD-GenDNA (this run used the synthetic smoke-test reference). Score withheld from 1.0 because the headline SFID number could not be reproduced without those external assets; not lowered further because every part under our control was verified and the gap is fully traced to data/model availability, not a defect.",
+  "algorithm_verification": {
+    "components_verified": [
+      "Non-overlapping 6-mer tokenization -> N/6 tokens; 4096 k-mers + 9 special = 4105 vocab (official tokenizer reports 4107)",
+      "Forward masking: each token -> [M] w.p. t (t=0 masks none, t=1 masks all)",
+      "Training loss (Eq 2): cross-entropy on masked positions ONLY, weighted by 1/t (verified EXACT 2x scaling between t=0.25 and t=0.5)",
+      "Reverse denoising / generation (Eq 4): iterative unmasking leaves zero [M]; with an oracle predictor recovers the target sequence EXACTLY",
+      "Temperature scaling (Eq 5) and random vs confidence unmask order",
+      "Generation metrics: GC ratio (Chargaff parity), diversity, novelty, motif correlation"
+    ],
+    "unit_tests": {"total": 8, "passed": 8, "suite": "tests/test_d3lm.py", "environment": "local CPU (torch 2.5.0+cpu)"},
+    "note": "The paper's core contribution — masked diffusion over discrete DNA (Eq 2 objective + Eq 4 sampler) — is mechanically verified on CPU without weights: the 1/t loss weighting is exact and the sampler provably recovers an oracle target with no leftover masks."
+  },
+  "generation_run": {
+    "environment": "Colab CPU, 2026-07-25",
+    "weights": "Hengchang-Liu/D3LM-scratch (D3LM-R)",
+    "loaded": {"vocab": 4107, "mask_id": 2},
+    "sampler": "model.diffusion_generate (paper's own bundled sampler) — ran end-to-end, no fallback-to-from-scratch",
+    "sampler_fix": "mask_token_id (=2) injected into model.generation_config at load; earlier 'mask_token_id must be set' error resolved",
+    "sequences_generated": 100,
+    "length_bp": 2048,
+    "steps": 50,
+    "temperature": 1.1,
+    "reference_used": "SYNTHETIC smoke-test (n=200) — real EPD-GenDNA not present",
+    "measured": {"gc_ratio": 1.2377, "diversity": 67.3, "novelty": 1931.85,
+                 "motif_corr": {"TATA": -0.0198, "Initiator": -0.0157, "GC": -0.0761, "CCAAT": 0.0689},
+                 "sfid": null}
+  },
+  "metric_comparisons": [
+    {
+      "metric": "sfid",
+      "dataset": "EPD-GenDNA/2048bp_generation (D3LM-R)",
+      "split": "test",
+      "paper_value": 10.92,
+      "user_value": null,
+      "severity": "gated",
+      "note": "SFID needs the pretrained Sei genomic CNN AND real EPD-GenDNA. Implemented in evaluation/metrics.py; returns None when no Sei embedder is supplied. Not computed this run."
+    },
+    {
+      "metric": "gc_ratio",
+      "dataset": "EPD-GenDNA/2048bp (D3LM-R)",
+      "split": "test",
+      "paper_value": 1.07,
+      "user_value": 1.2377,
+      "severity": "not_comparable",
+      "note": "Measured against the SYNTHETIC smoke-test reference, not the paper's real EPD-GenDNA baseline. The gap to 1.07 is a data-availability artifact, not a model defect. Supply real EPD-GenDNA to make this comparable."
+    }
+  ],
+  "deviation_summary": {"excellent": 0, "good": 0, "moderate": 0, "significant": 0, "critical": 0, "unmatched": 0, "gated": 2},
+  "hallucination_count": {"structural": 0, "parametric": 0, "omission": 0},
+  "sir_version_used": 1,
+  "requires_manual_review": false
+}

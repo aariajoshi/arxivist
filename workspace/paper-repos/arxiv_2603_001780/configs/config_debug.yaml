@@ -1,0 +1,28 @@
+# Debug config: few short sequences, few steps — fast smoke test.
+model:
+  variant: "D3LM-R"
+  k: 6
+
+generation:
+  n_samples: 4
+  steps: 8
+  temperature: 1.1
+  top_p: 1.0
+  unmask_order: "random"
+
+data:
+  dataset: "epd_gendna"
+  subset: "mammalian"
+  data_dir: "data/"
+  length: 120
+
+evaluation:
+  metrics: ["gc_ratio", "diversity", "novelty", "motif_corr"]
+  n_eval: 4
+  sfid_if_available: false
+
+hardware:
+  device: "auto"
+  num_workers: 0
+  seed: 42
+  deterministic: false

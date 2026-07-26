@@ -1,0 +1,46 @@
+{
+  "paper_id": "arxiv_2503_001161",
+  "plan_version": 1,
+  "strategy": "SGDD is an ALGORITHM paper — its contribution is the Split Gibbs sampler (Algorithm 1), not a network. The QOSI-appropriate reproduction verifies the algorithm MECHANICALLY on the synthetic benchmark, where the true posterior is known in closed form and no trained weights are required. This is the paper's OWN controlled study (Sec 4.2, Table 2), so a faithful reproduction of it is a direct, honest check of the core claim — SGDD converges to the true posterior and beats DPS/SMC/SVDD-PM. Real-data tasks (DNA/MNIST/music) are implemented as task modules but documented as gated on the SEDD-90M weights.",
+
+  "what_we_build_from_scratch": [
+    "split_gibbs.py — Algorithm 1: the annealed alternation of likelihood (MH) and prior (Euler denoise) steps, plus the geometric noise schedule eta_k = eta_min^{k/K} eta_max^{1-k/K}.",
+    "potential.py — D(x,z;eta) (Eq 10) and beta~(eta); the prior-step reweighting (Eq 11) and the p(x0|xt) identity (Eq 12).",
+    "metropolis_hastings.py — the likelihood step (Eq 13): MH on the accessible unnormalized density exp(-f(z;y) - D(x,z;eta)), no gradient needed.",
+    "discrete_diffusion.py — a minimal UNIFORM-kernel discrete diffusion with a CLOSED-FORM concrete score for the synthetic discretized-Gaussian prior (so the prior step needs no training), plus an H-step Euler reverse sampler.",
+    "tasks/synthetic.py — discretized Gaussian prior N(0,sigma^2 I_D) on a grid + forward model G(x)=||f(x)||_1 + EXACT true-posterior evaluator, so Hellinger/TV are measured against ground truth.",
+    "metrics.py — Hellinger distance + total variation between empirical (sample histogram) and a reference distribution."
+  ],
+
+  "what_we_verify_mechanically_cpu": [
+    "Potential limit: D(x,z;eta)->inf as eta->0 for d(x,z)>0, and D=0 when x=z (the convergence-forcing property).",
+    "Prior-step identity: sampling pi(x,z=z_k;eta) with beta~=beta_t equals unconditional p(x0|xt) denoising at sigma_t=eta (Eq 11==Eq 12 reweighting).",
+    "MH correctness: the Metropolis-Hastings likelihood step leaves the target exp(-f-D) invariant (detailed-balance check on a small support).",
+    "END-TO-END synthetic: run SGDD on D=2 discretized Gaussian and confirm the empirical sample distribution matches the KNOWN true posterior with Hellinger in the paper's ballpark (~0.15) and BELOW a DPS-style gradient-guidance baseline — i.e. reproduce Table 2's ordering, not just assert it."
+  ],
+
+  "what_is_gated": {
+    "dna_enhancers": "SEDD-90M DNA prior + HepG2 reward oracles + ATAC classifier. Task module + likelihood exp(beta r(x)) implemented; numbers not reproduced without weights.",
+    "mnist_music": "SEDD binary-MNIST / music priors. Forward operators (AND/XOR, infill mask) implemented; metrics gated on weights.",
+    "note": "Official code at github.com/chuwd19/... can supply these; we cross-reference it for the algorithm but reproduce the synthetic study independently."
+  },
+
+  "test_plan": {
+    "framework": "pytest, CPU only",
+    "targets": [
+      "potential D limits + beta~ monotonicity",
+      "prior-step reweighting == p(x0|xt) identity",
+      "MH invariance / detailed balance on small support",
+      "geometric schedule endpoints (eta_0=eta_max region, eta_{K}->eta_min)",
+      "Hellinger/TV are 0 for identical dists, 1 for disjoint",
+      "SGDD end-to-end on D=2 synthetic: Hellinger to true posterior < a gradient-guidance baseline's, and < ~0.25"
+    ]
+  },
+
+  "dependencies": {
+    "runtime": ["numpy", "torch (cpu ok)", "scipy", "pyyaml", "tqdm"],
+    "note": "No transformers pin needed — the synthetic study uses a closed-form score, not a HF model. Real SEDD tasks would add the official SEDD repo as an optional dependency."
+  },
+
+  "honesty_contract": "The synthetic Hellinger/TV we report are MEASURED against the analytic true posterior, not copied from Table 2. Real-data Table 3-5 numbers are cited as the paper's, explicitly labeled weight-gated, never presented as our reproduction."
+}

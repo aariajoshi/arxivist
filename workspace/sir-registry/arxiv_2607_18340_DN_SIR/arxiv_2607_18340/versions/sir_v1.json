@@ -1,0 +1,662 @@
+{
+  "paper_id": "arxiv_2607_18340",
+  "sir_version": 1,
+  "provenance": {
+    "title": "Quantum Cryptanalysis on IBM Quantum Hardware: Extending Even-Mansour Period Recovery from N=4 to N=10",
+    "authors": [
+      "Taebong Kim",
+      "Youngsik Hong",
+      "Minsik Kim",
+      "Sunyoung Choi",
+      "Jaewon Jang",
+      "Junghoon Shin",
+      "Minseo Kim"
+    ],
+    "affiliations": [
+      "VIDRAFT AI Research",
+      "QuantumOS, Seoul, Republic of Korea"
+    ],
+    "arxiv_id": "2607.18340",
+    "doi": null,
+    "submission_date": "2026-07-20",
+    "abstract": "Genuine, un-compiled, textbook-faithful quantum cryptanalysis of symmetric-cipher structures on real IBM hardware (ibm_kingston, Heron generation). Using Simon's algorithm, the hidden period of the Even-Mansour cipher is recovered up to security parameter N=10 on real hardware (vs. a prior N=4 record), and periods of a 3-round Feistel (DES-family) construction are recovered at block sizes 6 and 8. A breadth-first benchmark of five genuine quantum attacks spans four symmetric-cipher paradigms ...",
+    "domain": "Other",
+    "key_claims": [
+      "Real-hardware Even-Mansour period recovery extended from a prior record of N=4 to N=10 (clean/rank-1 up to N=5; quantum-narrowing + classical-verification hybrid for N=6-10).",
+      "Clean (rank-1) recovery of 3-round Feistel (DES-family) hidden periods at block sizes 6 and 8 on real hardware, each validated against an independent control key.",
+      "Single-query Bernstein-Vazirani extraction of a 16-bit linear secret on real hardware.",
+      "A breadth-first benchmark of 5 genuine (un-compiled) quantum attacks across 4 symmetric-cipher paradigms (linear/BV, unstructured search/Grover, hidden-period/Simon), validated in statevector simulation to a 25-qubit classical ceiling.",
+      "Explicit scope disclaimer: attacks follow the birthday bound (no quantum advantage over classical collision-finding), target reduced/structured constructions (not full AES-256/RSA-2048/16-round DES), and rely on error mitigation rather than fault-tolerant error correction."
+    ],
+    "parsed_at": "2026-07-22T08:58:13Z",
+    "arxivist_version": "0.1"
+  },
+  "architecture": {
+    "primary_variant": "Simon's-algorithm hidden-period recovery applied to the Even-Mansour cipher (N up to 10, real hardware), combining a clean/rank-1 regime (N<=5) with a quantum-narrowing + classical-verification hybrid regime (N=6-10).",
+    "modules": [
+      {
+        "name": "bv_oracle_and_circuit",
+        "operation_type": "quantum_oracle_plus_measurement",
+        "input_shape": "n-qubit register |x> (n=8 or 16) + 1 ancilla qubit",
+        "output_shape": "n-bit classical secret string a, extracted in a single query",
+        "parameters": {
+          "construction": "f(x) = a.x (mod 2)",
+          "validated_sizes": [
+            8,
+            16
+          ]
+        },
+        "paper_section": "3.1, Supplementary S2 (Bernstein-Vazirani)",
+        "confidence": 0.9,
+        "notes": "Textbook Bernstein-Vazirani oracle + Hadamard-transform readout; explicit and standard."
+      },
+      {
+        "name": "grover_spn_oracle_and_circuit",
+        "operation_type": "quantum_oracle_plus_amplitude_amplification",
+        "input_shape": "n-qubit key register (n=6, 8)",
+        "output_shape": "recovered SPN key after ~ (pi/4)*sqrt(2^n) Grover iterations",
+        "parameters": {
+          "iterations_formula": "(pi/4)*sqrt(2^n)",
+          "n_examples": [
+            6,
+            8
+          ],
+          "iterations_at_n8": 13
+        },
+        "paper_section": "3.1, Supplementary S2 (Grover / SPN key search)",
+        "confidence": 0.55,
+        "notes": "Iteration-count formula and target sizes are explicit, but the reduced SPN construction itself (S-box, round count, key schedule) is never spelled out -- only referred to generically as 'a reduced SPN construction' with a known plaintext/ciphertext pair. SIR ambiguities[3]."
+      },
+      {
+        "name": "simon_even_mansour_oracle_and_circuit",
+        "operation_type": "quantum_oracle_plus_hidden_period_recovery",
+        "input_shape": "n-qubit register (n=5..10; qubit counts 15,18,21,24,27,30 per Table 1)",
+        "output_shape": "hidden period s=k1 (clean at n<=5) or ranked candidate list with true-key rank tracking the birthday bound 2^(n/2) (n=6..10, hybrid)",
+        "parameters": {
+          "clean_method": "differential Simon (n=5)",
+          "hybrid_method": "hybrid top-K (K=16,16,32,64,128 for n=6..10)",
+          "control_key_validation": true
+        },
+        "paper_section": "3.1, 4.1, Table 1, Figure 3",
+        "confidence": 0.6,
+        "notes": "The clean/differential-Simon regime at n<=5 is standard Simon's algorithm and well specified. The n=6..10 'hybrid top-K + classical verification' regime, however, is the paper's central real-hardware contribution, and its exact mechanism -- how top-K candidates are formed from noisy measurement counts, and what the 'classical verification over the shortlist' step computes -- is described narratively, not algorithmically. Critically, the paper explicitly states that the specific 'hardware-aware circuit-conditioning and readout post-selection technique' that enables this is WITHHELD pending an IP decision (Section 5, S4) -- see SIR ambiguities[0], the single most consequential gap in this SIR."
+      },
+      {
+        "name": "simon_cbcmac_forgery_oracle_and_circuit",
+        "operation_type": "quantum_oracle_plus_hidden_period_recovery",
+        "input_shape": "n-qubit register (n=4, 6; simulation only)",
+        "output_shape": "hidden period s = Ek(a) XOR Ek(b), enabling existential forgery",
+        "parameters": {
+          "construction": "f(x) = Ek(x XOR c.a) XOR Ek(x XOR c.b)",
+          "validated_sizes": [
+            4,
+            6
+          ]
+        },
+        "paper_section": "3.1, Table 2, Supplementary S2 (CBC-MAC forgery)",
+        "confidence": 0.85,
+        "notes": "Explicit oracle formula and hidden period; simulation-only (not run on real hardware)."
+      },
+      {
+        "name": "simon_feistel_oracle_and_circuit",
+        "operation_type": "quantum_oracle_plus_hidden_period_recovery",
+        "input_shape": "1+4m qubits for block size 2m (block 6 -> 13 qubits, block 8 -> 17 qubits, block 10 -> 21 qubits)",
+        "output_shape": "hidden period s=(1,gamma), gamma=F1(alpha0) XOR F1(alpha1); rank-1/clean if F2 is a permutation",
+        "parameters": {
+          "construction": "f(b,x) = LeftHalf(E(x,alpha_b)) XOR alpha_b = F2(x XOR F1(alpha_b))",
+          "validated_block_sizes_hardware": [
+            6,
+            8
+          ],
+          "validated_block_sizes_sim": "4-12 (25 qubits)",
+          "block_10_status": "verified in simulation, submitted to hardware (queued at submission time)"
+        },
+        "paper_section": "3.1, 4.1, Table 1, Supplementary S2 (3-round Feistel)",
+        "confidence": 0.85,
+        "notes": "Explicit construction and qubit-count formula. Paper stresses that placing the variable on the left (x) and the constant on the right (alpha_b) is essential -- reversing this admits no hidden period; this constraint is called out clearly and is easy to preserve in code."
+      },
+      {
+        "name": "readout_error_mitigation_stack",
+        "operation_type": "classical_postprocessing_of_hardware_measurements",
+        "input_shape": "raw hardware measurement counts/bitstrings",
+        "output_shape": "mitigated measurement distribution used for period/candidate extraction",
+        "parameters": {
+          "components": [
+            "readout calibration",
+            "dynamical decoupling",
+            "twirling",
+            "per-job shot counts"
+          ],
+          "reference": "Nation et al., PRX Quantum 2021 [12]"
+        },
+        "paper_section": "3.2, Supplementary Table S1 (referenced)",
+        "confidence": 0.5,
+        "notes": "The general mitigation stack (readout calibration, dynamical decoupling, twirling) is named and cited to a specific published method (Nation et al.), but the paper states the precise technical specifications 'are documented in Supplementary Table S1' -- which, in the provided document, shows only literal '[measurement]' placeholders in the Shots column (Table 4) rather than actual values. See SIR ambiguities[1]."
+      },
+      {
+        "name": "withheld_hardware_scaling_technique",
+        "operation_type": "undisclosed",
+        "input_shape": "unknown",
+        "output_shape": "unknown",
+        "parameters": {
+          "status": "explicitly withheld pending IP decision"
+        },
+        "paper_section": "Section 5 ('Disclosure of methods'), Supplementary S4",
+        "confidence": 0.05,
+        "notes": "The paper explicitly states: 'Achieving clean period recovery at the reported noise levels and structure sizes additionally relies on a hardware-aware circuit-conditioning and readout post-selection technique. The full specification of that technique is withheld in this draft pending an intellectual-property decision.' This module CANNOT be reproduced from the paper text. It is included here as an explicit placeholder so downstream stages do not silently invent a substitute without flagging it. See SIR ambiguities[0] (Critical)."
+      },
+      {
+        "name": "statevector_simulator_backend",
+        "operation_type": "classical_simulation",
+        "input_shape": "up to 25 simulated qubits (classical-simulation ceiling)",
+        "output_shape": "exact statevector / measurement statistics for un-compiled circuits",
+        "parameters": {
+          "platform": "QuantumOS on NVIDIA B200 GPU",
+          "ceiling_examples": {
+            "EM_n8": "24 qubits, 0.27 GB",
+            "Feistel_block12": "25 qubits, 72s, block14 hits 8.6GB wall"
+          }
+        },
+        "paper_section": "3.3, 4.4, Figure 5, Supplementary S3",
+        "confidence": 0.75,
+        "notes": "Ceiling and example memory/time figures are explicit; exact simulator internals (e.g. which statevector library/kernel) are not detailed beyond 'QuantumOS on NVIDIA B200'."
+      }
+    ],
+    "connections": [
+      {
+        "from": "bv_oracle_and_circuit",
+        "to": "measurement_and_classical_readout",
+        "tensor_name": "single-query measurement -> secret a"
+      },
+      {
+        "from": "grover_spn_oracle_and_circuit",
+        "to": "measurement_and_classical_readout",
+        "tensor_name": "post-amplification measurement -> recovered key"
+      },
+      {
+        "from": "simon_even_mansour_oracle_and_circuit",
+        "to": "readout_error_mitigation_stack",
+        "tensor_name": "raw hardware counts (real-hardware runs only)"
+      },
+      {
+        "from": "simon_feistel_oracle_and_circuit",
+        "to": "readout_error_mitigation_stack",
+        "tensor_name": "raw hardware counts (real-hardware runs only)"
+      },
+      {
+        "from": "readout_error_mitigation_stack",
+        "to": "withheld_hardware_scaling_technique",
+        "tensor_name": "mitigated counts (paper implies this feeds the withheld technique for n=6-10 clean-ish recovery)"
+      },
+      {
+        "from": "withheld_hardware_scaling_technique",
+        "to": "classical_verification_hybrid_top_k",
+        "tensor_name": "candidate-narrowed measurement outcomes"
+      },
+      {
+        "from": "classical_verification_hybrid_top_k",
+        "to": "true_key_rank_output",
+        "tensor_name": "ranked candidate list -> true-key rank (tracks 2^(n/2))"
+      },
+      {
+        "from": "simon_cbcmac_forgery_oracle_and_circuit",
+        "to": "statevector_simulator_backend",
+        "tensor_name": "simulation-only path (n=4,6)"
+      },
+      {
+        "from": "grover_spn_oracle_and_circuit",
+        "to": "statevector_simulator_backend",
+        "tensor_name": "simulation-only path (n=6,8)"
+      }
+    ],
+    "variants": [
+      {
+        "name": "Bernstein-Vazirani (linear structure)",
+        "differences": {
+          "speedup_class": "1 query",
+          "validated_sizes": [
+            8,
+            16
+          ],
+          "hardware": "n=16 real hardware + simulation"
+        }
+      },
+      {
+        "name": "Grover (SPN key search)",
+        "differences": {
+          "speedup_class": "quadratic",
+          "validated_sizes": [
+            6,
+            8
+          ],
+          "hardware": "simulation only"
+        }
+      },
+      {
+        "name": "Simon - Even-Mansour",
+        "differences": {
+          "speedup_class": "exp->poly (queries)",
+          "validated_sizes": "3,4,5,8 (sim, 24q); 5-10 (real hardware)",
+          "hardware": "real hardware to N=10 (hybrid beyond N=5)"
+        }
+      },
+      {
+        "name": "Simon - CBC-MAC forgery",
+        "differences": {
+          "speedup_class": "exp->poly (queries)",
+          "validated_sizes": [
+            4,
+            6
+          ],
+          "hardware": "simulation only"
+        }
+      },
+      {
+        "name": "Simon - 3-round Feistel (DES-family)",
+        "differences": {
+          "speedup_class": "exp->poly (queries)",
+          "validated_sizes": "block 4-12 (sim, 25q); block 6,8 (real hardware); block 10 (sim-verified, submitted/queued)",
+          "hardware": "real hardware at block 6,8"
+        }
+      }
+    ]
+  },
+  "mathematical_spec": [
+    {
+      "name": "3-round Feistel hidden-period oracle",
+      "latex": "f(b,x) = \\mathrm{LeftHalf}(E(x,\\alpha_b)) \\oplus \\alpha_b = F_2(x \\oplus F_1(\\alpha_b))",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": [
+        "block size 2m",
+        "1+4m qubits required"
+      ],
+      "undefined_symbols": [
+        "F1, F2 (round functions) are generic/unspecified beyond 'F2 must be a permutation for a clean period'"
+      ],
+      "paper_section": "3.1 (Methods), Supplementary S2",
+      "confidence": 0.85
+    },
+    {
+      "name": "3-round Feistel hidden period",
+      "latex": "s = (1,\\gamma), \\quad \\gamma = F_1(\\alpha_0) \\oplus F_1(\\alpha_1)",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "3.1, Supplementary S2",
+      "confidence": 0.85
+    },
+    {
+      "name": "CBC-MAC forgery hidden-period oracle",
+      "latex": "f(x) = E_k(x \\oplus c \\cdot a) \\oplus E_k(x \\oplus c \\cdot b), \\quad s = E_k(a) \\oplus E_k(b)",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": [
+        "validated n=4,6"
+      ],
+      "undefined_symbols": [
+        "c (constant), a, b (fixed distinguishing inputs) not numerically specified"
+      ],
+      "paper_section": "Table 2, Supplementary S2",
+      "confidence": 0.85
+    },
+    {
+      "name": "Bernstein-Vazirani linear oracle",
+      "latex": "f(x) = a \\cdot x \\pmod 2",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": [
+        "validated n=8,16"
+      ],
+      "undefined_symbols": [],
+      "paper_section": "2.1, Supplementary S2",
+      "confidence": 0.9
+    },
+    {
+      "name": "Grover iteration count",
+      "latex": "\\text{iterations} \\approx \\frac{\\pi}{4}\\sqrt{2^n}",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": [
+        "n=8 -> ~13 iterations, per Fig. 4"
+      ],
+      "undefined_symbols": [],
+      "paper_section": "4.3, Figure 4, Supplementary S2",
+      "confidence": 0.9
+    },
+    {
+      "name": "Classical period-finding query complexity (birthday bound)",
+      "latex": "O(2^{n/2})",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "2.1, 4.3, Figure 2",
+      "confidence": 0.9
+    },
+    {
+      "name": "Quantum period-finding query complexity (Simon)",
+      "latex": "\\Theta(n)",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "2.1, Figure 2",
+      "confidence": 0.9
+    },
+    {
+      "name": "True-key rank vs. random expectation (Even-Mansour hybrid regime)",
+      "latex": "\\text{rank}(k_1) \\sim 2^{n/2} \\quad \\text{(vs. random expectation } 2^{n-1}\\text{)}",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": [
+        "K = 16,16,32,64,128 for n=6..10 (top-K shortlist size)"
+      ],
+      "undefined_symbols": [
+        "exact procedure for constructing the top-K shortlist from noisy measurement counts is not given algorithmically"
+      ],
+      "paper_section": "4.1, 4.3, Figure 3",
+      "confidence": 0.55
+    },
+    {
+      "name": "Statevector memory wall",
+      "latex": "\\text{memory} \\propto 2^{q}",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": [
+        "EM n=8 -> 24 qubits, 0.27 GB; Feistel block 12 -> 25 qubits, 72s; block 14 -> 8.6 GB wall; Simon n=16 -> ~4.5 PB (infeasible)"
+      ],
+      "undefined_symbols": [],
+      "paper_section": "4.4, Figure 5, Supplementary S3",
+      "confidence": 0.85
+    }
+  ],
+  "tensor_semantics": [
+    {
+      "name": "input qubit register |x>",
+      "shape_notation": "n qubits (n varies by attack/instance, 4-30 per Table 1/2)",
+      "dtype": "quantum state (complex amplitude vector, 2^n-dim)",
+      "tensor_type": "input",
+      "module": "oracle circuits (bv/grover/simon-*)",
+      "confidence": 0.85
+    },
+    {
+      "name": "oracle unitary U_f",
+      "shape_notation": "2^n x 2^n unitary (implemented as a quantum circuit, not materialized as a matrix)",
+      "dtype": "complex unitary operator",
+      "tensor_type": "intermediate",
+      "module": "oracle circuits",
+      "confidence": 0.8
+    },
+    {
+      "name": "measurement bitstring",
+      "shape_notation": "n-bit classical string per shot",
+      "dtype": "binary",
+      "tensor_type": "output",
+      "module": "measurement_and_classical_readout",
+      "confidence": 0.85
+    },
+    {
+      "name": "recovered hidden period / secret s",
+      "shape_notation": "n-bit (Simon) or n-bit linear secret a (BV)",
+      "dtype": "binary",
+      "tensor_type": "output",
+      "module": "classical post-processing (GF(2) linear solve for Simon; direct readout for BV)",
+      "confidence": 0.85
+    },
+    {
+      "name": "top-K candidate list (EM hybrid, n=6..10)",
+      "shape_notation": "K entries, K in {16,16,32,64,128} for n=6..10",
+      "dtype": "ranked list of candidate n-bit keys",
+      "tensor_type": "intermediate",
+      "module": "classical_verification_hybrid_top_k",
+      "confidence": 0.55
+    },
+    {
+      "name": "true-key rank",
+      "shape_notation": "scalar integer, reported as rank/total (e.g. 63/1023 for n=10)",
+      "dtype": "integer",
+      "tensor_type": "output",
+      "module": "true_key_rank_output",
+      "confidence": 0.85
+    }
+  ],
+  "training_pipeline": {
+    "optimizer": {
+      "name": null,
+      "learning_rate": null,
+      "beta1": null,
+      "beta2": null,
+      "weight_decay": null,
+      "confidence": 0.9
+    },
+    "lr_schedule": {
+      "type": null,
+      "warmup_steps": null,
+      "total_steps": null,
+      "confidence": 0.9
+    },
+    "batch_size": null,
+    "effective_batch_size": null,
+    "training_steps": null,
+    "epochs": null,
+    "mixed_precision": null,
+    "gradient_clipping": null,
+    "data_augmentation": [],
+    "curriculum": null,
+    "confidence": 0.15
+  },
+  "evaluation_protocol": {
+    "datasets": [
+      {
+        "name": "Synthetic cipher instances (Even-Mansour, 3-round Feistel, CBC-MAC, reduced SPN) with randomly chosen target + independent control keys",
+        "split": "per-instance; each cipher structure evaluated with a target key and a control key",
+        "size": null,
+        "publicly_available": true
+      }
+    ],
+    "metrics": [
+      "rank of true key among ranked candidates (rank-1 = clean/exact recovery)",
+      "qubit count per instance",
+      "real-hardware vs. simulation status",
+      "two-qubit gate fidelity (reported for block-8 Feistel: 219/233)",
+      "classical-simulation memory/time ceiling (bytes, seconds)"
+    ],
+    "reported_results": [
+      {
+        "metric": "true_key_rank",
+        "dataset": "EM-Simon n=5 (real hardware)",
+        "split": "differential Simon, clean",
+        "value": 1,
+        "is_primary": false
+      },
+      {
+        "metric": "true_key_rank",
+        "dataset": "EM-Simon n=6 (real hardware)",
+        "split": "hybrid top-16, out of 63",
+        "value": 6,
+        "is_primary": false
+      },
+      {
+        "metric": "true_key_rank",
+        "dataset": "EM-Simon n=7 (real hardware)",
+        "split": "hybrid top-16, out of 127",
+        "value": 3,
+        "is_primary": false
+      },
+      {
+        "metric": "true_key_rank",
+        "dataset": "EM-Simon n=8 (real hardware)",
+        "split": "hybrid top-32, out of 255",
+        "value": 9,
+        "is_primary": false
+      },
+      {
+        "metric": "true_key_rank",
+        "dataset": "EM-Simon n=9 (real hardware)",
+        "split": "hybrid top-64, out of 511",
+        "value": 15,
+        "is_primary": false
+      },
+      {
+        "metric": "true_key_rank",
+        "dataset": "EM-Simon n=10 (real hardware)",
+        "split": "hybrid top-128, out of 1023",
+        "value": 63,
+        "is_primary": true
+      },
+      {
+        "metric": "true_key_rank",
+        "dataset": "3-round Feistel block 6 (real hardware)",
+        "split": "Simon, clean",
+        "value": 1,
+        "is_primary": true
+      },
+      {
+        "metric": "true_key_rank",
+        "dataset": "3-round Feistel block 8 (real hardware)",
+        "split": "Simon, clean; 2-qubit gate fidelity 219/233",
+        "value": 1,
+        "is_primary": true
+      },
+      {
+        "metric": "recovery_status",
+        "dataset": "Bernstein-Vazirani n=16 (real hardware, ibm_kingston)",
+        "split": "single query",
+        "value": 1,
+        "is_primary": true
+      },
+      {
+        "metric": "max_prior_reported_real_hardware_N",
+        "dataset": "baseline (Koehler et al., arXiv:2604.25509)",
+        "split": "Even-Mansour real hardware",
+        "value": 4,
+        "is_primary": false
+      }
+    ],
+    "baselines": [
+      "Koehler et al. (arXiv:2604.25509) -- prior largest reported real-hardware Even-Mansour recovery at N=4, cites a practical barrier at N=5 due to 'DORCIS tool limitations'"
+    ],
+    "compute": "Real hardware: IBM ibm_kingston (Heron generation) via Qiskit. Simulation: 'QuantumOS' genuine statevector simulator on an NVIDIA B200 GPU, validated up to a 25-qubit classical-simulation ceiling (EM n=8 -> 24 qubits/0.27GB; Feistel block 12 -> 25 qubits/72s; block 14 -> 8.6GB wall; Simon n=16 would need ~4.5 PB, deemed infeasible).",
+    "special_conditions": [
+      "Every cipher instance evaluated with two independent keys (target + control) to rule out coincidental/artifactual recovery",
+      "Readout error-mitigation stack applied to all real-hardware runs (readout calibration, dynamical decoupling, twirling; Nation et al. [12])",
+      "For Even-Mansour n=6..10: quantum-narrowing + classical-verification hybrid (top-K candidates, K=16,16,32,64,128), since true-key rank does not reach rank-1 beyond n=5",
+      "3-round Feistel block-10 (21 qubits) verified in simulation and submitted to real hardware but only 'queued' at submission time -- not a completed real-hardware result",
+      "Explicit non-claims: no quantum advantage (birthday-bound-limited), not full AES-256/RSA-2048/16-round DES, error mitigation (not fault-tolerant correction), Q2 oracle model assumed"
+    ],
+    "confidence": 0.7
+  },
+  "implementation_assumptions": [
+    {
+      "assumption": "Because the paper's central real-hardware noise-scaling method (the 'hardware-aware circuit-conditioning and readout post-selection technique') is explicitly withheld, a faithful reproduction can only implement the STANDARD, publicly-documented Simon's-algorithm / BV / Grover circuits plus the published Nation et al. readout-mitigation stack. This will very likely reproduce clean recovery only up to the sizes the prior baseline (Koehler et al.) already achieved (~N=4-5), not the paper's claimed N=6-10 hybrid results, since the paper itself implies the standard stack alone is insufficient at those sizes.",
+      "basis": "explicitly stated in paper (Section 5, S4 'Disclosure of methods')",
+      "confidence": 0.85,
+      "alternatives": [
+        "Implement a best-effort, self-designed top-K/classical-verification heuristic as a stand-in, clearly labeled as NOT the paper's actual (withheld) method"
+      ],
+      "affects_section": "architecture"
+    },
+    {
+      "assumption": "Per-job shot counts default to a standard Qiskit value (e.g. 4096 or 8192 shots) since Supplementary Table 4's 'Shots' column shows only '[measurement]' placeholders in the provided document rather than actual numbers.",
+      "basis": "inferred from results / common practice",
+      "confidence": 0.4,
+      "alternatives": [
+        "Sweep multiple shot counts and report sensitivity",
+        "Treat shot count as an unknown free parameter to be tuned for best rank recovery"
+      ],
+      "affects_section": "evaluation_protocol"
+    },
+    {
+      "assumption": "The reduced SPN construction targeted by the Grover attack is instantiated as a small, generic textbook SPN (e.g. a toy 3-4 round substitution-permutation network with a simple S-box) since the paper never specifies its S-box, round count, or key schedule.",
+      "basis": "literature default / common practice",
+      "confidence": 0.4,
+      "alternatives": [
+        "Use a miniature well-known toy cipher (e.g. a 'baby AES'/mini-SPN teaching construction) as a stand-in",
+        "Treat the SPN oracle as a black-box parameter the user must supply"
+      ],
+      "affects_section": "architecture"
+    },
+    {
+      "assumption": "Real IBM hardware execution (ibm_kingston, Heron generation) requires an IBM Quantum account with backend access/credits, which cannot be assumed available in a reproduction environment; code defaults to Qiskit Aer (noiseless and/or noisy-simulator) backends, with an optional hook to swap in a real IBM backend if the user supplies credentials.",
+      "basis": "common practice / practical necessity",
+      "confidence": 0.9,
+      "alternatives": [
+        "Require the user to configure real hardware access before running anything"
+      ],
+      "affects_section": "evaluation_protocol"
+    },
+    {
+      "assumption": "The classical top-K candidate-narrowing + verification step for Even-Mansour n=6..10 is implemented as: take the K most frequent measurement bitstrings from the (mitigated) distribution, treat each as a candidate linear-system solution attempt, and rank candidates by how well they satisfy the collected Simon linear constraints, reporting the true key's position in that ranking -- since the paper describes this narratively rather than as a precise algorithm.",
+      "basis": "inferred from results",
+      "confidence": 0.45,
+      "alternatives": [
+        "Use a different scoring function for ranking (e.g. weighted by measurement count rather than constraint-satisfaction)",
+        "Treat this whole hybrid step as unimplementable without the withheld technique and report standard-Simon results only"
+      ],
+      "affects_section": "mathematical_spec"
+    }
+  ],
+  "ambiguities": [
+    {
+      "location": "Section 5 ('Disclosure of methods'), Supplementary S4",
+      "description": "The paper explicitly withholds the specific 'hardware-aware circuit-conditioning and readout post-selection technique' that it says is required to achieve clean period recovery at the reported noise levels and sizes ('pending an intellectual-property decision'). This technique underlies the paper's headline real-hardware claim (Even-Mansour to N=10) for n>5. Without it, the paper's own framing implies standard methods plateau around the prior N=4-5 baseline.",
+      "primary_assumption": "Reproduce only the standard, publicly-documented Simon/BV/Grover circuits and the cited (published) Nation et al. mitigation stack; do not attempt to reverse-engineer the withheld technique.",
+      "alternatives": [
+        "Design and clearly label a best-effort substitute heuristic for the withheld step",
+        "Limit reproduction claims strictly to the clean/simulation-only results (BV, CBC-MAC, Grover, EM n<=5, Feistel block 6/8) and treat EM n=6-10 hybrid results as unreproducible pending disclosure"
+      ],
+      "confidence": 0.85
+    },
+    {
+      "location": "Supplementary Table 4 ('Shots' column) vs. main-text reference to 'Supplementary Table S1'",
+      "description": "The main text (Section 3.2) states that 'per-job shot counts' are documented in Supplementary Table S1 alongside full experimental provenance. However, the provided document's Table 4 shows the literal placeholder text '[measurement]' in the Shots column for every row, rather than actual numeric values -- this data is not extractable from the given PDF.",
+      "primary_assumption": "Treat shot counts as unknown; default to a standard value (e.g. 4096/8192) for any reproduction attempt.",
+      "alternatives": [
+        "Contact the authors or check for a separate supplementary file/repository that may contain the real Table S1",
+        "Sweep a range of plausible shot counts and report sensitivity of rank recovery"
+      ],
+      "confidence": 0.4
+    },
+    {
+      "location": "Section 4.1/4.3/4.4 (Even-Mansour hybrid regime, n=6-10)",
+      "description": "The 'quantum-narrowing + classical-verification hybrid' procedure is described narratively (take top-K quantum-ranked candidates, confirm the period by classical verification over the shortlist) but not given as a precise, step-by-step algorithm -- e.g. exactly how candidates are ranked from noisy measurement counts, and what 'classical verification' concretely computes over the shortlist, are left unspecified.",
+      "primary_assumption": "Rank candidates by how well each satisfies the collected Simon-style linear constraints (GF(2) system), as this is the most natural 'classical verification' reading.",
+      "alternatives": [
+        "Rank purely by raw measurement frequency",
+        "Some combination of frequency and constraint-satisfaction, weighted in an unspecified way"
+      ],
+      "confidence": 0.45
+    },
+    {
+      "location": "Table 2, row 2 ('Grover / SPN block cipher (key search)')",
+      "description": "Unlike the Feistel, CBC-MAC, and BV constructions -- each given an explicit oracle formula -- the reduced SPN construction targeted by the Grover attack is never defined (no S-box, round count, or key schedule given), only referred to generically as 'a reduced SPN construction' with 'a known plaintext/ciphertext pair'.",
+      "primary_assumption": "Instantiate a small generic/toy SPN construction (e.g. a miniature textbook SPN) as a stand-in for reproduction purposes.",
+      "alternatives": [
+        "Request the exact SPN specification from the authors",
+        "Substitute a different well-known small-block cipher entirely and note the substitution"
+      ],
+      "confidence": 0.4
+    },
+    {
+      "location": "Table 1 / Table 4 ('Example job ID' column)",
+      "description": "Several rows give full or partially-truncated IBM Quantum job IDs (e.g. 'd940hmkql68s73c9ptg0', 'd9450anu.../d9450b4q...') apparently intended to allow independent verification of the real-hardware runs, but other rows show only '\u2014' with no ID at all, and the truncated ones cannot be resolved to complete, checkable identifiers from the paper text alone.",
+      "primary_assumption": "Treat job IDs as unverifiable provenance metadata for reproduction purposes; do not assume they can be used to pull down the original run data.",
+      "alternatives": [
+        "Attempt to query IBM Quantum's job history API with the partial IDs to see if they resolve",
+        "Request complete job IDs directly from the authors"
+      ],
+      "confidence": 0.5
+    }
+  ],
+  "confidence_annotations": {
+    "architecture": 0.62,
+    "mathematical_spec": 0.82,
+    "tensor_semantics": 0.75,
+    "training_pipeline": 0.15,
+    "evaluation_protocol": 0.7,
+    "implementation_assumptions": 0.45,
+    "overall_sir_confidence": 0.58
+  }
+}

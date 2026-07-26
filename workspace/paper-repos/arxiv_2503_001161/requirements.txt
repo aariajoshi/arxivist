@@ -1,0 +1,12 @@
+# SGDD synthetic reproduction — pure numpy/scipy, CPU only, no trained weights.
+numpy>=1.23
+scipy>=1.9
+pyyaml>=6.0
+tqdm>=4.64
+pytest>=7.0
+
+# Real-data SEDD tasks (DNA enhancers / MNIST XOR-AND / music infilling) additionally need:
+#   torch>=2.0
+#   the official SEDD prior weights + task oracles from
+#   https://github.com/chuwd19/Split-Gibbs-Discrete-Diffusion-Posterior-Sampling
+# These are NOT required for the synthetic controlled-posterior benchmark.

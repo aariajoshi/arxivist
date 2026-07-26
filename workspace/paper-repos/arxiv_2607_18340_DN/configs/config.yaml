@@ -1,0 +1,40 @@
+# Quantum Cryptanalysis reproduction config (arXiv:2607.18340)
+#
+# IMPORTANT: the paper's real-hardware headline result (Even-Mansour N=6-10)
+# depends on a WITHHELD technique (Section 5). This config runs the
+# DISCLOSED algorithms only, defaulting to a noiseless Qiskit Aer simulator.
+
+experiment:
+  backend_mode: aer_simulator_noiseless   # ASSUMED: real ibm_kingston access unavailable here.
+                                            # Options: aer_simulator_noiseless, aer_simulator_noisy, ibm_real
+  shots: 4096                               # ASSUMED: paper's actual shot counts are unrecoverable
+                                              # "[measurement]" placeholders in the provided PDF (confidence 0.4)
+  seed: 42
+
+even_mansour:
+  n_values: [3, 4, 5, 6, 7, 8]                # n=9,10 (27,30 qubits) feasible but slow on CPU Aer; see README
+  top_k_by_n: {6: 16, 7: 16, 8: 32, 9: 64, 10: 128}
+  # NOTE: the "hybrid" top-K + classical verification path (postprocessing/hybrid_ranking.py)
+  # is a labeled BEST-EFFORT SUBSTITUTE for the paper's withheld technique (confidence 0.05
+  # for the real method, 0.45 for our substitute). On the default noiseless simulator,
+  # standard Simon's algorithm succeeds cleanly (rank-1) for every n without needing this
+  # substitute at all -- it only becomes relevant if you switch to a noisy backend.
+
+feistel:
+  half_block_sizes: [3, 4, 5, 6]   # m (half-block); paper's "block size 2m" = 6,8,10,12 respectively
+
+cbc_mac:
+  n_values: [4, 6]
+  # NOTE (verified discrepancy, not just an assumption): the paper states period
+  # s = Ek(a) XOR Ek(b) for f(x) = Ek(x XOR c.a) XOR Ek(x XOR c.b). Direct testing
+  # shows this oracle actually satisfies Simon's promise with period s = a XOR b
+  # (input-space difference) for a generic permutation Ek, not Ek(a) XOR Ek(b).
+  # See oracles/simon_cbc_mac.py docstring and comparison/hallucination_report.md.
+
+bernstein_vazirani:
+  n_values: [8, 16]
+
+grover_spn:
+  n_values: [6, 8]
+  # NOTE: paper never specifies the SPN's S-box/rounds/key schedule (confidence 0.4).
+  # oracles/grover_spn.py::ToySPNCipher is a small, clearly-labeled stand-in.
