@@ -1,0 +1,298 @@
+{
+  "paper_id": "paper_improving-random-forests-by-smoothing",
+  "sir_version": 1,
+  "provenance": {
+    "title": "Improving Random Forests by Smoothing",
+    "authors": [
+      "Ziyi Liu",
+      "Phuc Luong",
+      "Mario Boley",
+      "Daniel F. Schmidt"
+    ],
+    "affiliations": [
+      "Data Science and Artificial Intelligence, Faculty of Information Technology, Monash University",
+      "Department of Information Systems, Faculty of Computer and Information Science, University of Haifa"
+    ],
+    "arxiv_id": null,
+    "doi": "10.1007/s10994-026-07077-z",
+    "submission_date": "2025-10-31",
+    "abstract": "Random forest regression is a powerful non-parametric method that adapts to local data characteristics through data-driven partitioning, making it effective across diverse application domains. However, the piecewise constant nature of random forest predictions means each partition is predicted independently, ignoring potential smoothness in the underlying function. Particularly in the small data regime, this lack of information sharing across the input space can lead to suboptimal performance.",
+    "domain": "Tabular",
+    "key_claims": [
+      "Introduces probabilistic kernel smoothing as a general approach to equip any learned prediction function with an arbitrary degree of smoothness.",
+      "Smoothing procedure captures the variability/uncertainty in tree cut points under resampling of the training inputs.",
+      "Investigates out-of-bag performance of random forest ensemble members as effective criterion to select the degree of smoothness.",
+      "Smoothed random forest model consistently improves predictive performance across diverse test cases, particularly in data-scarce settings."
+    ],
+    "parsed_at": "2026-07-26T23:08:47Z",
+    "arxivist_version": "1.0"
+  },
+  "architecture": {
+    "primary_variant": "EST-PD (ensemble of smoothed trees with per-dimension parameters)",
+    "modules": [
+      {
+        "name": "random_forest",
+        "operation_type": "tree_ensemble",
+        "input_shape": "[B, p]",
+        "output_shape": "[B, 1]",
+        "confidence": 0.95
+      },
+      {
+        "name": "probabilistic_smoothing",
+        "operation_type": "kernel_smoothing",
+        "input_shape": "[B, 1]",
+        "output_shape": "[B, 1]",
+        "confidence": 0.95
+      }
+    ],
+    "connections": [
+      {
+        "from": "random_forest",
+        "to": "probabilistic_smoothing",
+        "tensor_name": "f_RF"
+      }
+    ],
+    "variants": [
+      {
+        "name": "STE",
+        "differences": {
+          "smoothing": "Isotropically smoothed ensemble of trees (1 global parameter)"
+        }
+      },
+      {
+        "name": "STE-PD",
+        "differences": {
+          "smoothing": "Per-dimension smoothed ensemble of trees (p parameters)"
+        }
+      },
+      {
+        "name": "EST",
+        "differences": {
+          "smoothing": "Ensemble of isotropically smoothed trees (T parameters)"
+        }
+      },
+      {
+        "name": "EST-PD",
+        "differences": {
+          "smoothing": "Ensemble of per-dimension smoothed trees (T * p parameters)"
+        }
+      }
+    ]
+  },
+  "mathematical_spec": [
+    {
+      "name": "Random forest estimator",
+      "latex": "\\hat{f}_{RF}(x_0 | \\mathcal{F}, X, y) = \\frac{1}{T} \\sum_{t=1}^T \\hat{f}(x_0 | T_t, m_t, X, y)",
+      "role": "objective",
+      "used_in": "inference",
+      "hyperparameters": ["T"],
+      "undefined_symbols": [],
+      "paper_section": "2.1",
+      "confidence": 0.95
+    },
+    {
+      "name": "Probabilistic Smoothing",
+      "latex": "\\tilde{f}(x_0| X, y, \\Sigma) = \\mathbb{E}_{z \\sim k(x_0, \\Sigma)} [f(z | X, y)] = \\int_{\\mathbb{R}^p} f(z | X, y) k(z | x_0, \\Sigma) dz",
+      "role": "objective",
+      "used_in": "inference",
+      "hyperparameters": ["\\Sigma"],
+      "undefined_symbols": [],
+      "paper_section": "2.2",
+      "confidence": 0.95
+    },
+    {
+      "name": "Re-calibrated smoothed predictions",
+      "latex": "\\tilde{y}(x_0| X, y, \\Sigma, \\beta_0, \\beta_1) = \\beta_1 \\tilde{f}(x_0| X, y, \\Sigma) + \\beta_0",
+      "role": "objective",
+      "used_in": "inference",
+      "hyperparameters": ["\\beta_0", "\\beta_1"],
+      "undefined_symbols": [],
+      "paper_section": "2.2",
+      "confidence": 0.95
+    },
+    {
+      "name": "Out-of-bag loss",
+      "latex": "\\mathcal{L}_{oob}(\\Sigma, \\beta_0, \\beta_1) = \\sum_{t=1}^T \\sum_{i \\in \\mathcal{O}_t} (\\beta_1 \\tilde{f}_t(x_i | \\Sigma_t) + \\beta_0 - y_i)^2",
+      "role": "loss",
+      "used_in": "training",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "3.2",
+      "confidence": 0.95
+    },
+    {
+      "name": "Gaussian Kernel",
+      "latex": "k_{gs}(z|x,\\Sigma) = \\prod_{j=1}^p \\frac{1}{\\sqrt{2\\pi\\sigma_j^2}}\\exp\\left(-\\frac{(z^{(j)}-x^{(j)})^2}{2\\sigma_j^2}\\right)",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": ["\\sigma_j"],
+      "undefined_symbols": [],
+      "paper_section": "2.2",
+      "confidence": 0.95
+    },
+    {
+      "name": "Hyperbolic Secant Kernel",
+      "latex": "k_{hs}(z|x,\\Sigma) = \\prod_{j=1}^p \\frac{1}{2\\sigma_j}\\text{sech}\\left(\\frac{\\pi(z^{(j)}-x^{(j)})}{2\\sigma_j}\\right)",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": ["\\sigma_j"],
+      "undefined_symbols": [],
+      "paper_section": "2.2",
+      "confidence": 0.95
+    }
+  ],
+  "tensor_semantics": [
+    {
+      "name": "x",
+      "shape_notation": "[B, p]",
+      "dtype": null,
+      "tensor_type": "input",
+      "module": "random_forest",
+      "confidence": 0.95
+    },
+    {
+      "name": "y",
+      "shape_notation": "[B, 1]",
+      "dtype": null,
+      "tensor_type": "output",
+      "module": "probabilistic_smoothing",
+      "confidence": 0.95
+    },
+    {
+      "name": "Sigma",
+      "shape_notation": "[T, p]",
+      "dtype": null,
+      "tensor_type": "parameter",
+      "module": "probabilistic_smoothing",
+      "confidence": 0.95
+    }
+  ],
+  "training_pipeline": {
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.01,
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "weight_decay": 0.001,
+      "confidence": 0.95
+    },
+    "lr_schedule": {
+      "type": "OneCycleLR",
+      "warmup_steps": null,
+      "total_steps": null,
+      "confidence": 0.95
+    },
+    "batch_size": null,
+    "effective_batch_size": null,
+    "training_steps": null,
+    "epochs": null,
+    "mixed_precision": null,
+    "gradient_clipping": null,
+    "data_augmentation": [],
+    "curriculum": null,
+    "confidence": 0.95
+  },
+  "evaluation_protocol": {
+    "datasets": [
+      {
+        "name": "CCPP",
+        "split": "train/test",
+        "size": null,
+        "publicly_available": true
+      },
+      {
+        "name": "QSAR fish toxicity",
+        "split": "train/test",
+        "size": null,
+        "publicly_available": true
+      },
+      {
+        "name": "Real estate",
+        "split": "train/test",
+        "size": null,
+        "publicly_available": true
+      },
+      {
+        "name": "Yacht hydrodynamics",
+        "split": "train/test",
+        "size": null,
+        "publicly_available": true
+      },
+      {
+        "name": "Fertility",
+        "split": "train/test",
+        "size": null,
+        "publicly_available": true
+      }
+    ],
+    "metrics": [
+      "MSE",
+      "PIMSE (Percentage Improvement in MSE)",
+      "MAD (Median Absolute Deviation)",
+      "Maximum Absolute Error"
+    ],
+    "reported_results": [
+      {
+        "metric": "MSE",
+        "dataset": "CCPP",
+        "split": "test",
+        "value": 30.88,
+        "is_primary": true
+      },
+      {
+        "metric": "PIMSE",
+        "dataset": "CCPP",
+        "split": "test",
+        "value": 12.39,
+        "is_primary": true
+      }
+    ],
+    "baselines": [
+      "RF(10)",
+      "RF(20)",
+      "RF(50)",
+      "RF(100)",
+      "Gaussian Process (GP)"
+    ],
+    "compute": null,
+    "special_conditions": [
+      "Random forests have maximum tree depth optimized via 5-fold cross-validation.",
+      "max_features=0.8"
+    ],
+    "confidence": 0.95
+  },
+  "implementation_assumptions": [
+    {
+      "assumption": "Random forest hyperparameters not explicitly specified follow scikit-learn defaults.",
+      "basis": "Explicitly stated in the paper: 'All other hyperparameters follow scikit-learn defaults.'",
+      "confidence": 0.95,
+      "alternatives": [],
+      "affects_section": "training_pipeline"
+    },
+    {
+      "assumption": "Grid search used for max_depth is a typical range (e.g., 5-30).",
+      "basis": "Paper mentions max_depth is optimized via 5-fold CV, but doesn't specify the grid.",
+      "confidence": 0.7,
+      "alternatives": ["No limit to max depth"],
+      "affects_section": "training_pipeline"
+    }
+  ],
+  "ambiguities": [
+    {
+      "location": "Section 4.1",
+      "description": "Grid used for 5-fold CV optimization of max_depth is not specified.",
+      "primary_assumption": 15,
+      "alternatives": [5, 10, 20, 30, "None"],
+      "confidence": 0.7
+    }
+  ],
+  "confidence_annotations": {
+    "architecture": 0.9,
+    "mathematical_spec": 0.95,
+    "tensor_semantics": 0.9,
+    "training_pipeline": 0.9,
+    "evaluation_protocol": 0.95,
+    "implementation_assumptions": 0.9,
+    "overall_sir_confidence": 0.92
+  }
+}

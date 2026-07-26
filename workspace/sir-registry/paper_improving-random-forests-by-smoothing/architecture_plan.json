@@ -1,0 +1,314 @@
+{
+  "paper_id": "paper_improving-random-forests-by-smoothing",
+  "plan_version": 1,
+  "created_at": "2026-07-26T23:15:00Z",
+  "framework": {
+    "primary": "pytorch",
+    "python_version": "3.10",
+    "cuda_required": false,
+    "cuda_min_version": null,
+    "use_huggingface": false,
+    "config_library": "omegaconf",
+    "reasoning": "PyTorch is selected to optimize the smoothing parameters (Sigma, beta_0, beta_1) via gradient descent with AdamW using the out-of-bag loss. The base Random Forest will likely be integrated via scikit-learn, with tree structures parsed into PyTorch tensors for efficient parallel evaluation and integration."
+  },
+  "module_hierarchy": [
+    {
+      "path": "src/improving_rf_smoothing/models/random_forest.py",
+      "description": "Base Random Forest wrapper extracting tree structures",
+      "sir_modules_mapped": ["random_forest"],
+      "classes": [
+        {
+          "name": "TreeEnsemble",
+          "base_class": "torch.nn.Module",
+          "public_methods": [
+            {
+              "name": "fit",
+              "signature": "(X: np.ndarray, y: np.ndarray) -> None",
+              "returns": "None"
+            },
+            {
+              "name": "extract_tree_structures",
+              "signature": "() -> Dict[str, torch.Tensor]",
+              "returns": "Dict[str, torch.Tensor]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/improving_rf_smoothing/models/kernels.py",
+      "description": "Kernel functions for smoothing",
+      "sir_modules_mapped": ["probabilistic_smoothing"],
+      "classes": [
+        {
+          "name": "GaussianKernel",
+          "base_class": "torch.nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(z: torch.Tensor, x: torch.Tensor, sigma: torch.Tensor) -> torch.Tensor",
+              "returns": "torch.Tensor"
+            },
+            {
+              "name": "cdf",
+              "signature": "(x: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor) -> torch.Tensor",
+              "returns": "torch.Tensor"
+            }
+          ]
+        },
+        {
+          "name": "HyperbolicSecantKernel",
+          "base_class": "torch.nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(z: torch.Tensor, x: torch.Tensor, sigma: torch.Tensor) -> torch.Tensor",
+              "returns": "torch.Tensor"
+            },
+            {
+              "name": "cdf",
+              "signature": "(x: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor) -> torch.Tensor",
+              "returns": "torch.Tensor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/improving_rf_smoothing/models/smoothed_rf.py",
+      "description": "Smoothed Random Forest containing smoothing logic and parameters",
+      "sir_modules_mapped": ["probabilistic_smoothing"],
+      "classes": [
+        {
+          "name": "SmoothedRandomForest",
+          "base_class": "torch.nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(x: torch.Tensor) -> torch.Tensor",
+              "returns": "torch.Tensor"
+            },
+            {
+              "name": "compute_smoothed_tree",
+              "signature": "(x: torch.Tensor, tree_idx: int) -> torch.Tensor",
+              "returns": "torch.Tensor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/improving_rf_smoothing/data/dataset.py",
+      "description": "Tabular dataset loading",
+      "sir_modules_mapped": [],
+      "classes": [
+        {
+          "name": "TabularDataset",
+          "base_class": "torch.utils.data.Dataset",
+          "public_methods": [
+            {
+              "name": "__getitem__",
+              "signature": "(idx: int) -> Tuple[torch.Tensor, torch.Tensor]",
+              "returns": "Tuple[torch.Tensor, torch.Tensor]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/improving_rf_smoothing/training/losses.py",
+      "description": "Out-of-bag loss implementation",
+      "sir_modules_mapped": [],
+      "classes": [
+        {
+          "name": "OOBLoss",
+          "base_class": "torch.nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(smoothed_preds_oob: torch.Tensor, targets_oob: torch.Tensor) -> torch.Tensor",
+              "returns": "torch.Tensor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/improving_rf_smoothing/training/trainer.py",
+      "description": "Trainer for optimizing smoothing parameters",
+      "sir_modules_mapped": [],
+      "classes": [
+        {
+          "name": "SmoothingTrainer",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "train",
+              "signature": "() -> None",
+              "returns": "None"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tensor_flows": [
+    {
+      "name": "ProbabilisticSmoothingForward",
+      "input": {
+        "name": "x",
+        "shape": "[B, p]",
+        "dtype": "float32"
+      },
+      "output": {
+        "name": "y_tilde",
+        "shape": "[B, 1]",
+        "dtype": "float32"
+      },
+      "steps": [
+        "1. Initialize output tensor f_tilde_sum = 0 for aggregating smoothed tree predictions.",
+        "2. For each tree t in 1 to T:",
+        "3.   Retrieve the tree's leaf regions (bounding boxes) and corresponding prediction values.",
+        "4.   For each leaf region:",
+        "5.     Compute the probability mass of the kernel k(z|x, Sigma_t) within the leaf region using the kernel's CDF.",
+        "6.     Multiply the probability mass by the leaf's prediction value.",
+        "7.   Sum these weighted values to get the smoothed tree prediction f_tilde_t(x).",
+        "8.   Add f_tilde_t(x) to f_tilde_sum.",
+        "9. Compute ensemble average: f_tilde(x) = f_tilde_sum / T.",
+        "10. Apply re-calibration: y_tilde = beta_1 * f_tilde(x) + beta_0.",
+        "11. Return y_tilde."
+      ]
+    }
+  ],
+  "config_schema": {
+    "model": {
+      "variant": "EST-PD",
+      "n_estimators": 100,
+      "max_features": 0.8,
+      "max_depth": 15,
+      "kernel": "gaussian"
+    },
+    "training": {
+      "optimizer": "AdamW",
+      "learning_rate": 0.01,
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "weight_decay": 0.001,
+      "lr_schedule": "OneCycleLR",
+      "epochs": 100
+    },
+    "data": {
+      "dataset_name": "CCPP",
+      "split_ratio": 0.8
+    },
+    "evaluation": {
+      "metrics": [
+        "MSE",
+        "PIMSE",
+        "MAD",
+        "MaxAbsoluteError"
+      ]
+    },
+    "hardware": {
+      "device": "cuda",
+      "num_workers": 4
+    }
+  },
+  "dependencies": {
+    "runtime": [
+      {
+        "package": "torch",
+        "version": ">=2.0.0",
+        "reason": "Used for gradient-based optimization of smoothing parameters and fast tensor operations."
+      },
+      {
+        "package": "scikit-learn",
+        "version": ">=1.2.0",
+        "reason": "Provides the base Random Forest implementation."
+      },
+      {
+        "package": "pandas",
+        "version": ">=2.0.0",
+        "reason": "Used for tabular dataset loading and preprocessing."
+      },
+      {
+        "package": "omegaconf",
+        "version": ">=2.3.0",
+        "reason": "Configuration management."
+      }
+    ],
+    "dev": [
+      {
+        "package": "pytest",
+        "version": ">=7.0.0"
+      },
+      {
+        "package": "black",
+        "version": ">=23.0.0"
+      }
+    ]
+  },
+  "entrypoints": [
+    {
+      "filename": "train.py",
+      "purpose": "Train the random forest and optimize the smoothing parameters.",
+      "cli_args": [
+        {
+          "flag": "--config",
+          "type": "string",
+          "required": false,
+          "default": "configs/default.yaml",
+          "help": "Path to the configuration file."
+        }
+      ]
+    },
+    {
+      "filename": "evaluate.py",
+      "purpose": "Evaluate the smoothed random forest model on a test set.",
+      "cli_args": [
+        {
+          "flag": "--config",
+          "type": "string",
+          "required": false,
+          "default": "configs/default.yaml",
+          "help": "Path to the configuration file."
+        },
+        {
+          "flag": "--checkpoint",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "help": "Path to the trained model checkpoint."
+        }
+      ]
+    }
+  ],
+  "docker_spec": {
+    "base_image": "pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime",
+    "system_deps": [
+      "build-essential"
+    ],
+    "workdir": "/workspace",
+    "default_cmd": "python train.py"
+  },
+  "risk_assessment": [
+    {
+      "severity": "High",
+      "description": "Integration over leaf regions: Evaluating the integral of the kernel over the piecewise constant tree regions is non-trivial and may require traversing the tree structure to find leaf bounding boxes, then computing multivariate CDFs.",
+      "source": "Probabilistic Smoothing",
+      "mitigation": "Extract tree structures from scikit-learn (e.g. via `tree_.feature` and `tree_.threshold`) into PyTorch tensors to represent leaf bounding boxes. Use factorized kernels (as specified by the product in the math spec) so that the integral over a hyper-rectangle becomes a product of 1D CDF differences."
+    },
+    {
+      "severity": "Medium",
+      "description": "Ambiguity in max_depth optimization grid.",
+      "source": "Implementation Assumptions",
+      "mitigation": "Expose max_depth as a configurable parameter or list of values for GridSearch in the config file, defaulting to [5, 10, 15, 20]."
+    },
+    {
+      "severity": "Medium",
+      "description": "Memory and computational cost of OOB loss optimization for EST-PD variant, as it requires evaluating smoothed predictions for all OOB samples across all trees.",
+      "source": "Out-of-bag loss",
+      "mitigation": "Process the OOB loss computation in batches of samples or trees to prevent Out-Of-Memory errors on GPUs."
+    }
+  ]
+}

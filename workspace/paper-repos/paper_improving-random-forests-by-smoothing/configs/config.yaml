@@ -1,0 +1,28 @@
+model:
+  variant: "EST-PD"
+  n_estimators: 100
+  max_features: 0.8
+  max_depth: 15 # ASSUMED: Grid used for CV optimization of max_depth is not specified. Assuming 15 as typical default. (Confidence 0.7)
+  kernel: "gaussian"
+
+training:
+  optimizer: "AdamW"
+  learning_rate: 0.01
+  beta1: 0.9
+  beta2: 0.999
+  weight_decay: 0.001
+  lr_schedule: "OneCycleLR"
+  epochs: 100
+
+data:
+  dataset_name: "CCPP"
+  split_ratio: 0.8
+  data_dir: "data/raw"
+
+evaluation:
+  metrics: ["MSE", "PIMSE", "MAD", "MaxAbsoluteError"]
+
+hardware:
+  device: "cuda"
+  num_workers: 4
+  deterministic: false # Note: setting to true may slow down training
