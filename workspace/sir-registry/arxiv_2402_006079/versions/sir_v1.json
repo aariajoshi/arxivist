@@ -1,0 +1,108 @@
+{
+  "sir_version": 1,
+  "paper_id": "arxiv_2402_006079",
+  "arxiv": "https://arxiv.org/abs/2402.06079",
+  "title": "DiscDiff: Latent Diffusion Model for DNA Sequence Generation",
+  "authors": ["Zehui Li", "Yuhao Ni", "William A V Beardall", "Guoxuan Xia", "Akashaditya Das", "Tim August B. Huygelen", "Guy-Bart Stan", "Yiren Zhao"],
+  "affiliations": ["Imperial College London", "University College London"],
+  "venue": "ICML 2024 (AI4Science)",
+  "arxiv_version": "v2 (17 Apr 2024)",
+  "official_code": "https://github.com/Zehui127/Latent-DNA-Diffusion (author repo)",
+  "dataset": "EPD-GenDNA (introduced by this paper): HuggingFace Zehui127/*; 160k seqs, 15 species, 2048 & 256 bp",
+  "confidence": 0.85,
+  "domain": "Multimodal",
+
+  "problem": {
+    "statement": "Generate realistic discrete DNA sequences (regulatory + protein-coding) across species. Standard continuous diffusion is ill-suited to discrete DNA; prior discrete DMs (DDSM, D3PM) are compute-heavy; latent diffusion suffers ROUNDING ERRORS converting latent->discrete, worst on long sequences.",
+    "contribution": "Three parts: (1) DiscDiff — the first Latent Diffusion Model for DNA: a two-stage VAE (discrete seq <-> continuous latent) + a U-Net denoiser trained in latent space. (2) Absorb-Escape — a post-training refinement algorithm that fixes single-nucleotide 'rounding errors' (low-softmax 'valleys') by locally re-generating with a pretrained autoregressive model (Hyena). (3) EPD-GenDNA — the first large multi-species DNA-generation dataset (160k seqs, 15 species, 2713 cell types)."
+  },
+
+  "method": {
+    "discdiff_model": {
+      "stage1_vae": {
+        "encoder": "E = E_phi2 . E_phi1. First-stage E_phi1: N_4^L -> R^{K x M} (2D latent, K channels, M length). Second-stage E_phi2: R^{1 x K x M} -> R^{C x K' x M'} (3D latent, reduced dims).",
+        "decoder": "D = D_theta1 . D_theta2, symmetric to encoders. Reconstruction s~ = D(E(s)).",
+        "variants": ["CNN-VAE (best generation: S-FID/CorTATA)", "CNN-Attn-VAE", "1D-Swin-VAE (best recon acc 99.6%)"],
+        "loss": "CE reconstruction loss (per-position 4-way categorical) + beta * KL(q_phi(z|s) || N(z;mu,Sigma)), isotropic prior (Eq in 4.1.2).",
+        "note": "Higher-dim latent helps the denoiser learn; two-stage architecture is the key design (Sec 4.1.1, ablation Table 4)."
+      },
+      "stage2_denoiser": {
+        "objective": "Standard DDPM epsilon-prediction in latent space: E_{z,t,eps} || eps - eps_theta(z_t, t) ||^2 (Eq 2).",
+        "network": "U-Net with ResNet blocks, optional self-attention, cross-attention on (species, time). Locked/frozen decoder at generation.",
+        "conditioning": "species + time embeddings via cross-attention (enables conditional multi-species generation)."
+      }
+    },
+    "absorb_escape": {
+      "role": "Post-training / inference-time refinement of a DiscDiff-generated sequence s, using a pretrained autoregressive model M (Hyena) and the diffusion decoder's per-position max-softmax L(D, s_i).",
+      "procedure": [
+        "Scan tokens s_i in s.",
+        "ABSORB: trigger at position i when absorb condition A(s_i) is true.",
+        "AUTOREGRESSIVE GEN: from position i, re-generate with M.",
+        "ESCAPE: continue until escape condition E(s_j) holds, then replace the low-prob region of s with M's generation."
+      ],
+      "conditions_table3": {
+        "absorb": "A(s_i) = true  iff  L(D, s_i) < T_absorb   (diffusion is UNconfident here)",
+        "escape_natural": "E(s_j) = true  iff  L(D, s_j) > L(M, s_j)   (diffusion regains confidence over AR)  [DEFAULT]",
+        "escape_threshold": "E(s_j, T_escape) = true  iff  L(M, s_j) < T_escape",
+        "escape_random": "E(s_j, T_random) = true  iff  uniform(0,1) > T_random",
+        "escape_maxlen": "E(s_j, max_sub_length) = true  iff  j > max_sub_length"
+      },
+      "cpu_verifiable": true,
+      "note": "Absorb-Escape is a deterministic algorithm over softmax coefficient arrays; it can be verified with synthetic confidence profiles containing known 'valleys' (Fig 4: TATT -> TATA) WITHOUT any trained weights. This is the core, cheaply-checkable contribution."
+    }
+  },
+
+  "dataset_epd_gendna": {
+    "size": "160,000 unique sequences",
+    "species": 15,
+    "cell_types": 2713,
+    "lengths": [2048, 256],
+    "variants": ["EPD-GenDNA-large (2048bp)", "EPD-GenDNA-small (256bp)"],
+    "mammalian_train_subset": "~65,000 unique seqs for unconditional generation (Table 5)",
+    "source": "built on EPD (Eukaryotic Promoter Database, Meylan et al. 2020); ~300M wet-lab experiments"
+  },
+
+  "evaluation": {
+    "metrics": {
+      "S-FID": "Sei Frechet Inception Distance: FID in the latent space of a pretrained genomic model (Sei). LOWER better.",
+      "CorTATA": "Pearson correlation of the TATA-box (and Initiator etc.) motif frequency distribution vs natural DNA. HIGHER better.",
+      "Diversity": "avg pairwise distance among generated seqs; report Delta-Div = |Div_gen - Div_natural| (match natural). LOWER better.",
+      "CorM": "general motif distribution correlation."
+    }
+  },
+
+  "headline_results": {
+    "table5_unconditional": {
+      "EPD_small_256bp": {
+        "DiscDiff": {"S-FID": 57.4, "CorTATA": 0.973, "dDiv": "4.40%"},
+        "Absorb_Escape": {"S-FID": 3.21, "CorTATA": 0.975, "dDiv": "5.70%"},
+        "best_diffusion_baseline_D3PM_small": {"S-FID": 97.4, "CorTATA": 0.0964},
+        "sample_from_training": {"S-FID": 0.509, "CorTATA": 1.0}
+      },
+      "EPD_large_2048bp": {
+        "DiscDiff": {"S-FID": 45.2, "CorTATA": 0.858, "dDiv": "4.20%"},
+        "Absorb_Escape": {"S-FID": 4.38, "CorTATA": 0.892, "dDiv": "1.90%"},
+        "best_diffusion_baseline_D3PM_small": {"S-FID": 94.5, "CorTATA": 0.363}
+      }
+    },
+    "table6_conditional_15species_avg": {
+      "Hyena": {"CorTATA": 0.939, "CorInitiator": 0.488, "avg": 0.714},
+      "DiscDiff": {"CorTATA": 0.894, "CorInitiator": 0.581, "avg": 0.738},
+      "Absorb_Escape": {"CorTATA": 0.917, "CorInitiator": 0.568, "avg": 0.743}
+    },
+    "ablation_table4_VAE": {
+      "CNN-VAE": {"recon_acc": "99.4%", "S-FID": 45.2, "CorTATA": 0.858, "dDiv": "4.2%"},
+      "CNN-Attn-VAE": {"recon_acc": "98.8%", "S-FID": 53.6, "CorTATA": 0.531},
+      "1D-Swin-VAE": {"recon_acc": "99.6%", "S-FID": 82.1, "CorTATA": 0.651}
+    }
+  },
+
+  "baselines": ["DDSM (Time Dilation)", "D3PM (small 38M / large 640M)", "BitDiffusion", "Hyena (autoregressive, RegLM)", "VAE-only", "Random"],
+
+  "confidence_annotations": {
+    "absorb_escape_algorithm": {"value": 0.92, "why": "Table 3 conditions + Fig 4 procedure fully specified: absorb when L(D,s_i)<T_absorb, natural escape when L(D)>L(M). Deterministic over softmax arrays; CPU-verifiable with synthetic valleys."},
+    "vae_ldm_architecture": {"value": 0.8, "why": "Two-stage VAE + latent U-Net + eps-prediction (Eq 2) described; exact U-Net config is in Appendix C (partial). Reproducible in structure; exact channel/dim values need the appendix + code."},
+    "results_metrics": {"value": 0.65, "why": "S-FID needs the Sei genomic model; full generation needs trained DiscDiff weights + Hyena + EPD-GenDNA. Numbers (Table 5: 3.21/4.38 S-FID) taken verbatim; reproduction is weight+data-gated."},
+    "dataset": {"value": 0.75, "why": "EPD-GenDNA on HuggingFace (Zehui127/*); loadable but large. Same dataset D3LM uses."}
+  }
+}

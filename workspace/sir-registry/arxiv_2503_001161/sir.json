@@ -1,0 +1,96 @@
+{
+  "sir_version": 1,
+  "paper_id": "arxiv_2503_001161",
+  "arxiv": "https://arxiv.org/abs/2503.01161",
+  "title": "Split Gibbs Discrete Diffusion Posterior Sampling",
+  "authors": ["Wenda Chu", "Zihui Wu", "Yifan Chen", "Yang Song", "Yisong Yue"],
+  "venue": "NeurIPS 2025",
+  "official_code": "https://github.com/chuwd19/Split-Gibbs-Discrete-Diffusion-Posterior-Sampling",
+  "confidence": 0.92,
+  "domain": "Multimodal",
+
+  "problem": {
+    "statement": "Posterior sampling p(x|y) in DISCRETE-state spaces using a pretrained discrete diffusion model as a plug-and-play prior. Covers inverse problems (y = G(x)+n) and reward-guided generation (p(y|x) ~ exp(beta*r(x))). Continuous DPS methods do not transfer because log p(y|x) has no gradient on a finite support.",
+    "contribution": "SGDD: a plug-and-play posterior sampler built on the SPLIT GIBBS principle. Introduce an auxiliary variable z and a potential D(x,z;eta) (Hamming-distance based, Eq 10) that relaxes the problem into an augmented distribution pi(x,z;eta) (Eq 7). Alternate: (1) LIKELIHOOD step z~pi(x=x_k,z;eta) via Metropolis-Hastings (Eq 13), (2) PRIOR step x~pi(x,z=z_k;eta) which is equivalent to a partial discrete-diffusion denoising from sigma_t=eta, x_t=z_k (Eq 11-12). Both marginals provably converge to p(x|y) as eta->0. Theorem 1 gives an O(1/K) Fisher-divergence convergence bound accounting for score + discretization error."
+  },
+
+  "method": {
+    "core_algorithm": {
+      "name": "Algorithm 1 — SplitGibbsDiscreteDiffusion (SGDD)",
+      "inputs": ["concrete score model s_theta", "measurement y", "annealing schedule {eta_k}_{k=0..K-1}"],
+      "loop": [
+        "for k = 0..K-1:",
+        "  likelihood step (Eq 13): z_k ~ pi(x=x_k, z; eta_k)  via Metropolis-Hastings, T steps",
+        "  prior step (Eq 11): x_{k+1} ~ pi(x, z=z_k; eta_k)   via H-step Euler discrete-diffusion denoise from eta_k",
+        "return x_K"
+      ],
+      "potential": "D(x,z;eta) = d(x,z) * log[ (1 + (N-1)e^{-eta}) / ((N-1)(1-e^{-eta})) ], d = Hamming distance (Eq 10). D->inf as eta->0 unless d(x,z)=0, which forces both marginals to the posterior.",
+      "prior_step_identity": "pi(x,z=z_k;eta) ~ p0(x) * (beta~/(1-beta~))^{d(z_k,x)} with beta~ = (N-1)/N (1-e^{-eta}). This equals unconditional p(x0|xt) denoising when beta~ = beta_t, i.e. eta = sigma_t. So the prior step IS a partial reverse discrete-diffusion sampler started at noise level eta from state z_k.",
+      "likelihood_step": "z_k ~ exp(-f(z;y) - d(x,z)*log[...]) with f(z;y) = -log p(y|z). Unnormalized density is accessible -> sample by Metropolis-Hastings (no likelihood gradient needed). This is the key enabler for discrete data.",
+      "convergence": "Theorem 1: average relative Fisher information between non-stationary mu_t and stationary pi_t over K prior steps <= 2KL(pi0||mu0)/(K t*) + 4 M eps / c + 2 M L t* / (c H). O(1/K) convergence + bounded score/discretization error."
+    },
+    "prior_model": {
+      "type": "SEDD (Score Entropy Discrete Diffusion, Lou et al. [29]) with UNIFORM transition kernel Qfw = (1/N) 11^T - I",
+      "size": "SEDD-small, ~90M params, used for ALL real-data experiments",
+      "note": "For the synthetic benchmark the prior is a CLOSED-FORM concrete score (discretized Gaussian) — NO trained weights needed. This is what makes the algorithm CPU-verifiable end-to-end against a known posterior."
+    },
+    "noise_schedule": "Geometric annealing eta_k = eta_min^{k/K} * eta_max^{1-k/K}, eta_min=1e-4, eta_max=20 (Sec C.3). Anneals large->0 to accelerate mixing (Sec B.1)."
+  },
+
+  "experiments": [
+    {
+      "name": "Synthetic (controlled posterior)",
+      "task_type": "inverse problem",
+      "setup": "Prior = discretized Gaussian N(0, sigma^2 I_D) on a D-dim grid, vocab N=50. Forward model G(x)=||f(x)||_1. TRUE posterior is computable, so accuracy is measurable exactly.",
+      "dims": "D = 2, 5, 10",
+      "hparams": {"K": 10, "MH_T": 10, "Euler_H": 20, "N": 50},
+      "metrics": ["Hellinger distance", "Total variation"],
+      "cpu_reproducible": true
+    },
+    {
+      "name": "Guided DNA enhancers (reward guidance)",
+      "task_type": "reward guidance",
+      "setup": "SEDD trained on Gosai et al. ~700k MPRA DNA seqs; reward oracle r(.) predicts HepG2 activity; p(y|x) ~ exp(beta r(x)). 640 samples.",
+      "dims": "D=200, N=4",
+      "hparams": {"K": 50, "MH_T": 200, "Euler_H": 20, "beta": [30, 50]},
+      "metrics": ["Pred-Activity median/avg", "ATAC-Acc %", "Log-likelihood"],
+      "cpu_reproducible": false,
+      "gated_on": "SEDD-90M DNA weights + two reward oracles + ATAC classifier"
+    },
+    {
+      "name": "MNIST XOR/AND inverse problem",
+      "task_type": "inverse problem",
+      "dims": "D=1024, N=2",
+      "hparams": {"K": [50, 100], "MH_T": [2000, 5000], "Euler_H": 20},
+      "metrics": ["PSNR", "classifier accuracy"],
+      "cpu_reproducible": false,
+      "gated_on": "SEDD MNIST-binary weights"
+    },
+    {
+      "name": "Monophonic music infilling",
+      "task_type": "inverse problem",
+      "dims": "D=256, N=129",
+      "hparams": {"K": 100, "MH_T": 5000, "Euler_H": 20},
+      "metrics": ["Hellinger", "Outliers"],
+      "cpu_reproducible": false,
+      "gated_on": "SEDD music weights"
+    }
+  ],
+
+  "headline_results": {
+    "synthetic_D2": {"SGDD": {"Hellinger": 0.149, "TV": 0.125}, "best_baseline_DPS": {"Hellinger": 0.182, "TV": 0.176}},
+    "synthetic_D5": {"SGDD": {"Hellinger": 0.214, "TV": 0.222}, "best_baseline_DPS": {"Hellinger": 0.345, "TV": 0.383}},
+    "synthetic_D10": {"SGDD": {"Hellinger": 0.334, "TV": 0.365}, "best_baseline_DPS": {"Hellinger": 0.410, "TV": 0.453}},
+    "dna_enhancer_pred_activity_median": {"SGDD_b50": 9.14, "SGDD_b30": 8.82, "DRAKES_woKL": 6.44, "SVDD_PM": 5.41, "note": "42% higher median than prior SOTA"},
+    "mnist_xor_psnr": {"SGDD": 20.17, "best_baseline_SVDD": 11.81},
+    "music_infill_hellinger_40pct": {"SGDD": 0.126, "SVDD_PM": 0.465}
+  },
+
+  "baselines": ["DPS [7] (discrete analogy)", "SVDD-PM [27]", "SMC [50]", "DRAKES [48]", "CG [32]", "TDS [50]", "FK-MAX [33]"],
+
+  "confidence_annotations": {
+    "algorithm": {"value": 0.95, "why": "Algorithm 1 + Eq 7-13 are fully specified in-text; potential D (Eq 10), prior-step identity (Eq 11-12), MH likelihood step (Eq 13), and geometric schedule (Sec C.3) all given explicitly. Public reference code exists."},
+    "synthetic_benchmark": {"value": 0.9, "why": "Discretized-Gaussian prior + G(x)=||f(x)||_1; true posterior computable. Exact hparams in Table 7 (K=10, T=10, H=20, N=50). Fully CPU-reproducible."},
+    "real_data_metrics": {"value": 0.6, "why": "DNA/MNIST/music all need the trained SEDD-90M priors + task-specific oracles/classifiers. Numbers taken verbatim from Tables 3-5; reproduction of these is weight-gated."}
+  }
+}

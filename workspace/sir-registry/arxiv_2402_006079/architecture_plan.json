@@ -1,0 +1,52 @@
+{
+  "paper_id": "arxiv_2402_006079",
+  "plan_version": 1,
+  "strategy": "DiscDiff has two separable contributions with very different reproduction cost. (1) Absorb-Escape is a DETERMINISTIC post-processing algorithm over per-position softmax coefficients — it needs NO trained weights and is the paper's most portable, reusable idea. We build it from scratch and verify it MECHANICALLY on CPU with synthetic confidence 'valleys' (Fig 4: TATT->TATA), proving it corrects low-confidence regions exactly as specified in Table 3. (2) The DiscDiff LDM (two-stage VAE + latent U-Net) is built structurally in PyTorch (CPU-instantiable, forward-pass testable on tiny configs) but its GENERATION metrics (S-FID 3.21/4.38) are gated on trained weights + the Sei model + EPD-GenDNA — documented and offered as a Colab run, mirroring the D3LM approach. This gives a real, verified core (Absorb-Escape) plus an honest, structurally-correct model whose heavy metrics are user-runnable.",
+
+  "what_we_build_from_scratch": [
+    "refine/absorb_escape.py — the Absorb-Escape algorithm (Table 3 conditions + Fig 4 scan/absorb/AR-generate/escape/replace loop). Operates on L(D, .) diffusion confidences and an autoregressive model M interface.",
+    "refine/conditions.py — absorb condition A(s_i)=L(D,s_i)<T_absorb and the four escape conditions (natural, threshold, random, max-length).",
+    "models/vae.py — two-stage VAE (CNN-VAE variant): stage-1 1D conv encoder/decoder (seq<->2D latent) + stage-2 conv (2D<->3D latent), CE recon + KL loss. Tiny-config instantiable on CPU.",
+    "models/unet.py — latent U-Net denoiser with ResNet blocks + time/species cross-attention; eps-prediction (Eq 2). Tiny-config forward pass on CPU.",
+    "models/ddpm.py — the DDPM noise schedule + eps-objective + latent sampling loop.",
+    "data/epd_gendna.py — EPD-GenDNA loader (HF Zehui127/*) with a loud synthetic fallback (like D3LM's), one-hot DNA tokenization.",
+    "evaluation/metrics.py — CorTATA (motif Pearson corr), diversity / Delta-Div, S-FID (gated on a Sei embedder, returns None otherwise), reconstruction accuracy."
+  ],
+
+  "what_we_verify_mechanically_cpu": [
+    "Absorb-Escape corrects a synthetic 'valley': a sequence whose diffusion confidence dips (T<T_absorb) over a wrong motif is repaired by a mock AR model that emits the correct motif -> output matches the intended sequence (Fig 4 TATT->TATA).",
+    "Absorb condition fires exactly when L(D,s_i) < T_absorb and nowhere else.",
+    "Natural escape stops exactly when L(D,s_j) > L(M,s_j) (diffusion re-confident).",
+    "No-valley case: when diffusion is confident everywhere, Absorb-Escape is a no-op (sequence unchanged).",
+    "VAE round-trip: tiny CNN-VAE encodes/decodes a batch on CPU, output shapes correct, CE loss finite, recon accuracy computable.",
+    "U-Net eps-prediction: tiny latent U-Net forward pass returns noise-shaped output; one DDPM denoise step runs on CPU.",
+    "CorTATA / diversity metrics behave (corr=1 for identical motif dists, Delta-Div=0 when gen matches natural)."
+  ],
+
+  "what_is_gated": {
+    "generation_metrics": "S-FID 3.21/4.38 and full CorTATA on 50k samples need trained DiscDiff weights + fine-tuned Hyena + the Sei model + EPD-GenDNA. Structure is built; numbers are Colab/weight-gated.",
+    "sei_sfid": "S-FID requires the Sei genomic CNN embedder (heavy), same gate as D3LM.",
+    "note": "Author code (github.com/Zehui127/Latent-DNA-Diffusion) + EPD-GenDNA (HF Zehui127/*) can supply weights/data; we reproduce Absorb-Escape independently and instantiate the LDM structurally."
+  },
+
+  "test_plan": {
+    "framework": "pytest, CPU",
+    "targets": [
+      "absorb fires iff L(D,s_i) < T_absorb",
+      "natural escape stops iff L(D) > L(M)",
+      "Absorb-Escape repairs a synthetic valley (TATT->TATA)",
+      "Absorb-Escape is a no-op on an all-confident sequence",
+      "two-stage VAE round-trip shapes + finite CE/KL on tiny config",
+      "latent U-Net eps forward + one DDPM step on tiny config",
+      "CorTATA=1 for identical motif dists; Delta-Div=0 when matched"
+    ]
+  },
+
+  "dependencies": {
+    "runtime": ["torch (cpu ok)", "numpy", "scipy", "pyyaml", "tqdm"],
+    "realdata": ["the Sei model for S-FID", "trained DiscDiff + Hyena weights", "datasets (HF EPD-GenDNA)"],
+    "note": "transformers only needed if loading Hyena for real Absorb-Escape; the algorithm itself is model-agnostic (any object exposing per-position max-softmax + a generate())."
+  },
+
+  "honesty_contract": "Absorb-Escape correctness is MEASURED on synthetic confidence profiles, not asserted. The LDM is built structurally and its forward pass verified, but its generation metrics (S-FID/CorTATA) are NOT reproduced without weights and are labeled gated. Table 5/6 numbers are cited as the paper's, never presented as our results."
+}
