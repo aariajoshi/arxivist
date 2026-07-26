@@ -1,0 +1,37 @@
+{
+  "paper_id": "arxiv_2506_02244",
+  "paper_title": "Physics-Guided Motion Loss for Video Generation Model",
+  "current_stage": 7,
+  "stages_completed": [
+    "stage_1_paper_parser",
+    "stage_2_sir_registry",
+    "stage_3_architecture_planner",
+    "stage_4_code_generator",
+    "stage_5_notebook_generator",
+    "stage_6_results_comparator"
+  ],
+  "sir_path": "sir-registry/arxiv_2506_02244/sir.json",
+  "repo_path": "paper-repos/arxiv_2506_02244/",
+  "artifacts": {
+    "sir": "sir-registry/arxiv_2506_02244/sir.json",
+    "architecture_plan": "sir-registry/arxiv_2506_02244/architecture_plan.json",
+    "repo_initialized": true,
+    "notebook_path": "paper-repos/arxiv_2506_02244/notebooks/",
+    "comparison_report": "paper-repos/arxiv_2506_02244/comparison/"
+  },
+  "confidence_flags": {
+    "architecture": 0.93,
+    "mathematical_spec": 0.96,
+    "tensor_semantics": 0.87,
+    "training_pipeline": 0.82,
+    "evaluation_protocol": 0.96,
+    "implementation_assumptions": 0.78,
+    "overall_sir_confidence": 0.89
+  },
+  "human_review_required": false,
+  "loop_count": 0,
+  "created_at": "2025-07-25T00:00:00Z",
+  "last_updated": "2025-07-25T00:00:00Z",
+  "halt_requested": false,
+  "halt_reason": "User requested HALT after Stage 2"
+}

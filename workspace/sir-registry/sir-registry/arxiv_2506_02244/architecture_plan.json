@@ -1,0 +1,608 @@
+{
+  "paper_id": "arxiv_2506_02244",
+  "plan_version": 1,
+  "created_at": "2025-07-25T00:00:00Z",
+
+  "framework_selection": {
+    "primary_framework": "PyTorch",
+    "version": ">=2.1.0",
+    "python_version": "3.10+",
+    "cuda_required": true,
+    "cuda_minimum": "11.8",
+    "cudnn_minimum": "8",
+    "huggingface_integration": true,
+    "reasoning": "Paper fine-tunes Open-Sora, MVDIT, and Hunyuan — all PyTorch-native diffusion models. LoRA adaptation uses PEFT (HuggingFace). Mixed precision BF16 requires PyTorch >=2.0. No JAX/TF mentions anywhere. torch.fft.fftn is the natural FFT backend. PEFT library needed for Hunyuan LoRA.",
+    "config_management": "OmegaConf + YAML (Hydra optional wrapper)"
+  },
+
+  "module_hierarchy": {
+    "project_name": "physics_motion_loss",
+    "root": "src/physics_motion_loss/",
+    "files": [
+      {
+        "path": "src/physics_motion_loss/__init__.py",
+        "purpose": "Package init; exports PhysicsMotionLoss as top-level symbol",
+        "classes": [],
+        "sir_mapping": "top-level entry point"
+      },
+      {
+        "path": "src/physics_motion_loss/spectral/fft_utils.py",
+        "purpose": "3D FFT computation, low-pass cube truncation, Hann windowing, polar resampling LUT",
+        "classes": [
+          {
+            "name": "SpectralProcessor",
+            "sir_mapping": "3D FFT Low-Pass Module",
+            "confidence": 0.97,
+            "public_methods": [
+              "compute_spectrum(video: Tensor[T,H,W]) -> Tensor[T,H,W] complex",
+              "apply_lowpass_cube(spectrum: Tensor, rho: float=0.3) -> Tensor",
+              "to_polar(spectrum: Tensor, Nr: int=20, M: int=24) -> Tensor[Nr,M,T]",
+              "to_log_radius(spectrum: Tensor, Nxi: int=24) -> Tensor[Nxi,T]",
+              "get_ring_energies(spectrum: Tensor, Nr: int=20) -> Tensor[Nr,T]"
+            ]
+          },
+          {
+            "name": "PolarLUT",
+            "sir_mapping": "Appendix A.6 polar interpolation LUT",
+            "confidence": 0.88,
+            "public_methods": [
+              "__init__(H: int, W: int, Nr: int, M: int) -> None  [precomputes bilinear LUT]",
+              "resample(spectrum: Tensor[H,W,T]) -> Tensor[Nr,M,T]"
+            ]
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/spectral/gates.py",
+        "purpose": "Energy gate and observability gate functions",
+        "classes": [
+          {
+            "name": "EnergyGate",
+            "sir_mapping": "Appendix A.6 observability and energy gates",
+            "confidence": 0.88,
+            "public_methods": [
+              "forward(E: Tensor, E_max: Tensor, tau_E: float=0.1, f: float=10.0) -> Tensor  [sigmoid gate]"
+            ]
+          },
+          {
+            "name": "ObservabilityGate",
+            "sir_mapping": "g_obs(m) = m²/(m²+λ)",
+            "confidence": 0.90,
+            "public_methods": [
+              "rotation_gate(m_indices: Tensor, lam: float=1.0) -> Tensor",
+              "scaling_gate(nu_indices: Tensor, lam: float=1.0) -> Tensor"
+            ]
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/losses/translation_loss.py",
+        "purpose": "Translational motion loss via energy-weighted ridge WLS plane fitting",
+        "classes": [
+          {
+            "name": "TranslationalMotionLoss",
+            "sir_mapping": "ℒ_trans (Section 3.4, App D.1)",
+            "confidence": 0.96,
+            "public_methods": [
+              "forward(spectrum_cube: Tensor) -> Tensor  [scalar loss]",
+              "_build_design_matrix(omega_x: Tensor, omega_y: Tensor, omega_t: Tensor) -> Tuple[Tensor, Tensor]",
+              "_ridge_wls(A: Tensor, b: Tensor, W: Tensor, lam: float) -> Tensor  [returns beta_hat]",
+              "_normalized_residual(A: Tensor, b: Tensor, W: Tensor, beta: Tensor) -> Tensor"
+            ]
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/losses/rotation_loss.py",
+        "purpose": "Rotational motion loss: angular DFT, angular velocity estimate, ring entropy + tilted-line ratio",
+        "classes": [
+          {
+            "name": "RotationalMotionLoss",
+            "sir_mapping": "ℒ_rot (Section 3.5, App D.2)",
+            "confidence": 0.94,
+            "public_methods": [
+              "forward(polar_spectrum: Tensor[Nr,M,T]) -> Tensor  [scalar loss]",
+              "_angular_dft(polar_spectrum: Tensor) -> Tensor[Nr,M,T]  [C_m(rho,t)]",
+              "_temporal_dft(C_m: Tensor) -> Tensor[Nr,M,T]  [C̃_m(rho,omega_t)]",
+              "_estimate_omega(C_m_tilde: Tensor) -> Tensor  [Ω* closed-form Eq A.7]",
+              "_tilted_line_ratio(C_m_tilde: Tensor, omega_star: Tensor, delta: float) -> Tensor  [C_rot]",
+              "_ring_concentration(ring_energies: Tensor[Nr,T]) -> Tensor  [C_ring via entropy]"
+            ]
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/losses/scaling_loss.py",
+        "purpose": "Scaling motion loss: radial gradient alignment + spectral centroid trend",
+        "classes": [
+          {
+            "name": "ScalingMotionLoss",
+            "sir_mapping": "ℒ_scale (Section 3.6)",
+            "confidence": 0.93,
+            "public_methods": [
+              "forward(ring_energies: Tensor[Nr,T]) -> Tensor  [scalar loss]",
+              "_radial_flow_alignment(ring_energies: Tensor) -> Tensor  [C_flow]",
+              "_centroid_trend(ring_energies: Tensor) -> Tensor  [S_trend via Pearson corr]",
+              "_radial_centroid(ring_energies: Tensor) -> Tensor[T]  [rho_c(t)]"
+            ],
+            "edge_case": "If T<3: return 0.5 for both C_flow and S_trend (per Section 3.6)"
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/losses/adaptive_composite.py",
+        "purpose": "Adaptive softmax weighting and composite motion loss assembly",
+        "classes": [
+          {
+            "name": "AdaptiveMotionLoss",
+            "sir_mapping": "ℒ_motion (Section 3.7)",
+            "confidence": 0.97,
+            "public_methods": [
+              "forward(L_trans: Tensor, L_rot: Tensor, L_scale: Tensor) -> Tensor  [scalar ℒ_motion]",
+              "_compute_weights(losses: Tensor[3], tau: float=0.1) -> Tensor[3]  [softmax over -L/τ]"
+            ]
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/losses/physics_motion_loss.py",
+        "purpose": "Top-level orchestrator — wraps all loss branches, manages spectral preprocessing pipeline",
+        "classes": [
+          {
+            "name": "PhysicsMotionLoss",
+            "sir_mapping": "Full pipeline (Figure 1)",
+            "confidence": 0.93,
+            "public_methods": [
+              "forward(x0_hat: Tensor[B,C,T,H,W]) -> Tensor  [scalar ℒ_motion, differentiable]",
+              "_preprocess_channel(video: Tensor[T,H,W]) -> Dict[str, Tensor]  [spectral features]"
+            ],
+            "notes": "Processes RGB channel-wise, sums energies per App A.1. Runs in FP32 regardless of backbone precision (autocast disabled inside forward)."
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/losses/flow_baseline.py",
+        "purpose": "Optional ℒ_flow baseline (RAFT-based warping loss for ablation comparison)",
+        "classes": [
+          {
+            "name": "FlowConsistencyLoss",
+            "sir_mapping": "ℒ_flow (Section 4.2 Eq 4.3)",
+            "confidence": 0.88,
+            "public_methods": [
+              "forward(frames: Tensor[B,T,C,H,W]) -> Tensor  [masked reprojection + smoothness]",
+              "_estimate_flow(frame_t: Tensor, frame_tp1: Tensor) -> Tuple[Tensor, Tensor]  [RAFT fwd+bwd]",
+              "_charbonnier(x: Tensor, eps: float=1e-3) -> Tensor"
+            ],
+            "notes": "RAFT used at inference only — no gradient through flow estimation. torchvision or separate RAFT checkpoint required."
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/training/trainer.py",
+        "purpose": "Fine-tuning loop with physics loss injection into diffusion training step",
+        "classes": [
+          {
+            "name": "PhysicsGuidedTrainer",
+            "sir_mapping": "Section 4.1 training pipeline",
+            "confidence": 0.82,
+            "public_methods": [
+              "train(config: DictConfig) -> None",
+              "_training_step(batch: Dict, step: int) -> Dict[str, Tensor]",
+              "_compute_x0_hat(noisy_x: Tensor, t: Tensor, model_output: Tensor) -> Tensor  [DDPM x0 reconstruction]",
+              "_total_loss(denoising_loss: Tensor, physics_loss: Tensor, weight: float) -> Tensor"
+            ],
+            "notes": "Physics loss computed at every diffusion timestep on x̂₀. LoRA path for Hunyuan handled via PEFT wrapper."
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/training/lora_wrapper.py",
+        "purpose": "LoRA/PEFT integration for Hunyuan backbone fine-tuning",
+        "classes": [
+          {
+            "name": "LoRAWrapper",
+            "sir_mapping": "Hunyuan LoRA adaptation (Section 4.2)",
+            "confidence": 0.88,
+            "public_methods": [
+              "wrap(model: nn.Module, target_modules: List[str], rank: int) -> PeftModel",
+              "freeze_non_lora(model: PeftModel) -> None"
+            ]
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/data/dataset.py",
+        "purpose": "OpenVID-1M dataset wrapper with motion complexity stratification",
+        "classes": [
+          {
+            "name": "OpenVIDDataset",
+            "sir_mapping": "Section 4.1 datasets",
+            "confidence": 0.85,
+            "public_methods": [
+              "__init__(root: str, split: str, T: int=16, motion_split: Optional[str]=None) -> None",
+              "__getitem__(idx: int) -> Dict[str, Tensor]",
+              "__len__() -> int"
+            ]
+          },
+          {
+            "name": "MotionComplexityFilter",
+            "sir_mapping": "Section 4.2 stratified evaluation (GPT-5 rubric)",
+            "confidence": 0.70,
+            "public_methods": [
+              "classify(prompt: str) -> Literal['simple', 'complex']  [LLM-based; needs API key]"
+            ],
+            "notes": "Confidence 0.70 — LLM rubric not fully specified. Implement as swappable classifier."
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/evaluation/metrics.py",
+        "purpose": "All EvalCrafter metrics: warping error, temporal consistency, action recognition, flow score",
+        "classes": [
+          {
+            "name": "EvalCrafterMetrics",
+            "sir_mapping": "Section 4.1 evaluation protocol",
+            "confidence": 0.96,
+            "public_methods": [
+              "warping_error(frames: Tensor[B,T,C,H,W]) -> Tensor",
+              "temporal_consistency(frames: Tensor) -> Tensor",
+              "clip_temporal_score(frames: Tensor) -> Tensor",
+              "compute_all(frames: Tensor, prompts: List[str]) -> Dict[str, float]"
+            ],
+            "notes": "VQA A/T, SD Score, Action Recognition, BLIP-BLEU defer to official EvalCrafter implementation. Wrap as subprocess calls."
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/utils/config.py",
+        "purpose": "Config dataclass and OmegaConf schema validation",
+        "classes": [
+          {
+            "name": "PhysicsLossConfig",
+            "public_methods": ["from_yaml(path: str) -> PhysicsLossConfig", "validate() -> None"]
+          }
+        ]
+      },
+      {
+        "path": "src/physics_motion_loss/utils/precision.py",
+        "purpose": "Mixed precision context manager — ensures spectral/solver blocks run in FP32",
+        "classes": [
+          {
+            "name": "FP32Context",
+            "sir_mapping": "Section 4.1 precision policy",
+            "public_methods": ["__enter__() -> None", "__exit__(...) -> None"]
+          }
+        ]
+      }
+    ]
+  },
+
+  "tensor_flow_specs": [
+    {
+      "name": "PhysicsMotionLoss.forward — full pipeline",
+      "pseudocode": [
+        "INPUT: x0_hat: [B, C=3, T, H, W]  float32",
+        "LOOP over channel c in {R,G,B}:",
+        "  video_c: [B, T, H, W] = x0_hat[:, c, :, :, :]",
+        "  LOOP over batch item b:",
+        "    v: [T, H, W]",
+        "    DISABLE autocast (force FP32)",
+        "    Apply Hann window h[t] to v along T axis",
+        "    spectrum: [T, H, W] complex = torch.fft.fftn(v, dim=(0,1,2))",
+        "    lowpass_cube: [⌊0.3T⌋, ⌊0.3H⌋, ⌊0.3W⌋] complex = spectrum[:rho_T, :rho_H, :rho_W]",
+        "    ── BRANCH 1: Translation ──",
+        "    Build omega_x, omega_y, omega_t grids from lowpass_cube shape",
+        "    weights_trans: [N] = EnergyGate(|lowpass_cube|²)",
+        "    L_trans: scalar = TranslationalMotionLoss(lowpass_cube, weights_trans)",
+        "    ── BRANCH 2: Rotation ──",
+        "    polar: [Nr=20, M=24, T_lp] complex = PolarLUT.resample(lowpass_cube)",
+        "    ring_E: [Nr, T_lp] = sum |polar|² over M axis",
+        "    C_m: [Nr, M, T_lp] complex = angular DFT of polar over M axis",
+        "    C_m_tilde: [Nr, M, T_lp] complex = temporal DFT of C_m over T_lp axis",
+        "    omega_star: scalar = closed-form Ω* (Eq A.7, m≠0)",
+        "    C_rot: scalar = tilted_line_ratio(C_m_tilde, omega_star, delta=1)",
+        "    C_ring: scalar = ring_concentration(ring_E, Nr=20)",
+        "    L_rot: scalar = 1 - (C_ring + C_rot)/2",
+        "    ── BRANCH 3: Scaling ──",
+        "    IF T_lp < 3: L_scale = 0.5 (early exit)",
+        "    ELSE:",
+        "      grad_rho: [Nr, T_lp] = ring_E[k+1,t] - ring_E[k,t]  (finite diff)",
+        "      grad_t:   [Nr, T_lp] = ring_E[k,t+1] - ring_E[k,t]",
+        "      C_flow: scalar = |dot(normalize(grad_rho), normalize(grad_t))|",
+        "      rho_c: [T_lp] = Σk k*Ek(t) / (Σk Ek(t) + eps_stab)",
+        "      S_trend: scalar = |pearson_corr(rho_c, arange(T_lp))|",
+        "      L_scale: scalar = 1 - (C_flow + S_trend)/2",
+        "    ── ADAPTIVE WEIGHTING ──",
+        "    losses: [3] = [L_trans, L_rot, L_scale]",
+        "    weights: [3] = softmax(-losses / tau=0.1)",
+        "    L_motion_item: scalar = dot(weights, losses)",
+        "  accumulate L_motion over batch and channels",
+        "OUTPUT: L_motion: scalar  (added to backbone denoising loss × weight=0.1)"
+      ]
+    },
+    {
+      "name": "RidgeWLS solver — TranslationalMotionLoss",
+      "pseudocode": [
+        "INPUT: A: [N, 3]  (rows: [omega_x_i, omega_y_i, 1])",
+        "       b: [N]     (-omega_t_i)",
+        "       W: [N, N]  diagonal weight matrix",
+        "       lam: float = 1e-3",
+        "M = A^T W A + lam * I_3         → [3, 3]",
+        "r = A^T W b                     → [3]",
+        "beta_hat = solve(M, r)           → [3]  [vx, vy, b0]",
+        "  fallback: pseudo-inverse if M is ill-conditioned",
+        "residuals = A @ beta_hat - b     → [N]",
+        "L_trans = (residuals^T W residuals) / tr(W)  → scalar",
+        "OUTPUT: L_trans: scalar"
+      ]
+    },
+    {
+      "name": "MotionComplexityFilter — stratified evaluation",
+      "pseudocode": [
+        "INPUT: prompt: str",
+        "rubric: 'simple' if dominant motion ≈ single rigid transform (translate/rotate/scale); else 'complex'",
+        "Send prompt + rubric to LLM API (GPT or local model)",
+        "Parse response → Literal['simple', 'complex']",
+        "OUTPUT: motion_class: str"
+      ]
+    }
+  ],
+
+  "config_schema": {
+    "yaml_template": {
+      "spectral": {
+        "low_pass_rho": 0.3,
+        "Nr_rings": 20,
+        "M_angular_bins": 24,
+        "Nxi_log_radius_bins": 24,
+        "delta_tolerance": 1,
+        "temporal_window": "hann",
+        "T_min_scaling": 3
+      },
+      "gates": {
+        "energy_threshold_tau_E": 0.1,
+        "energy_smoothing_f": 10.0,
+        "observability_lambda_rot": 1.0,
+        "observability_lambda_scale": 1.0
+      },
+      "losses": {
+        "softmax_temperature": 0.1,
+        "physics_loss_weight": 0.1,
+        "ridge_lambda": 1.0e-3,
+        "numeric_epsilon": 1.0e-8,
+        "epsilon_stab": 1.0e-8
+      },
+      "training": {
+        "learning_rate": 2.0e-5,
+        "lr_schedule": "cosine",
+        "epochs": 4,
+        "backbone": "open_sora",
+        "mixed_precision_backbone": "bf16",
+        "mixed_precision_spectral": "fp32"
+      },
+      "lora": {
+        "enabled": false,
+        "rank": 16,
+        "alpha": 32,
+        "target_modules": ["attn", "time_embed"],
+        "dropout": 0.1
+      },
+      "data": {
+        "dataset": "openvid1m",
+        "data_root": "data/openvid1m",
+        "T": 16,
+        "H": 256,
+        "W": 256,
+        "num_workers": 4
+      },
+      "hardware": {
+        "device": "cuda",
+        "num_gpus": 4,
+        "compile": false
+      },
+      "evaluation": {
+        "use_evalcrafter": true,
+        "evalcrafter_script": "scripts/run_evalcrafter.sh",
+        "flow_baseline_enabled": false
+      },
+      "comments": {
+        "optimizer": "# ASSUMED: AdamW — not stated in paper (confidence 0.65)",
+        "T_window": "# ASSUMED: T=16 (range 12-16 given; confidence 0.72)",
+        "lora_rank": "# ASSUMED: rank=16 (not specified; confidence < 0.6 — make swappable)",
+        "weight_schedule": "# ASSUMED: physics_loss_weight is constant (confidence 0.78)"
+      }
+    }
+  },
+
+  "dependencies": {
+    "requirements_txt": [
+      "torch>=2.1.0",
+      "torchvision>=0.16.0",
+      "torchaudio>=2.1.0",
+      "numpy>=1.24.0",
+      "einops>=0.7.0",
+      "omegaconf>=2.3.0",
+      "peft>=0.9.0",
+      "transformers>=4.38.0",
+      "diffusers>=0.27.0",
+      "accelerate>=0.27.0",
+      "scipy>=1.11.0",
+      "opencv-python>=4.8.0",
+      "pillow>=10.0.0",
+      "tqdm>=4.66.0",
+      "wandb>=0.16.0",
+      "clip @ git+https://github.com/openai/CLIP.git",
+      "open_clip_torch>=2.24.0"
+    ],
+    "requirements_dev_txt": [
+      "pytest>=7.4.0",
+      "pytest-cov>=4.1.0",
+      "black>=23.0.0",
+      "isort>=5.12.0",
+      "mypy>=1.5.0",
+      "ruff>=0.1.0",
+      "jupyter>=1.0.0",
+      "matplotlib>=3.7.0",
+      "seaborn>=0.12.0"
+    ],
+    "dependency_rationale": {
+      "torch": "Core framework; fftn, autocast, BF16 all require >=2.1",
+      "einops": "Clean tensor reshaping for polar/angular transforms",
+      "peft": "LoRA adapters for Hunyuan fine-tuning",
+      "diffusers": "Backbone model loading (Open-Sora, MVDIT, Hunyuan)",
+      "accelerate": "Multi-GPU training (4× A100 setup)",
+      "scipy": "Pearson correlation for S_trend; Hann window generation fallback",
+      "clip": "CLIP Temporal Score metric",
+      "open_clip_torch": "Alternative CLIP backend for evaluation"
+    }
+  },
+
+  "entrypoints": [
+    {
+      "file": "train.py",
+      "description": "Main fine-tuning entrypoint — physics loss + backbone denoising",
+      "cli_args": [
+        "--config  str  Path to config YAML  [required]",
+        "--backbone  str  {open_sora,mvdit,hunyuan}  [required]",
+        "--data_root  str  Path to OpenVID-1M root  [required]",
+        "--output_dir  str  Checkpoint output directory  [required]",
+        "--resume  str  Optional checkpoint to resume from",
+        "--use_lora  bool  Enable LoRA (for Hunyuan)  [default: False]",
+        "--lora_rank  int  LoRA rank  [default: 16]",
+        "--physics_weight  float  Loss mixing weight  [default: 0.1]",
+        "--epochs  int  Training epochs  [default: 4]",
+        "--lr  float  Learning rate  [default: 2e-5]",
+        "--num_gpus  int  [default: 4]",
+        "--wandb_project  str  Optional W&B project name"
+      ]
+    },
+    {
+      "file": "evaluate.py",
+      "description": "EvalCrafter evaluation on a checkpoint",
+      "cli_args": [
+        "--checkpoint  str  Path to trained model checkpoint  [required]",
+        "--backbone  str  {open_sora,mvdit,hunyuan}  [required]",
+        "--data_root  str  [required]",
+        "--output_dir  str  Where to write metric JSONs  [required]",
+        "--motion_split  str  {all,simple,complex}  [default: all]",
+        "--evalcrafter_root  str  Path to EvalCrafter repo"
+      ]
+    },
+    {
+      "file": "inference.py",
+      "description": "Single-prompt video generation",
+      "cli_args": [
+        "--checkpoint  str  [required]",
+        "--backbone  str  [required]",
+        "--prompt  str  Text prompt  [required]",
+        "--output_path  str  Output .mp4 path  [required]",
+        "--num_frames  int  [default: 16]",
+        "--height  int  [default: 256]",
+        "--width  int  [default: 256]",
+        "--seed  int  [default: 42]"
+      ]
+    },
+    {
+      "file": "scripts/ablation.py",
+      "description": "Ablation study runner — trains with each loss component removed",
+      "cli_args": [
+        "--config  str  [required]",
+        "--ablation_mode  str  {full,no_trans,no_rot,no_scale,flow_only}  [required]",
+        "--output_dir  str  [required]"
+      ]
+    },
+    {
+      "file": "scripts/visualize_spectrum.py",
+      "description": "Debugging tool — visualizes 3D FFT, polar resampling, ring energies for a video",
+      "cli_args": [
+        "--video  str  Path to input video  [required]",
+        "--output_dir  str  [required]",
+        "--show_branches  bool  [default: True]"
+      ]
+    }
+  ],
+
+  "docker_spec": {
+    "base_image": "pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime",
+    "system_deps": ["git", "ffmpeg", "libsm6", "libxext6", "wget", "unzip"],
+    "python_setup": [
+      "COPY requirements.txt .",
+      "RUN pip install --no-cache-dir -r requirements.txt",
+      "RUN pip install --no-cache-dir git+https://github.com/openai/CLIP.git"
+    ],
+    "workdir": "/workspace/physics_motion_loss",
+    "volume_mounts": ["/data", "/checkpoints", "/outputs"],
+    "default_cmd": "python train.py --config configs/default.yaml",
+    "env_vars": {
+      "PYTHONPATH": "/workspace",
+      "TORCH_CUDA_ARCH_LIST": "8.0",
+      "NCCL_DEBUG": "INFO"
+    }
+  },
+
+  "risk_assessment": [
+    {
+      "id": "R1",
+      "severity": "High",
+      "component": "LoRA rank and target modules for Hunyuan",
+      "description": "Paper does not specify LoRA rank, alpha, or exactly which linear layers are targeted. SIR confidence 0.65. Wrong rank significantly affects parameter count and convergence.",
+      "mitigation": "Design LoRAWrapper with fully configurable target_modules list and rank/alpha via config. Default to rank=16; provide ablation script to sweep {4,8,16,32}."
+    },
+    {
+      "id": "R2",
+      "severity": "High",
+      "component": "Optimizer identity",
+      "description": "Optimizer not named in paper (SIR confidence 0.65). AdamW assumed.",
+      "mitigation": "Make optimizer a config parameter with factory pattern. Mark in config YAML with # ASSUMED comment."
+    },
+    {
+      "id": "R3",
+      "severity": "Medium",
+      "component": "Polar resampling numerical accuracy",
+      "description": "Bilinear interpolation on irregular polar grid can introduce energy leakage εinterp. Paper bounds this theoretically but does not provide calibration data.",
+      "mitigation": "Implement synthetic validation: generate known SIM(2) motions, measure εinterp empirically, log in tests. Use precomputed LUT (PolarLUT class) for reproducibility."
+    },
+    {
+      "id": "R4",
+      "severity": "Medium",
+      "component": "Temporal window length T ambiguity",
+      "description": "T given as range 12–16 (SIR confidence 0.72). Different T changes spectral resolution and window leakage εwin.",
+      "mitigation": "Default T=16. Add --window_size CLI flag. Include sensitivity test in ablation script."
+    },
+    {
+      "id": "R5",
+      "severity": "Medium",
+      "component": "Gradient flow through adaptive weights",
+      "description": "Whether stop-gradient is applied to softmax weights is unspecified (SIR confidence 0.70). This changes optimization dynamics.",
+      "mitigation": "Default to fully differentiable (no stop-grad). Add --stop_grad_weights bool flag. Include in ablation."
+    },
+    {
+      "id": "R6",
+      "severity": "Medium",
+      "component": "Motion complexity stratification (GPT-5 rubric)",
+      "description": "The exact LLM prompt/rubric for simple vs complex split is not published. SIR confidence 0.70.",
+      "mitigation": "Design MotionComplexityFilter as abstract base class with LLM and rule-based subclasses. Provide simple keyword-matching fallback."
+    },
+    {
+      "id": "R7",
+      "severity": "Low",
+      "component": "EvalCrafter dependency",
+      "description": "VQA A/T, SD Score, Action Recognition, BLIP-BLEU all defer to EvalCrafter official implementation which requires separate installation.",
+      "mitigation": "Wrap EvalCrafter as optional subprocess dependency. Provide --skip_evalcrafter flag. Document installation in README."
+    },
+    {
+      "id": "R8",
+      "severity": "Low",
+      "component": "RAFT flow baseline",
+      "description": "Flow baseline requires RAFT checkpoint download and torchvision optical flow integration.",
+      "mitigation": "Keep FlowConsistencyLoss in separate optional module. Gate behind --flow_baseline_enabled flag."
+    },
+    {
+      "id": "R9",
+      "severity": "Low",
+      "component": "OpenVID-1M dataset access",
+      "description": "Large dataset (~1M videos). Download time and storage (~multi-TB) may be prohibitive.",
+      "mitigation": "Provide data/download_openvid.sh script. Support subset mode for rapid local testing (--max_samples N)."
+    }
+  ]
+}

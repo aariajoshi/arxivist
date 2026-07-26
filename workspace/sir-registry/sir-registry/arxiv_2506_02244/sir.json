@@ -1,0 +1,441 @@
+{
+  "paper_id": "arxiv_2506_02244",
+  "version": 1,
+  "provenance": {
+    "title": "Physics-Guided Motion Loss for Video Generation Model",
+    "authors": [
+      {"name": "Bowen Xue", "affiliation": "University of Manchester"},
+      {"name": "Giuseppe Claudio Guarnera", "affiliation": "University of York"},
+      {"name": "Shuang Zhao", "affiliation": "University of California, Irvine"},
+      {"name": "Zahra Montazeri", "affiliation": "University of Manchester"}
+    ],
+    "arxiv_id": "2506.02244",
+    "version_tag": "v2",
+    "last_revised": "2025-09-25",
+    "abstract": "Current video diffusion models generate visually compelling content but often violate basic laws of physics, producing subtle artifacts like rubber-sheet deformations and inconsistent object motion. We introduce a frequency-domain physics prior that improves motion plausibility without modifying model architectures.",
+    "domain": "CV",
+    "key_claims": [
+      "Frequency-domain physics prior improves motion plausibility without changing backbone architecture",
+      "Only 2.7% of spectral coefficients are needed while preserving 97%+ of spectral energy",
+      "Average ~11% relative improvement in motion accuracy and action recognition on OpenVID-1M",
+      "User studies show 74–83% preference for physics-enhanced videos",
+      "Reduces warping error by 22–37% depending on backbone"
+    ],
+    "parsed_at": "2025-07-25T00:00:00Z"
+  },
+
+  "architecture": {
+    "description": "Drop-in frequency-domain regularizer applied during diffusion training. No backbone modification. Plugs into standard denoising objective as an auxiliary loss on the reconstructed x̂₀.",
+    "components": [
+      {
+        "name": "3D FFT Low-Pass Module",
+        "type": "signal_processing",
+        "operation": "3D Discrete Fourier Transform followed by low-pass cube truncation (ϱ=0.3 per dimension)",
+        "input": "[T, H, W] video window (one channel; RGB handled channel-wise)",
+        "output": "Truncated spectral cube — only 2.7% of coefficients (low-frequency cube)",
+        "notes": "Separable: 2D spatial DFT per frame + 1D temporal DFT with optional Hann window. Retains 97–98.7% of spectral energy under natural video power-law (κ≈1.8).",
+        "confidence": 0.97
+      },
+      {
+        "name": "Translational Motion Loss (ℒ_trans)",
+        "type": "loss_function",
+        "operation": "Energy-weighted ridge WLS plane fitting in (ωx, ωy, ωt) space",
+        "input": "Spectral cube; design matrix rows Aᵢ = (ωx,i, ωy,i, 1), bᵢ = -ωt,i",
+        "output": "Scalar loss: normalized WLS residual from plane ωt + vx·ωx + vy·ωy + b₀ = 0",
+        "notes": "Velocity estimate β̂_tr via ridge-WLS (λ=1e-3). Loss = Σ Wᵢᵢ(Aᵢβ̂-bᵢ)² / Σ Wᵢᵢ",
+        "confidence": 0.96
+      },
+      {
+        "name": "Rotational Motion Loss (ℒ_rot)",
+        "type": "loss_function",
+        "operation": "Polar resampling → angular DFT → temporal DFT; ring concentration + tilted-line energy ratio",
+        "input": "Spectral cube resampled to polar (ρ, θ); angular harmonics Cₘ(ρ,t)",
+        "output": "Scalar loss: Lrot = 1 - (C_ring + C_rot)/2",
+        "sub_components": {
+          "angular_velocity_estimate": "Ω* = -Σ|C̃ₘ|²ωt·m / Σ|C̃ₘ|²·m²  (energy-weighted LS, m≠0)",
+          "tilted_line_ratio": "C_rot = E_line / E_all  where E_line sums |C̃ₘ|² within |ωt + mΩ*| ≤ Δ",
+          "ring_concentration": "C_ring = 1 - H̄_ring / log(Nr)  where H̄_ring is mean temporal entropy over Nr rings",
+          "tolerance": "Δ = 1 temporal-frequency bin"
+        },
+        "confidence": 0.94
+      },
+      {
+        "name": "Scaling Motion Loss (ℒ_scale)",
+        "type": "loss_function",
+        "operation": "Log-radius resampling of spatial frequency plane; radial-flow alignment + centroid trend",
+        "input": "Ring energies Ek(t) per concentric annulus in spatial-frequency plane",
+        "output": "Scalar loss: Lscale = 1 - (C_flow + S_trend)/2",
+        "sub_components": {
+          "flow_alignment": "C_flow = |Σ ∇̂ρE · ∇̂tE| — absolute dot product of normalized radial vs temporal energy gradients",
+          "centroid_trend": "S_trend = |corr(ρc, t)| — Pearson correlation of radial spectral centroid over time",
+          "radial_centroid": "ρc(t) = Σk k·Ek(t) / (Σk Ek(t) + ε_stab)"
+        },
+        "confidence": 0.93
+      },
+      {
+        "name": "Adaptive Weighting Module",
+        "type": "weighting",
+        "operation": "Softmax over negated individual losses with temperature τ",
+        "input": "Scalar losses {L_trans, L_rot, L_scale}",
+        "output": "Scalar composite loss ℒ_motion = Σ w_i · Lᵢ",
+        "formula": "w_i^type = exp(-Lᵢ/τ) / Σⱼ exp(-Lⱼ/τ);  τ = 0.1",
+        "notes": "Small τ → winner-takes-all; large τ → uniform mix. Grounded in maximum-entropy principle.",
+        "confidence": 0.97
+      },
+      {
+        "name": "Backbone Video Diffusion Model (frozen structure)",
+        "type": "pretrained_backbone",
+        "variants": ["Open-Sora", "MVDIT", "Hunyuan (LoRA)"],
+        "operation": "Standard denoising objective; ℒ_motion added as auxiliary loss computed on x̂₀",
+        "notes": "No architectural changes. For Hunyuan: LoRA adapters in attention + time-related linear layers; all other weights frozen.",
+        "confidence": 0.95
+      }
+    ],
+    "data_flow": [
+      "Video window V ∈ R^{T×H×W} → 3D FFT (with Hann window) → V̂(ωx,ωy,ωt)",
+      "V̂ → Low-pass cube truncation (ϱ=0.3) → reduced spectral cube",
+      "Cube → [ℒ_trans branch]: WLS plane fit in (ωx,ωy,ωt)",
+      "Cube → [ℒ_rot branch]: polar resample → angular DFT → temporal DFT → ring entropy + tilted-line ratio",
+      "Cube → [ℒ_scale branch]: ring energies → radial gradient alignment + centroid trend",
+      "{ℒ_trans, ℒ_rot, ℒ_scale} → Adaptive softmax weighting (τ=0.1) → ℒ_motion",
+      "ℒ_motion (weight 0.1) + standard denoising loss → total training objective"
+    ],
+    "confidence": 0.93,
+    "ambiguities": [
+      {
+        "location": "Section 3.7",
+        "description": "Physics-loss mixing weight stated as 0.1 (Table 5) but exact schedule not specified (constant vs annealed)",
+        "primary_assumption": "constant weight 0.1 throughout training",
+        "alternatives": ["cosine-annealed mixing weight"],
+        "confidence": 0.72
+      },
+      {
+        "location": "Sections 3.5, D.2",
+        "description": "Polar resampling resolution: Nr ∈ {16,20} rings, M ∈ {16,24} angular bins — range given, not single value",
+        "primary_assumption": "Nr=20, M=24 as listed in reproducibility checklist (App A.8)",
+        "alternatives": ["Nr=16, M=16"],
+        "confidence": 0.85
+      }
+    ]
+  },
+
+  "mathematical_spec": {
+    "unified_sim2_hyperplane": {
+      "latex": "\\omega_t + v_x \\omega_x + v_y \\omega_y + \\Omega m + \\alpha \\nu + b_0 = 0",
+      "role": "Theoretical foundation — ideal SIM(2) motion concentrates all spectral energy on this hyperplane in (ωx, ωy, m, ν, ωt)",
+      "parameters": {"vx_vy": "translation velocity", "Omega": "angular velocity of rotation", "alpha": "log-scale rate (α = σ̇)", "b0": "intercept absorbing windowing/phase"},
+      "confidence": 0.99
+    },
+    "translation_plane": {
+      "latex": "\\omega_t + v_x \\omega_x + v_y \\omega_y + b_0 = 0",
+      "role": "Spectral support of constant-velocity translational motion — slice of SIM(2) hyperplane",
+      "confidence": 0.99
+    },
+    "rotation_line": {
+      "latex": "\\omega_t + \\Omega m = 0",
+      "role": "Tilted lines in (m, ωt) plane — m-th angular harmonic acquires temporal tone mΩ",
+      "confidence": 0.99
+    },
+    "scaling_line": {
+      "latex": "\\omega_t + \\alpha \\nu = 0",
+      "role": "Tilted lines in (ν, ωt) plane after log-radius transform converts scaling to translation",
+      "confidence": 0.99
+    },
+    "translational_loss": {
+      "latex": "L_{\\text{trans}} = \\frac{\\sum_i W_{ii}(A_i \\hat{\\beta}_{tr} - b_i)^2}{\\sum_i W_{ii}}",
+      "estimator": "\\hat{\\beta}_{tr} = \\arg\\min_{\\beta} \\sum_i W_{ii}(A_i \\beta - b_i)^2 + \\lambda \\|\\beta\\|_2^2",
+      "role": "Training loss — normalized WLS plane-fitting residual",
+      "hyperparams": {"lambda_ridge": 1e-3, "epsilon_jitter": 1e-8},
+      "confidence": 0.97
+    },
+    "angular_velocity_estimate": {
+      "latex": "\\Omega^* = -\\frac{\\sum_{\\rho,m\\neq0,\\omega_t} |\\tilde{C}_m|^2 \\omega_t m}{\\sum_{\\rho,m\\neq0,\\omega_t} |\\tilde{C}_m|^2 m^2}",
+      "role": "Closed-form energy-weighted LS estimate of rotation rate",
+      "confidence": 0.97
+    },
+    "rotational_loss": {
+      "latex": "L_{\\text{rot}} = 1 - \\frac{C_{\\text{ring}} + C_{\\text{rot}}}{2}",
+      "components": {
+        "C_rot": "E_line / E_all  (tilted-line energy ratio in (m,ωt))",
+        "C_ring": "1 - H̄_ring / log(Nr)  (annular spectral concentration)"
+      },
+      "role": "Training loss for rotational motion",
+      "confidence": 0.96
+    },
+    "scaling_loss": {
+      "latex": "L_{\\text{scale}} = 1 - \\frac{C_{\\text{flow}} + S_{\\text{trend}}}{2}",
+      "components": {
+        "C_flow": "|Σ ∇̂ρE · ∇̂tE|  (absolute dot product of unit gradient fields)",
+        "S_trend": "|corr(ρc, t)|  (Pearson correlation of radial centroid over time)"
+      },
+      "role": "Training loss for scaling/zoom motion",
+      "confidence": 0.95
+    },
+    "adaptive_composite_loss": {
+      "latex": "\\mathcal{L}_{\\text{motion}} = \\sum_{i \\in M} w_i^{\\text{type}} \\cdot L_i, \\quad w_i = \\frac{\\exp(-L_i/\\tau)}{\\sum_j \\exp(-L_j/\\tau)}",
+      "role": "Final composite physics loss added to backbone denoising objective",
+      "hyperparams": {"tau": 0.1, "mixing_weight": 0.1},
+      "confidence": 0.97
+    },
+    "unified_wls_regression": {
+      "latex": "\\hat{\\theta} = \\arg\\min_\\theta \\sum_i w_i(\\phi_i \\theta - b_i)^2 + \\lambda \\|\\theta\\|_2^2",
+      "where": "φᵢ = [ωx, ωy, m, ν, 1], bᵢ = -ωt, θ = [vx, vy, Ω, α, b₀]ᵀ",
+      "role": "Gold-standard unified residual fitting — theoretical anchor for all three surrogate losses",
+      "confidence": 0.98
+    },
+    "retained_energy_fraction": {
+      "latex": "\\eta_{\\text{ball}}(\\varrho) = \\frac{(\\varrho R)^{3-2\\kappa} - \\varepsilon^{3-2\\kappa}}{R^{3-2\\kappa} - \\varepsilon^{3-2\\kappa}}",
+      "role": "Theoretical energy retention bound for low-pass truncation under power-law video spectra",
+      "hyperparams": {"kappa": 1.8, "rho": 0.3},
+      "confidence": 0.94
+    },
+    "energy_gate": {
+      "formula": "g_E = σ(f(E/E_max - τ_E))  with τ_E ∈ [0.1,0.2], f ∈ [6,10]",
+      "role": "Soft gate that down-weights low-energy spectral samples in WLS",
+      "confidence": 0.88
+    },
+    "observability_gate_rotation": {
+      "formula": "g_obs(m) = m²/(m²+λ)  with λ=1",
+      "role": "Down-weights near-zero angular harmonics where rotation is unobservable",
+      "confidence": 0.90
+    }
+  },
+
+  "tensor_semantics": {
+    "input_video": {
+      "name": "V",
+      "shape": "[T, H, W]",
+      "dtype": "float32 (BF16 for backbone; FP32 for spectral/solver blocks)",
+      "role": "input",
+      "notes": "Single channel; RGB processed channel-wise with energies summed"
+    },
+    "spatiotemporal_spectrum": {
+      "name": "V̂(ωx, ωy, ωt)",
+      "shape": "[T, H, W] in frequency domain (complex)",
+      "dtype": "complex float32",
+      "role": "intermediate"
+    },
+    "low_pass_cube": {
+      "name": "V̂_lp",
+      "shape": "[⌊0.3T⌋, ⌊0.3H⌋, ⌊0.3W⌋] complex",
+      "dtype": "complex float32",
+      "role": "intermediate",
+      "notes": "2.7% of original coefficients retained"
+    },
+    "angular_harmonics": {
+      "name": "Cₘ(ρ, t)",
+      "shape": "[Nr, M, T] complex",
+      "dtype": "complex float32",
+      "role": "intermediate",
+      "notes": "Nr=20 rings, M=24 angular bins"
+    },
+    "angular_temporal_spectrum": {
+      "name": "C̃ₘ(ρ, ωt)",
+      "shape": "[Nr, M, T] complex",
+      "dtype": "complex float32",
+      "role": "intermediate"
+    },
+    "ring_energies": {
+      "name": "Ek(t)",
+      "shape": "[Nr, T]",
+      "dtype": "float32",
+      "role": "intermediate"
+    },
+    "motion_losses": {
+      "name": "{L_trans, L_rot, L_scale}",
+      "shape": "scalar × 3",
+      "dtype": "float32",
+      "role": "output of loss branches"
+    },
+    "adaptive_weights": {
+      "name": "w_i",
+      "shape": "[3]",
+      "dtype": "float32",
+      "role": "intermediate"
+    },
+    "composite_loss": {
+      "name": "ℒ_motion",
+      "shape": "scalar",
+      "dtype": "float32",
+      "role": "output — added to backbone denoising loss"
+    }
+  },
+
+  "training_pipeline": {
+    "optimizer": "AdamW (implied; not explicitly stated — standard for diffusion fine-tuning)",
+    "optimizer_confidence": 0.65,
+    "learning_rate": 2e-5,
+    "lr_schedule": "cosine annealing",
+    "epochs": 4,
+    "hardware": "4× NVIDIA A100 GPUs",
+    "mixed_precision": "BF16 for backbone; FP32 for spectral blocks and WLS solvers (autocast disabled for loss computation)",
+    "physics_loss_weight": 0.1,
+    "physics_loss_applied_at": "Every diffusion timestep t on reconstructed x̂₀",
+    "ridge_lambda": 1e-3,
+    "numeric_epsilon": 1e-8,
+    "temporal_window": "Hann window, length T=12–16 frames",
+    "softmax_temperature": 0.1,
+    "hunyuan_adaptation": "LoRA (PEFT) — low-rank adapters in attention and time-related linear layers; identical LoRA placement, rank, and schedule for fair comparison",
+    "data_augmentation": "Not described",
+    "gradient_clipping": "Not specified",
+    "spectral_settings": {
+      "Nr_rings": 20,
+      "M_angular_bins": 24,
+      "Nxi_log_radius_bins": 24,
+      "delta_tolerance": "1 temporal-frequency bin",
+      "low_pass_rho": 0.3,
+      "energy_threshold_tau_E": 0.1,
+      "smoothing_factor_f": 10
+    },
+    "confidence": 0.82
+  },
+
+  "evaluation_protocol": {
+    "dataset": {
+      "name": "OpenVID-1M",
+      "description": "Large-scale open-domain video dataset with diverse motion patterns",
+      "splits": "Not explicitly detailed; evaluation follows EvalCrafter protocol"
+    },
+    "baseline_models": ["Open-Sora (Zheng et al., 2024)", "MVDIT (Nan et al., 2024)", "Hunyuan (Kong et al., 2025)"],
+    "ablation_baselines": ["w/o Translation Loss", "w/o Rotation Loss", "w/o Scaling Loss", "Flow-based consistency loss (ℒ_flow with RAFT)"],
+    "metrics": {
+      "visual_quality": ["VQA A ↑", "VQA T ↑", "SD Score ↑"],
+      "temporal_coherence": ["CLIP Temporal Score ↑", "Warping Error ↓", "Temporal Consistency ↑"],
+      "motion_quality": ["Action Recognition Score ↑", "Motion Accuracy Score ↑", "Flow Score ↑"],
+      "text_alignment": ["Text-Video Alignment ↑", "BLIP-BLEU ↑"]
+    },
+    "evaluation_framework": "EvalCrafter (Liu et al., 2023) — official implementation",
+    "user_study": {
+      "protocol": "2AFC (Two-Alternative Forced-Choice)",
+      "participants": 106,
+      "trials_per_participant": 15,
+      "randomization": "left-right position randomized to eliminate positional bias",
+      "questions": ["Visual quality + motion naturalness", "Text-video alignment"]
+    },
+    "primary_results": {
+      "Open-Sora": {
+        "Action_Recognition_Score": {"baseline": 60.77, "ours": 69.71, "delta": "+8.94"},
+        "Motion_Accuracy_Score": {"baseline": 44.0, "ours": 49.0, "delta": "+5.0"},
+        "Warping_Error": {"baseline": 0.0089, "ours": 0.0056, "delta": "-37%"},
+        "Text_Video_Alignment": {"baseline": 54.02, "ours": 61.05, "delta": "+7.03"}
+      },
+      "MVDIT": {
+        "Action_Recognition_Score": {"baseline": 62.34, "ours": 69.70, "delta": "+7.36"},
+        "Motion_Accuracy_Score": {"baseline": 44.0, "ours": 51.0, "delta": "+7.0"},
+        "Warping_Error": {"baseline": 0.0080, "ours": 0.0062, "delta": "-22%"},
+        "Flow_Score": {"baseline": 1.01, "ours": 1.22, "delta": "+21%"}
+      },
+      "Hunyuan_LoRA": {
+        "Action_Recognition_Score": {"baseline": 68.93, "ours": 73.15, "delta": "+4.22"},
+        "Motion_Accuracy_Score": {"baseline": 56.0, "ours": 59.0, "delta": "+3.0"},
+        "Warping_Error": {"baseline": 0.0024, "ours": 0.0016, "delta": "-33%"},
+        "Text_Video_Alignment": {"baseline": 59.60, "ours": 65.34, "delta": "+5.74"}
+      },
+      "user_study_preference": {
+        "Open-Sora": "79.4% (quality/motion), 74.2% (text alignment)",
+        "MVDIT": "82.7% (quality/motion), 77.9% (text alignment)"
+      }
+    },
+    "confidence": 0.96
+  },
+
+  "implementation_assumptions": [
+    {
+      "assumption": "Optimizer is AdamW with β1=0.9, β2=0.999, weight_decay=0.01",
+      "basis": "Standard for diffusion model fine-tuning; paper specifies lr=2e-5 and cosine schedule but not optimizer name",
+      "confidence": 0.65,
+      "alternatives": ["Adam without weight decay", "Lion optimizer"]
+    },
+    {
+      "assumption": "Physics loss weight 0.1 is constant throughout training (not annealed)",
+      "basis": "Table 5 lists 0.1 as a fixed value; no schedule mentioned",
+      "confidence": 0.78,
+      "alternatives": ["Linear warmup of physics weight", "Cosine annealing of mixing weight"]
+    },
+    {
+      "assumption": "Polar resampling LUT is precomputed once at initialization, not per batch",
+      "basis": "App A.6 states 'pre-compute a look-up table'; efficiency rationale",
+      "confidence": 0.88,
+      "alternatives": ["Per-batch bilinear interpolation without LUT caching"]
+    },
+    {
+      "assumption": "For very short windows (T<3), L_scale proxies default to 0.5 as stated",
+      "basis": "Explicitly stated in Section 3.6",
+      "confidence": 0.99,
+      "alternatives": []
+    },
+    {
+      "assumption": "m=0 excluded from angular harmonic sums for rotation (DC component excluded)",
+      "basis": "Explicitly stated in Section 3.5 and App D.2",
+      "confidence": 0.99,
+      "alternatives": []
+    },
+    {
+      "assumption": "Pseudo-inverse fallback used when WLS system is ill-conditioned",
+      "basis": "Stated in Section 3.1 implementation note",
+      "confidence": 0.95,
+      "alternatives": []
+    },
+    {
+      "assumption": "RGB channels processed independently with energies summed for spectral analysis",
+      "basis": "App A.1 states 'RGB is handled channel-wise with energies summed'",
+      "confidence": 0.99,
+      "alternatives": ["Luminance conversion", "Per-channel losses averaged"]
+    },
+    {
+      "assumption": "The flow-baseline (ℒ_flow) uses RAFT for optical flow at inference-only (not end-to-end)",
+      "basis": "Section 4.2: 'RAFT inference only' parenthetical",
+      "confidence": 0.95,
+      "alternatives": []
+    }
+  ],
+
+  "confidence_annotations": {
+    "architecture": 0.93,
+    "mathematical_spec": 0.96,
+    "tensor_semantics": 0.87,
+    "training_pipeline": 0.82,
+    "evaluation_protocol": 0.96,
+    "implementation_assumptions": 0.78,
+    "overall_sir_confidence": 0.89
+  },
+
+  "ambiguities": [
+    {
+      "location": "Section 4.1 / App A.6",
+      "description": "Nr, M, Nξ given as ranges {16,20} and {16,24}; reproducibility checklist pins them at 20/24/24",
+      "primary_assumption": "Nr=20, M=24, Nξ=24",
+      "alternatives": ["Nr=16, M=16, Nξ=16"],
+      "confidence": 0.85
+    },
+    {
+      "location": "Section 4.1",
+      "description": "Temporal window length T=12–16 not pinned to single value",
+      "primary_assumption": "T=16 (upper bound, more stable spectra)",
+      "alternatives": ["T=12"],
+      "confidence": 0.72
+    },
+    {
+      "location": "Section 3.4 / App A.6",
+      "description": "Energy gate threshold τ_E listed as range [0.1, 0.2]; smoothing factor f as range [6,10]",
+      "primary_assumption": "τ_E=0.10, f=10 per Table 5",
+      "alternatives": ["τ_E=0.15, f=8"],
+      "confidence": 0.90
+    },
+    {
+      "location": "Section 3.7",
+      "description": "Adaptive weighting uses softmax over negated losses, but whether gradient flows through adaptive weights into individual loss terms is unstated",
+      "primary_assumption": "Gradients flow through weights (fully differentiable end-to-end)",
+      "alternatives": ["Stop-gradient on weight computation"],
+      "confidence": 0.70
+    }
+  ],
+
+  "key_theoretical_insights": [
+    "SIM(2) spectral manifold: any similarity transform (translate + rotate + scale) concentrates all energy on ONE hyperplane ωt + vxωx + vyωy + Ωm + αν + b₀ = 0 in 5D frequency space",
+    "Log-radius coordinate change converts scaling from a dilation (hard to detect) to a translation (easy to detect as a tilted line in (ν,ωt))",
+    "Low-pass cube with ϱ=0.3 is sufficient: natural video spectra follow ~ω^(-3.6) power law, so >97% energy concentrates in lowest 2.7% of coefficients",
+    "Adaptive softmax weighting is maximum-entropy optimal: it automatically selects the dominant motion type without hard classification",
+    "All three losses upper-bound the gold-standard unified SIM(2) residual L_uni (proven via Cauchy-Schwarz and Chebyshev inequalities in Appendix B)"
+  ]
+}
