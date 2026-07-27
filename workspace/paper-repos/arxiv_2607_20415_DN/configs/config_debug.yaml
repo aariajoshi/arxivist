@@ -1,0 +1,38 @@
+model:
+  scheme: fcdf_b
+  zalesak_kappa: 2
+  picard_tol: 1.0e-12
+  picard_max_sweeps: 200
+  active_set_max_pattern_updates: 25
+
+training:
+  time_scheme: backward_euler
+  dt: 2.0e-3   # coarser than the main config for a fast debug run
+  dt_large: 5.0e-2
+  T_horizon: 0.05
+
+data:
+  benchmark: ou_process
+  ou:
+    alpha: 1.0
+    sigma: 1.0
+    x0: 0.5
+    v0: 1.0e-2
+    domain_std_devs: 6
+  front:
+    mu: 1.0
+    D: 1.0e-4
+    plateau_lo: 0.1
+    plateau_hi: 0.4
+  smooth_advection:
+    D_sweep: [1.0e-1, 1.0e-2]
+  mesh_sizes: [21, 41]
+
+evaluation:
+  metrics: [l1_error, observed_order, mass_defect, min_nodal_value, pattern_updates]
+  reference_tables: comparison/paper_reported_values.json
+
+hardware:
+  device: cpu
+  num_workers: 0
+  precision: float64

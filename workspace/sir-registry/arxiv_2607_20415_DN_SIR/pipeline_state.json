@@ -1,0 +1,59 @@
+{
+  "paper_id": "arxiv_2607_20415",
+  "paper_title": "Flux-Corrected Diagonal Frog: second order and positivity at all time steps",
+  "current_stage": 6,
+  "stages_completed": [1, 2, 3, 4, 5, 6],
+  "stage_timestamps": {
+    "1": "2026-07-25T16:03:58Z",
+    "2": "2026-07-25T16:07:00Z",
+    "3": "2026-07-26T11:15:00Z",
+    "4": "2026-07-26T12:20:00Z",
+    "5": "2026-07-26T12:37:00Z",
+    "6": "2026-07-26T12:40:00Z"
+  },
+  "stage_confidence": {
+    "1": 0.84,
+    "2": 1.0,
+    "3": 0.88,
+    "4": 0.82,
+    "5": 0.9,
+    "6": 0.71
+  },
+  "sir_path": "sir-registry/arxiv_2607_20415/sir.json",
+  "repo_path": "paper-repos/arxiv_2607_20415/",
+  "artifacts": {
+    "sir": "sir-registry/arxiv_2607_20415/sir.json",
+    "architecture_plan": "sir-registry/arxiv_2607_20415/architecture_plan.json",
+    "repo_initialized": true,
+    "notebook_path": "paper-repos/arxiv_2607_20415/notebooks/reproduce_arxiv_2607_20415.ipynb",
+    "comparison_report": "paper-repos/arxiv_2607_20415/comparison/benchmark_comparison.md"
+  },
+  "confidence_flags": {
+    "training_pipeline": 0.55,
+    "implementation_assumptions": 0.72,
+    "active_set_pattern_update_count_vs_paper": "flagged for manual review, see comparison/verification_log.md"
+  },
+  "human_review_required": true,
+  "human_review_reasons": [
+    "Active-set pattern-update count deviates from paper (3 vs 1) at n=201; likely mesh-size artifact, not re-verified at n=401",
+    "Unlimited-scheme undershoot magnitude on front benchmark deviates from paper (-0.123 vs -0.255); likely same mesh-size cause",
+    "Tables 4, 6, 9 not yet implemented in evaluate.py (scope/time, documented in README)"
+  ],
+  "loop_count": 2,
+  "retry_history": [
+    {
+      "stage": 4,
+      "issue": "FCDF-DC defect-flux sign error caught by test_fcdf_dc_second_order_beats_fcdf_b_on_smooth_ou_like_problem",
+      "resolution": "Fixed sign of G in schemes/fcdf_dc.py (verified against Lemma 1 algebraic identity); all 14 tests pass after fix"
+    },
+    {
+      "stage": 6,
+      "issue": "User requested verification (not assumption) of two flagged Stage 6 deviations before sharing externally. Found active-set solver performed a redundant confirmatory solve, inflating pattern_updates by +1 in every run. Also tested (and refuted) the 'mesh-size artifact' hypothesis for the unlimited-scheme undershoot magnitude via an explicit mesh sweep n=51..801.",
+      "resolution": "Fixed the redundant-solve bug in schemes/active_set.py, added regression test test_active_set_does_not_perform_redundant_confirmatory_solve (15/15 tests pass). Re-ran Tables 7/8 at n=401 (paper's stated mesh). Pattern-update count improved 3->2 (paper: 1, residual gap confirmed mesh-independent, root cause not fully identified). Unlimited-scheme undershoot magnitude remains unexplained (not a mesh artifact) -- honestly flagged as open in comparison/benchmark_comparison.md rather than resolved."
+    }
+  ],
+  "created_at": "2026-07-25T16:03:58Z",
+  "last_updated": "2026-07-26T13:20:00Z",
+  "pipeline_complete": true,
+  "orchestrator_note": "All 6 stages complete, revision 2. Reproducibility score 0.71 (unchanged numerically from revision 1, but two flagged deviations were actively investigated per user request rather than left as unverified hypotheses -- one improved via a confirmed second bug fix, the other's 'mesh artifact' explanation was tested and refuted). Repo is test-verified (15/15 passing) and notebook-verified (re-executed with zero errors after the fix) as of this revision -- suitable for external sharing with the two remaining open items clearly flagged in README.md and comparison/benchmark_comparison.md."
+}

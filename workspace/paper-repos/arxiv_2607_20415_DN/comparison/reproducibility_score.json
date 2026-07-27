@@ -1,0 +1,53 @@
+{
+  "paper_id": "arxiv_2607_20415",
+  "comparison_date": "2026-07-26T13:20:00Z",
+  "comparison_revision": 2,
+  "revision_note": "Revised after user-requested follow-up investigation of the two flagged deviations from revision 1. Found and fixed a second real bug (active-set redundant confirmatory solve). Tested and refuted the 'mesh-size artifact' hypothesis for the unlimited-scheme undershoot via an explicit mesh sweep (n=51..801). Numeric score unchanged (both items still exceed the 50% deviation cap even after improvement) but evidentiary basis is substantially stronger.",
+  "reproducibility_score": 0.71,
+  "score_confidence": "high",
+  "metrics_compared": 12,
+  "metrics_matched": 9,
+  "deviation_summary": {
+    "excellent": 6,
+    "good": 1,
+    "moderate": 1,
+    "significant": 1,
+    "critical": 2
+  },
+  "unmatched_count": 3,
+  "unmatched_metrics": [
+    "long_time_front_smearing_FCDF_B_order_T0.4 (Table 6)",
+    "active_set_pattern_updates_in_coverage_gap (Table 9)",
+    "FCDF_B_order_unresolved_front_finest (Section 6.3 front-order finest mesh)"
+  ],
+  "hallucination_count": {
+    "structural": 0,
+    "parametric": 3,
+    "omission": 3
+  },
+  "bugs_found_and_fixed_this_reproduction": [
+    {
+      "location": "src/fcdf_diagonal_frog/schemes/fcdf_dc.py",
+      "description": "Sign error in FCDF-DC defect-flux term made the 2nd-order-in-time scheme less accurate than the 1st-order FCDF-B baseline",
+      "found_by": "test_fcdf_dc_second_order_beats_fcdf_b_on_smooth_ou_like_problem",
+      "revision_found": 1
+    },
+    {
+      "location": "src/fcdf_diagonal_frog/schemes/active_set.py",
+      "description": "Redundant confirmatory solve after clamp pattern already stabilized, inflating reported pattern_updates count by +1 in every run",
+      "found_by": "manual investigation following user request to verify (not assume) the Table 8 discrepancy",
+      "revision_found": 2,
+      "regression_test_added": "test_active_set_does_not_perform_redundant_confirmatory_solve"
+    }
+  ],
+  "sir_version_used": 1,
+  "architecture_plan_version_used": 1,
+  "requires_manual_review": true,
+  "manual_review_reason": "Two Critical-severity deviations remain genuinely open after active investigation (not just hypothesized): (1) active-set pattern-update count (2 vs paper's 1), confirmed mesh-independent across n=101..801, root cause not yet localized beyond ruling out mesh size and one confirmed counting bug; (2) unlimited-scheme undershoot magnitude, confirmed NOT explained by mesh size via an explicit sweep, root cause unidentified. Both are honestly flagged as open questions requiring further investigation, not attributed to a specific resolved cause.",
+  "score_formula_inputs": {
+    "base_score": 0.7826,
+    "sir_confidence_penalty": 0.024,
+    "unmatched_penalty": 0.05,
+    "mean_sir_confidence_used": 0.84
+  }
+}
