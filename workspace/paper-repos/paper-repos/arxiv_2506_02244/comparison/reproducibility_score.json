@@ -1,0 +1,73 @@
+{
+  "paper_id": "arxiv_2506_02244",
+  "paper_title": "Physics-Guided Motion Loss for Video Generation Model",
+  "comparison_date": "2025-07-25T00:00:00Z",
+  "status": "pre_training_scaffold",
+  "user_results_submitted": false,
+  "reproducibility_score": null,
+  "score_confidence": null,
+  "theoretical_ceiling": 0.983,
+  "expected_score_if_correct": 0.895,
+  "score_formula": {
+    "description": "score = max(0, base - sir_penalty - unmatched_penalty)",
+    "sir_confidence_penalty": 0.017,
+    "mean_sir_confidence": 0.8867,
+    "note": "SIR penalty is fixed at 0.017 regardless of user results"
+  },
+  "metrics_compared": 0,
+  "metrics_available_in_sir": 12,
+  "metrics_matched": 0,
+  "deviation_summary": {
+    "excellent": 0,
+    "good": 0,
+    "moderate": 0,
+    "significant": 0,
+    "critical": 0
+  },
+  "hallucination_count": {
+    "structural": 3,
+    "parametric": 7,
+    "omission": 4,
+    "critical": 2,
+    "significant": 5,
+    "minor": 7
+  },
+  "critical_blockers": [
+    {
+      "id": "OH-1",
+      "description": "Backbone loaders (open_sora, mvdit, hunyuan) are stubs \u2014 NotImplementedError",
+      "blocks": "All training"
+    },
+    {
+      "id": "OH-2",
+      "description": "x\u0302\u2080 reconstruction from noise prediction not implemented",
+      "blocks": "Correct physics loss computation at every diffusion timestep"
+    }
+  ],
+  "high_risk_assumptions": [
+    {
+      "id": "PH-1",
+      "assumption": "AdamW optimizer",
+      "confidence": 0.65,
+      "severity": "Significant"
+    },
+    {
+      "id": "PH-2",
+      "assumption": "LoRA rank=16",
+      "confidence": 0.6,
+      "severity": "Significant"
+    },
+    {
+      "id": "PH-3",
+      "assumption": "Physics weight constant=0.1",
+      "confidence": 0.78,
+      "severity": "Significant"
+    }
+  ],
+  "sir_version_used": 1,
+  "sir_overall_confidence": 0.89,
+  "architecture_plan_version": 1,
+  "requires_manual_review": true,
+  "manual_review_reason": "Two critical omissions (OH-1, OH-2) must be resolved before training can begin. Review hallucination_report.md for implementation guidance.",
+  "next_action": "Implement backbone loaders and x\u0302\u2080 reconstruction, then submit experimental results to populate this score."
+}
