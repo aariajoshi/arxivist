@@ -1,0 +1,39 @@
+model:
+  scheme: fcdf_b   # options: fcdf_a, fcdf_b, fcdf_dc, active_set, monotone_core, unlimited, chang_cooper
+  zalesak_kappa: 2   # even budget split, SIR eq_zalesak_limiter (confidence 0.93)
+  picard_tol: 1.0e-12   # ASSUMED: not stated numerically in the paper (SIR confidence 0.5)
+  picard_max_sweeps: 200   # ASSUMED generous upper bound
+  active_set_max_pattern_updates: 25   # ASSUMED safeguard (Proposition 5 open nonsingularity question)
+
+training:
+  # No learned parameters exist in this paper. This section configures the time-marching loop.
+  time_scheme: backward_euler   # theta=1 for fcdf_a/fcdf_b/monotone_core/unlimited/chang_cooper; two_stage for fcdf_dc
+  dt: 2.0e-4        # small-step default, matches Tables 3/4/6
+  dt_large: 5.0e-2  # large-step default, matches Table 7
+  T_horizon: 0.2
+
+data:
+  benchmark: ou_process   # options: ou_process, smooth_advection_diffusion, front
+  ou:
+    alpha: 1.0
+    sigma: 1.0
+    x0: 0.5
+    v0: 1.0e-2
+    domain_std_devs: 6
+  front:
+    mu: 1.0
+    D: 1.0e-4
+    plateau_lo: 0.1
+    plateau_hi: 0.4
+  smooth_advection:
+    D_sweep: [1.0e-1, 1.0e-2, 1.0e-3, 3.0e-4]
+  mesh_sizes: [51, 101, 201, 401]
+
+evaluation:
+  metrics: [l1_error, observed_order, mass_defect, min_nodal_value, pattern_updates]
+  reference_tables: comparison/paper_reported_values.json
+
+hardware:
+  device: cpu
+  num_workers: 0
+  precision: float64

@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  fcdf:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ../results:/workspace/results
+      - ../configs:/workspace/configs
+    command: ["python", "evaluate.py", "--config", "configs/config.yaml", "--table", "all"]
