@@ -1,0 +1,31 @@
+{
+  "paper_id": "paper_attention-is-all-you-need",
+  "title": "Attention Is All You Need",
+  "authors": [
+      "Ashish Vaswani",
+      "Noam Shazeer",
+      "Niki Parmar",
+      "Jakob Uszkoreit",
+      "Llion Jones",
+      "Aidan N. Gomez",
+      "Łukasz Kaiser",
+      "Illia Polosukhin"
+  ],
+  "domain": "NLP",
+  "arxiv_id": null,
+  "version": 1,
+  "created_at": "2026-07-10T23:53:29+05:30",
+  "last_updated": "2026-07-10T23:53:29+05:30",
+  "sir_confidence": 0.90,
+  "stages_with_data": [1],
+  "has_comparison_report": true,
+  "repo_path": "paper-repos/paper_attention-is-all-you-need/",
+  "update_history": [
+    {
+      "version": 1,
+      "timestamp": "2026-07-10T23:53:29+05:30",
+      "reason": "initial commit",
+      "changed_sections": []
+    }
+  ]
+}

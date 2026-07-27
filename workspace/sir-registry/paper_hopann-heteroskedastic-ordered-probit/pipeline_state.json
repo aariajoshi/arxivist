@@ -1,0 +1,56 @@
+{
+  "paper_id": "paper_hopann-heteroskedastic-ordered-probit",
+  "paper_title": "Heteroskedastic Ordered Probit Models with an Artificial Neural Network",
+  "current_stage": 6,
+  "stages_completed": [
+    "01_paper_parser",
+    "02_sir_registry",
+    "03_architecture_planner",
+    "04_code_generator",
+    "05_notebook_generator",
+    "06_results_comparator"
+  ],
+  "sir_path": "sir-registry/sir.json",
+  "repo_path": "paper-repos/",
+  "artifacts": {
+    "sir": "sir-registry/sir.json",
+    "architecture_plan": "sir-registry/architecture_plan.json",
+    "architecture_plan_summary": "sir-registry/architecture_plan_summary.md",
+    "repo_initialized": true,
+    "repo_files": 35,
+    "notebook_path": "paper-repos/notebooks/reproduce_paper_hopann-heteroskedastic-ordered-probit.ipynb",
+    "comparison_report": "comparison/benchmark_comparison.md"
+  },
+  "confidence_flags": {
+    "architecture": 0.78,
+    "mathematical_spec": 0.91,
+    "tensor_semantics": 0.82,
+    "training_pipeline": 0.52,
+    "evaluation_protocol": 0.88,
+    "overall_sir_confidence": 0.76
+  },
+  "stage_4_notes": {
+    "sub_agent_failure": "Quota limit hit at step 0 — all 34 source files written by orchestrator directly",
+    "files_written_by_orchestrator": [
+      "train.py", "evaluate.py", "run_baselines.py", "run_experiments.py", "inference.py",
+      "setup.py", "requirements.txt", "requirements-dev.txt", "environment.yaml", "README.md",
+      "docker/Dockerfile", "docker/docker-compose.yml",
+      "data/README_data.md", "data/preprocess.py"
+    ],
+    "files_written_by_sub_agent": [
+      "configs/config.yaml",
+      "src/hopann/__init__.py",
+      "src/hopann/data/__init__.py", "src/hopann/data/dataset.py", "src/hopann/data/transforms.py",
+      "src/hopann/evaluation/__init__.py", "src/hopann/evaluation/metrics.py",
+      "src/hopann/models/__init__.py", "src/hopann/models/baselines.py",
+      "src/hopann/models/cutting_points.py", "src/hopann/models/hopann.py",
+      "src/hopann/models/mean_network.py", "src/hopann/models/opann.py", "src/hopann/models/variance_network.py",
+      "src/hopann/training/__init__.py", "src/hopann/training/losses.py", "src/hopann/training/trainer.py",
+      "src/hopann/utils/__init__.py", "src/hopann/utils/config.py", "src/hopann/utils/reproducibility.py"
+    ]
+  },
+  "human_review_required": false,
+  "loop_count": 0,
+  "created_at": "2026-07-16T09:07:58Z",
+  "last_updated": "2026-07-16T15:05:00Z"
+}
