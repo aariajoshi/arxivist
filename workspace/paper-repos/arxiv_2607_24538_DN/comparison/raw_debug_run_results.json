@@ -1,0 +1,33 @@
+{
+  "note": "Self-generated verification run (no external user upload) performed while building and smoke-testing this repo, on the synthetic stand-in scene, at --debug scale (image 24x24, ~4 training views, 15-20 base-NeRF steps, 8 edit/distillation steps per phase). NOT run on the real NEO-Dataset. See comparison/benchmark_comparison.md for full context.",
+  "run_1_edit_and_evaluate": {
+    "pipeline": "train.py --debug -> edit.py --debug (prompt='move the soup can', motion=0.4,0.0,0.3,0,0,0) -> evaluate.py --debug",
+    "edit_metadata": {
+      "edit_history_final_L_masked": 0.0035753240808844566,
+      "distill_phase1_final": 0.015630319714546204,
+      "distill_phase2_final": 0.13824087381362915,
+      "lang_update_final": 0.019665410742163658
+    },
+    "evaluate_aggregated": {
+      "depth_rmse_full": 1.0427,
+      "depth_rmse_in": 0.7853,
+      "depth_rmse_out": 0.6346,
+      "psnr_full": 14.9584,
+      "psnr_in": 10.4675,
+      "psnr_out": 13.9221,
+      "ssim_full": 0.4561,
+      "ssim_in": 0.2212,
+      "ssim_out": 0.0558
+    }
+  },
+  "run_2_ablation_table_iii": {
+    "pipeline": "run_ablation.py --debug --variants full wo_virtual_view_dist wo_grid_inp wo_mask_cond_train field_distill_only",
+    "results": {
+      "full":                  {"psnr_out": 11.824583145785912, "psnr_in": 10.73586586461538,  "ssim_out": 0.040464796125888824, "ssim_in": 0.29698462784290314, "depth_rmse_out": 1.1341493415022361, "depth_rmse_in": 1.2088593230713145},
+      "wo_virtual_view_dist":  {"psnr_out": 11.826750035123885, "psnr_in": 10.733693767182029, "ssim_out": 0.040342748165130615, "ssim_in": 0.2966722548007965,  "depth_rmse_out": 1.1485850227935066, "depth_rmse_in": 1.2442404646092984},
+      "wo_grid_inp":           {"psnr_out": 11.824583145785912, "psnr_in": 10.73586586461538,  "ssim_out": 0.040464796125888824, "ssim_in": 0.29698462784290314, "depth_rmse_out": 1.1341493415022361, "depth_rmse_in": 1.2088593230713145},
+      "wo_mask_cond_train":    {"psnr_out": 11.85416940052897,  "psnr_in": 10.76154815876155,  "ssim_out": 0.04045002907514572,  "ssim_in": 0.29738834500312805, "depth_rmse_out": 1.0306426802746609, "depth_rmse_in": 1.097182179892358},
+      "field_distill_only":    {"psnr_out": 11.818516627721777, "psnr_in": 10.724425715555599, "ssim_out": 0.04065747745335102,  "ssim_in": 0.29683977365493774, "depth_rmse_out": 1.175425699166497,  "depth_rmse_in": 1.2546251503484562}
+    }
+  }
+}

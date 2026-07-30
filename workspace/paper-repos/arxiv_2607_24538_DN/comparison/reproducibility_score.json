@@ -1,0 +1,42 @@
+{
+  "paper_id": "arxiv_2607_24538",
+  "comparison_date": "2026-07-29",
+  "reproducibility_score": 0.0,
+  "score_confidence": "high",
+  "score_confidence_rationale": "High confidence that 0.0 is the CORRECT formulaic output given zero (metric,dataset,split) matches -- not high confidence that the implementation is bad. See benchmark_comparison.md.",
+  "metrics_compared": 16,
+  "metrics_matched": 0,
+  "deviation_summary": {
+    "excellent": 0,
+    "good": 0,
+    "moderate": 0,
+    "significant": 0,
+    "critical": 0,
+    "unmatched": 16
+  },
+  "hallucination_count": {
+    "structural": 0,
+    "parametric": 7,
+    "omission": 3
+  },
+  "sir_version_used": 1,
+  "architecture_plan_version_used": 1,
+  "algorithmic_fidelity_checks": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "note": "Qualitative code-level checks that the paper's own equations/mechanisms behave as specified (see benchmark_comparison.md); these do NOT factor into reproducibility_score, which is strictly the metric-matching formula."
+  },
+  "score_formula_trace": {
+    "base_score": 0.0,
+    "matched_pairs": 0,
+    "sir_confidence_penalty": 0.0465,
+    "mean_sir_section_confidence": 0.69,
+    "unmatched_penalty": 0.2,
+    "unmatched_count": 16,
+    "total_paper_metrics": 16,
+    "computed_score": 0.0
+  },
+  "requires_manual_review": true,
+  "manual_review_reason": "Score is a direct consequence of dataset/pretrained-model unavailability (see benchmark_comparison.md), not a signal to distrust the code. A human should re-run this comparison once real NEO-Dataset + Stable Diffusion + CLIP/DINO access is available before drawing conclusions about implementation correctness."
+}
