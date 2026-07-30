@@ -1,0 +1,60 @@
+# NEO (arxiv_2607_24538) — full hyperparameter configuration.
+# Every value derived from paper text is unannotated. Every value the paper does NOT
+# state numerically is marked "# ASSUMED: <basis>" together with the SIR confidence
+# score for the section it belongs to (see sir-registry/arxiv_2607_24538/sir.json).
+
+seed: 0
+deterministic: false   # set true for bit-exact reproducibility; slows training (torch.use_deterministic_algorithms)
+
+model:
+  d_l: 64                      # ASSUMED: language-field feature dim reduced from typical CLIP 512/768 (SIR tensor_semantics confidence 0.55) for tractable CPU-only runs
+  posenc_num_freqs: 10          # standard NeRF (Mildenhall et al.) default; paper does not restate it
+  posenc_include_input: true
+  mlp_hidden_dim: 128           # ASSUMED: backbone width never specified (SIR architecture confidence 0.72 overall, this specific value ~0.5)
+  mlp_num_layers: 6             # ASSUMED: backbone depth never specified
+  mlp_skip_layers: [3]          # standard NeRF skip-connection convention
+  backbone_type: "mlp_positional_encoding"  # ASSUMED substitute for a possible Instant-NGP hash-grid backbone (ambiguity #1 in SIR)
+
+training:
+  optimizer: "adam"             # ASSUMED: paper states no optimizer anywhere (SIR training_pipeline confidence 0.45)
+  learning_rate: 5.0e-4         # ASSUMED: standard NeRF-scale default
+  beta1: 0.9                    # ASSUMED
+  beta2: 0.999                  # ASSUMED
+  weight_decay: 0.0             # ASSUMED
+  batch_size_rays: 1024         # ASSUMED: standard NeRF ray-batch default
+  n_samples_uniform: 64         # ASSUMED (ambiguity #6): first-stage uniform sample count
+  n_samples_hierarchical: 128   # ASSUMED (ambiguity #6): second-stage PDF resample count
+  n_steps_base_nerf: 800        # ASSUMED, reduced for CPU-only synthetic demo; paper gives no step count
+  n_steps_edit_stage: 300       # ASSUMED (mask-conditioned F~_Theta training, Sec II-B)
+  n_steps_distill_phase1: 200   # ASSUMED (Sec II-C phase 1: field-level distillation)
+  n_steps_distill_phase2: 200   # ASSUMED (Sec II-C phase 2: image-level distillation)
+  n_steps_lang_field_update: 50 # paper says "converges in a small number of iterations" (Sec II-D) — 50 is a concrete stand-in
+  lambda_rec: 1.0               # ASSUMED: numeric weight for L_rec in L_masked never given (SIR ambiguity #3)
+  lambda_reg: 1.0               # ASSUMED: numeric weight for L_reg in L_masked never given (SIR ambiguity #3)
+  reinpaint_interval_n: 100     # ASSUMED: symbol "n" in Sec II-B iterative inpainting never assigned a value (SIR ambiguity #4)
+  xi_start: 1.0                 # inpainting strength factor, initial value (paper: "reduce ... after each inpainting iteration")
+  xi_end: 0.2                   # ASSUMED floor value
+  xi_decay: "linear"            # ASSUMED: decay schedule shape never specified
+  grad_clip_norm: null          # not mentioned in paper; left disabled
+
+data:
+  dataset: "synthetic_toy_scene"   # SUBSTITUTE: real NEO-Dataset (12 tabletop scenes) is unreleased / unreachable in this sandbox
+  image_h: 128                     # reduced from likely paper resolution for CPU tractability
+  image_w: 128
+  n_train_views: 40                # ASSUMED: paper describes "automated capture procedure" with a fixed trajectory, no view count given
+  n_virtual_views: 12               # ASSUMED: 4 azimuths x 3 elevations (SIR ambiguity #2)
+  near: 2.0
+  far: 8.0
+
+evaluation:
+  metrics: ["psnr", "ssim", "depth_rmse", "reprojection_error"]
+  regions: ["full", "out", "in"]
+
+hardware:
+  device: "auto"     # "auto" -> cuda if torch.cuda.is_available() else cpu
+  precision: "float32"
+  num_workers: 0
+
+logging:
+  log_every_n_steps: 50
+  checkpoint_every_n_steps: 200

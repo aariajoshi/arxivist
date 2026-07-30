@@ -1,0 +1,19 @@
+{
+  "index_version": 1,
+  "total_papers": 1,
+  "papers": [
+    {
+      "paper_id": "arxiv_2607_24538",
+      "title": "NEO: NeRF It Once, Edit It Many Times for Continuous Object Manipulation",
+      "domain": "Multimodal",
+      "sir_version": 1,
+      "sir_confidence": 0.69,
+      "has_repo": true,
+      "has_notebook": true,
+      "has_comparison": true,
+      "reproducibility_score": 0.0,
+      "last_updated": "2026-07-29T09:20:00Z"
+    }
+  ]
+}
+
