@@ -1,0 +1,471 @@
+{
+  "paper_id": "arxiv_2607_24538",
+  "plan_version": 1,
+  "created_at": "2026-07-28T15:20:00Z",
+  "framework": {
+    "primary": "pytorch",
+    "python_version": "3.10+",
+    "cuda_required": false,
+    "cuda_min_version": null,
+    "use_huggingface": false,
+    "config_library": "yaml",
+    "reasoning": "PyTorch is the de-facto standard for NeRF/diffusion-adjacent research (default per planning rules since the paper never names a framework). CUDA is marked optional/not required because this environment has no GPU and no access to Stable Diffusion / CLIP / DINO checkpoint hosts (not on the egress allowlist); the repo runs CPU-only against a synthetic toy scene by default but is written to transparently accelerate on CUDA if available. HuggingFace integration is intentionally NOT wired in as a hard dependency because the real inpainting/language-field models it would pull in are unreachable in this sandbox -- see risk_assessment. YAML is sufficient given the modest config surface; Hydra/OmegaConf would be overkill for a single-paper repro."
+  },
+  "module_hierarchy": [
+    {
+      "path": "src/neo_nerf_editing/models/nerf_field.py",
+      "description": "Base joint scene+language NeRF F_Theta: small coordinate MLP with positional encoding mapping (x,y,z,view_dir) to (density, RGB, language_feature).",
+      "sir_modules_mapped": ["F_Theta (base joint scene+language NeRF)"],
+      "classes": [
+        {
+          "name": "PositionalEncoding",
+          "base_class": "torch.nn.Module",
+          "public_methods": [
+            {"name": "forward", "signature": "forward(self, x: Tensor) -> Tensor", "returns": "[..., D_encoded]"}
+          ]
+        },
+        {
+          "name": "JointNeRFField",
+          "base_class": "torch.nn.Module",
+          "public_methods": [
+            {"name": "forward", "signature": "forward(self, points: Tensor, view_dirs: Tensor) -> Dict[str, Tensor]", "returns": "{'density': [...,1], 'rgb': [...,3], 'lang_feat': [...,d_l]}"},
+            {"name": "query_density_only", "signature": "query_density_only(self, points: Tensor) -> Tensor", "returns": "[...,1]"}
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/neo_nerf_editing/models/language_field.py",
+      "description": "Grounds a text prompt in the language field via cosine similarity over surface points, clusters high-relevance points, and fits an oriented bounding box b=(c, theta).",
+      "sir_modules_mapped": ["Language field grounding / bounding-box retrieval"],
+      "classes": [
+        {
+          "name": "LanguageGrounder",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "embed_prompt", "signature": "embed_prompt(self, prompt: str) -> Tensor", "returns": "[d_l]"},
+            {"name": "localize", "signature": "localize(self, surface_points: Tensor, surface_lang_feats: Tensor, prompt_embed: Tensor, top_k: float = 0.05) -> OrientedBox", "returns": "OrientedBox(center=[3], yaw=float, extents=[3])"}
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/neo_nerf_editing/models/object_removal.py",
+      "description": "Neural field resampling for object removal: excludes ray-bbox intersection segments from sampling, concatenates remaining ray intervals, draws uniform + PDF-based hierarchical resamples that never fall inside b.",
+      "sir_modules_mapped": ["Neural Field Resampling (Object Removal)"],
+      "classes": [
+        {
+          "name": "RayBoxExcluder",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "intersect", "signature": "intersect(self, rays_o: Tensor, rays_d: Tensor, box: OrientedBox) -> Tensor", "returns": "[N_rays, 2] near/far intersection distances or NaN if no hit"},
+            {"name": "build_exclusion_intervals", "signature": "build_exclusion_intervals(self, near: Tensor, far: Tensor, box_hits: Tensor) -> List[Tensor]", "returns": "per-ray list of valid (non-excluded) t-intervals"}
+          ]
+        },
+        {
+          "name": "TwoStageResampler",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "uniform_resample", "signature": "uniform_resample(self, intervals: List[Tensor], n_uniform: int) -> Tensor", "returns": "[N_rays, n_uniform] t-values"},
+            {"name": "hierarchical_resample", "signature": "hierarchical_resample(self, intervals: List[Tensor], weights: Tensor, n_hierarchical: int) -> Tensor", "returns": "[N_rays, n_hierarchical] t-values, none inside box"}
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/neo_nerf_editing/models/inpainting.py",
+      "description": "Multiview-consistent progressive inpainting: augments training views with a virtual hemisphere around the bbox, tiles 4 views into a 2x2 composite, and calls a pluggable inpainting backend (Stable-Diffusion-compatible interface) to complete masked regions. Ships with a lightweight local heuristic backend (Navier-Stokes / patch-based fill via OpenCV) as the default since the real Stable Diffusion checkpoint is unreachable in this sandbox; the interface is designed so swapping in `diffusers.StableDiffusionInpaintPipeline` is a one-line change.",
+      "sir_modules_mapped": ["Multiview-Consistent Progressive Inpainting"],
+      "classes": [
+        {
+          "name": "VirtualHemisphereSampler",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "sample_views", "signature": "sample_views(self, box: OrientedBox, n_azimuths: int = 4, n_elevations: int = 3) -> List[Camera]", "returns": "list of virtual camera poses on the hemisphere spiral"}
+          ]
+        },
+        {
+          "name": "InpaintingBackend",
+          "base_class": "abc.ABC",
+          "public_methods": [
+            {"name": "inpaint", "signature": "inpaint(self, composite_rgb: Tensor, composite_mask: Tensor, strength: float) -> Tensor", "returns": "[H,W,3] inpainted composite"}
+          ]
+        },
+        {
+          "name": "HeuristicInpaintingBackend",
+          "base_class": "InpaintingBackend",
+          "public_methods": [
+            {"name": "inpaint", "signature": "inpaint(self, composite_rgb: Tensor, composite_mask: Tensor, strength: float) -> Tensor", "returns": "[H,W,3] inpainted composite (OpenCV Telea/NS fallback, ASSUMED substitute for Stable Diffusion)"}
+          ]
+        },
+        {
+          "name": "ProgressiveInpaintingLoop",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "run", "signature": "run(self, edited_nerf, virtual_views, backend: InpaintingBackend, n_iterations: int, xi_schedule: Callable[[int], float]) -> Dict[str, Tensor]", "returns": "refined (I_v, M_v) dataset for mask-conditioned training"}
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/neo_nerf_editing/training/losses.py",
+      "description": "All loss functions from the SIR mathematical_spec: mask-conditioned reconstruction (Eq.3), density regularization (Eq.4-5), combined masked objective, and two-phase distillation loss (Eq.6).",
+      "sir_modules_mapped": ["Mask-conditioned NeRF F~_Theta (edited/removed-object NeRF)", "Density Regularization (anti-reappearance)", "Object Reconfiguration / Knowledge Distillation (teacher-student)"],
+      "classes": [
+        {
+          "name": "MaskedReconstructionLoss",
+          "base_class": "torch.nn.Module",
+          "public_methods": [
+            {"name": "forward", "signature": "forward(self, rendered: Tensor, target: Tensor, mask: Tensor) -> Tensor", "returns": "scalar L_rec"}
+          ]
+        },
+        {
+          "name": "DensityRegularizationLoss",
+          "base_class": "torch.nn.Module",
+          "public_methods": [
+            {"name": "forward", "signature": "forward(self, sigma: Tensor, points: Tensor, box: OrientedBox) -> Tensor", "returns": "scalar L_reg"}
+          ]
+        },
+        {
+          "name": "MaskedTrainingObjective",
+          "base_class": "torch.nn.Module",
+          "public_methods": [
+            {"name": "forward", "signature": "forward(self, rendered, target, mask, sigma, points, box, lambda_rec: float, lambda_reg: float) -> Tensor", "returns": "scalar L_masked"}
+          ]
+        },
+        {
+          "name": "TeacherStudentDistillationLoss",
+          "base_class": "torch.nn.Module",
+          "public_methods": [
+            {"name": "forward_field", "signature": "forward_field(self, sigma_t, sigma_s, color_t, color_s) -> Tensor", "returns": "scalar phase-1 field-level distillation term"},
+            {"name": "forward_image", "signature": "forward_image(self, rgb_t, rgb_s, depth_t, depth_s) -> Tensor", "returns": "scalar phase-2 image-level distillation term"}
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/neo_nerf_editing/training/pipeline.py",
+      "description": "Orchestrates the full editable-NEO pipeline described in Sec. II-C to II-E: region-wise composition of teacher fields, student distillation, language field update, and the 'editing many times' loop that feeds (S',L') back as (S,L).",
+      "sir_modules_mapped": ["Object Reconfiguration / Knowledge Distillation (teacher-student)", "Language Field Update", "Editable NEO Model Orchestrator (Editing Many Times)"],
+      "classes": [
+        {
+          "name": "RegionCompositor",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "compose", "signature": "compose(self, points: Tensor, teacher_full, teacher_edited, box: OrientedBox, motion: Tensor) -> Dict[str, Tensor]", "returns": "region-wise target field S' supervision tensors"}
+          ]
+        },
+        {
+          "name": "StudentDistiller",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "distill", "signature": "distill(self, student, region_compositor, virtual_views, n_steps_phase1: int, n_steps_phase2: int) -> None", "returns": "None (student trained in place)"}
+          ]
+        },
+        {
+          "name": "LanguageFieldUpdater",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "update", "signature": "update(self, edited_nerf, original_poses: Tensor, n_iterations: int) -> None", "returns": "None (language field trained in place using CLIP/DINO-substitute supervision)"}
+          ]
+        },
+        {
+          "name": "NEOEditPipeline",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "edit", "signature": "edit(self, scene_and_lang_field, prompt: str, motion: Tensor) -> Tuple", "returns": "(S', L') -- reusable as input to the next edit call"},
+            {"name": "edit_many", "signature": "edit_many(self, scene_and_lang_field, prompts: List[str], motions: List[Tensor]) -> List[Tuple]", "returns": "list of intermediate (S_i, L_i) states, one per edit"}
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/neo_nerf_editing/training/trainer.py",
+      "description": "Base NeRF training loop (volumetric rendering, ray batching, optimizer step) used to train F_Theta from scratch on a scan, and to train F~_Theta during Stage II-B.",
+      "sir_modules_mapped": ["F_Theta (base joint scene+language NeRF)", "Mask-conditioned NeRF F~_Theta (edited/removed-object NeRF)"],
+      "classes": [
+        {
+          "name": "VolumetricRenderer",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "render_rays", "signature": "render_rays(self, field, rays_o: Tensor, rays_d: Tensor, t_samples: Tensor) -> Dict[str, Tensor]", "returns": "{'rgb':[N,3], 'depth':[N], 'weights':[N,S]}"}
+          ]
+        },
+        {
+          "name": "NeRFTrainer",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "fit", "signature": "fit(self, field, dataset, n_steps: int, lr: float) -> Dict[str, List[float]]", "returns": "training history (losses per step)"}
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/neo_nerf_editing/data/synthetic_scene.py",
+      "description": "Procedural toy tabletop-scene generator and camera-pose sampler standing in for the (unreleased) NEO-Dataset and YCB-sourced objects; produces multi-view RGB-D renders + poses for a pre-edit and post-edit (removed/relocated object) scene pair, mirroring the ArUco-registered before/after protocol described in Sec. III.",
+      "sir_modules_mapped": [],
+      "classes": [
+        {
+          "name": "ToySceneGenerator",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "generate_scene", "signature": "generate_scene(self, seed: int, objects: List[str]) -> ToyScene", "returns": "ToyScene(objects, table, ground_truth_boxes)"},
+            {"name": "render_views", "signature": "render_views(self, scene: ToyScene, camera_trajectory: List[Camera]) -> Dict[str, Tensor]", "returns": "{'images':[N,H,W,3], 'depths':[N,H,W], 'poses':[N,4,4]}"},
+            {"name": "apply_manipulation", "signature": "apply_manipulation(self, scene: ToyScene, object_name: str, motion: Tensor, remove_only: bool = False) -> ToyScene", "returns": "post-edit ToyScene for ground-truth comparison"}
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/neo_nerf_editing/data/rays.py",
+      "description": "Camera/ray utility functions: pinhole ray generation, pose sampling on spheres/hemispheres, batching.",
+      "sir_modules_mapped": [],
+      "classes": [
+        {
+          "name": "RayGenerator",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "rays_from_camera", "signature": "rays_from_camera(self, camera: Camera, H: int, W: int) -> Tuple[Tensor, Tensor]", "returns": "(rays_o [H*W,3], rays_d [H*W,3])"}
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/neo_nerf_editing/evaluation/metrics.py",
+      "description": "Standard NeRF quality + geometry metrics from Sec. IV: PSNR, SSIM, depth RMSE, photometric reprojection error E_rep; computed over both full-image and masked (Out/In) regions.",
+      "sir_modules_mapped": [],
+      "classes": [
+        {
+          "name": "NeRFEvalMetrics",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "psnr", "signature": "psnr(self, pred: Tensor, target: Tensor, mask: Optional[Tensor] = None) -> float", "returns": "PSNR in dB"},
+            {"name": "ssim", "signature": "ssim(self, pred: Tensor, target: Tensor, mask: Optional[Tensor] = None) -> float", "returns": "SSIM [-1,1]"},
+            {"name": "depth_rmse", "signature": "depth_rmse(self, pred_depth: Tensor, target_depth: Tensor, mask: Optional[Tensor] = None) -> float", "returns": "RMSE in meters"},
+            {"name": "reprojection_error", "signature": "reprojection_error(self, pred_points: Tensor, target_points: Tensor, poses: Tensor) -> float", "returns": "E_rep"}
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/neo_nerf_editing/utils/config.py",
+      "description": "YAML config loading/validation and dataclass-based typed config objects.",
+      "sir_modules_mapped": [],
+      "classes": [
+        {
+          "name": "NEOConfig",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "from_yaml", "signature": "from_yaml(cls, path: str) -> 'NEOConfig'", "returns": "typed config instance"}
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/neo_nerf_editing/utils/grasp_stub.py",
+      "description": "Interface-compatible stub for the external AnyGrasp component referenced in Sec. II. Real AnyGrasp is proprietary/unavailable in this sandbox; this returns geometrically plausible candidate grasps (top-down + side approach at the bbox surface) purely so the pipeline's grasp-planning call site has something to invoke. Clearly documented as NOT a reproduction of AnyGrasp.",
+      "sir_modules_mapped": ["Grasp Planning (AnyGrasp, external)"],
+      "classes": [
+        {
+          "name": "AnyGraspStub",
+          "base_class": "object",
+          "public_methods": [
+            {"name": "generate_candidates", "signature": "generate_candidates(self, box: OrientedBox, n_candidates: int = 8) -> List[Grasp]", "returns": "list of candidate grasp poses (STUB, not real AnyGrasp)"}
+          ]
+        }
+      ]
+    }
+  ],
+  "tensor_flows": [
+    {
+      "name": "Base NeRF forward + volumetric rendering",
+      "input": {"name": "rays_o, rays_d", "shape": "[N_rays,3],[N_rays,3]", "dtype": "float32"},
+      "output": {"name": "rgb, depth, lang_feat", "shape": "[N_rays,3], [N_rays], [N_rays,d_l]", "dtype": "float32"},
+      "steps": [
+        "t_samples = stratified_sample(near, far, n_samples)              -> [N_rays, n_samples]",
+        "points = rays_o[:,None,:] + t_samples[...,None]*rays_d[:,None,:] -> [N_rays, n_samples, 3]",
+        "enc = PositionalEncoding(points)                                 -> [N_rays, n_samples, D_enc]",
+        "out = JointNeRFField(enc, view_dirs)                             -> density [N_rays,n_samples,1], rgb [N_rays,n_samples,3], lang [N_rays,n_samples,d_l]",
+        "weights = VolumetricRenderer.alpha_composite(density, t_samples) -> [N_rays, n_samples]",
+        "rgb_out = sum(weights[...,None] * rgb, dim=1)                    -> [N_rays,3]",
+        "depth_out = sum(weights * t_samples, dim=1)                      -> [N_rays]",
+        "lang_out = sum(weights[...,None] * lang, dim=1)                  -> [N_rays,d_l]"
+      ]
+    },
+    {
+      "name": "Object removal via neural field resampling",
+      "input": {"name": "rays_o, rays_d, box b", "shape": "[N,3],[N,3], OrientedBox", "dtype": "float32"},
+      "output": {"name": "resampled t-values excluding box interior", "shape": "[N, n_uniform+n_hierarchical]", "dtype": "float32"},
+      "steps": [
+        "hits = RayBoxExcluder.intersect(rays_o, rays_d, b)                     -> [N,2] (t_enter,t_exit) or NaN",
+        "intervals = build_exclusion_intervals(near, far, hits)                -> per-ray list of valid t-segments (near-seg, far-seg)",
+        "t_uniform = TwoStageResampler.uniform_resample(intervals, n_uniform)  -> [N, n_uniform], none inside b",
+        "weights = render_weights_at(t_uniform)                                -> [N, n_uniform]",
+        "t_hier = TwoStageResampler.hierarchical_resample(intervals, weights, n_hierarchical) -> [N, n_hierarchical], none inside b",
+        "t_final = concat(t_uniform, t_hier, dim=-1).sort()                    -> [N, n_uniform+n_hierarchical]"
+      ]
+    },
+    {
+      "name": "Mask-conditioned inpainting + reconstruction (Eq. 3-5)",
+      "input": {"name": "I_o, I_v, M_o, M_v, poses", "shape": "images [.,H,W,3], masks [.,H,W]", "dtype": "float32/bool"},
+      "output": {"name": "L_masked (scalar)", "shape": "[]", "dtype": "float32"},
+      "steps": [
+        "virtual_views = VirtualHemisphereSampler.sample_views(box)                 -> list[Camera]",
+        "I_v = render(edited_field, virtual_views)                                  -> [K,H,W,3]",
+        "composite_rgb, composite_mask = tile_2x2(I_v_batch, M_v_batch)             -> [H*2,W*2,3], [H*2,W*2]",
+        "I_v_inpainted = InpaintingBackend.inpaint(composite_rgb, composite_mask, xi) -> [H*2,W*2,3]",
+        "split back into per-view completions                                       -> [K,H,W,3]",
+        "rendered = VolumetricRenderer.render_rays(edited_field, ...)               -> [.,H,W,3] over D = {(I_o,M_o),(I_v,M_v)}",
+        "L_rec = MaskedReconstructionLoss(rendered, I, M)",
+        "L_reg = DensityRegularizationLoss(sigma_tilde, points, box)",
+        "L_masked = lambda_rec*L_rec + lambda_reg*L_reg"
+      ]
+    },
+    {
+      "name": "Region-wise teacher-student distillation (Eq. 6) + language field update",
+      "input": {"name": "F_Theta, F_tilde_Theta, box, motion", "shape": "two NeRF teachers + OrientedBox + [6]", "dtype": "float32"},
+      "output": {"name": "F_hat_Theta (student), L' (updated language field)", "shape": "trained student NeRF params + language field params", "dtype": "float32"},
+      "steps": [
+        "S_prime = RegionCompositor.compose(points, F_Theta, F_tilde_Theta, box, motion)  -> per-region supervision tensors {outside_box: F_Theta, inside_removal_box: F_tilde_Theta, relocated_object_region: F_Theta(under motion)}",
+        "phase1: student = StudentDistiller.distill(...,n_steps_phase1) using field-level L_distill term (density/color along rays)",
+        "phase2: student = StudentDistiller.distill(...,n_steps_phase2) adding image-level RGB+depth L_distill term",
+        "L_prime = LanguageFieldUpdater.update(student, original_poses, n_iterations)     -> supervised by CLIP/DINO-substitute features rendered from fixed student"
+      ]
+    }
+  ],
+  "config_schema": {
+    "model": {
+      "d_l_language_feature_dim": "64  # ASSUMED: reduced from typical CLIP 512/768-dim (SIR confidence 0.55) for tractable CPU-only synthetic runs; swappable via config",
+      "positional_encoding_freqs": "10  # standard NeRF default, not stated in paper",
+      "mlp_hidden_dim": "128  # ASSUMED: paper never specifies backbone width/depth (SIR confidence 0.5)",
+      "mlp_num_layers": "6  # ASSUMED",
+      "backbone_type": "mlp_positional_encoding  # ASSUMED substitute for possible Instant-NGP hash-grid backbone; see risk_assessment R1"
+    },
+    "training": {
+      "optimizer": "adam  # ASSUMED: paper never states optimizer (SIR confidence 0.2)",
+      "learning_rate": "5.0e-4  # ASSUMED: standard NeRF-scale default, not stated in paper",
+      "batch_size_rays": "1024  # ASSUMED: standard NeRF ray-batch default, not stated in paper",
+      "n_steps_base_nerf": "2000  # ASSUMED, reduced for CPU-only synthetic demo; paper gives no step count",
+      "n_steps_edit_stage": "500  # ASSUMED",
+      "n_steps_distill_phase1": "300  # ASSUMED",
+      "n_steps_distill_phase2": "300  # ASSUMED",
+      "lambda_rec": "1.0  # ASSUMED: numeric value not given in paper (ambiguity #3)",
+      "lambda_reg": "1.0  # ASSUMED: numeric value not given in paper (ambiguity #3)",
+      "reinpaint_interval_n": "100  # ASSUMED: symbol n never assigned a value in paper (ambiguity #4)",
+      "xi_schedule": "linear_decay_1.0_to_0.2  # ASSUMED: decay schedule never specified numerically"
+    },
+    "data": {
+      "dataset": "synthetic_toy_scene  # SUBSTITUTE: NEO-Dataset is not publicly released; YCB-object-class scenes procedurally approximated",
+      "n_train_views": "40",
+      "n_virtual_views": "12  # ASSUMED: 4 azimuths x 3 elevations (ambiguity #2)",
+      "image_size": "[128,128]  # reduced from likely paper resolution for CPU tractability"
+    },
+    "evaluation": {
+      "metrics": ["psnr", "ssim", "depth_rmse", "reprojection_error"],
+      "regions": ["full", "out", "in"]
+    },
+    "hardware": {
+      "device": "cpu  # ASSUMED default; auto-switches to cuda if torch.cuda.is_available()",
+      "precision": "float32",
+      "num_workers": 0
+    }
+  },
+  "dependencies": {
+    "runtime": [
+      {"package": "torch", "version": ">=2.1.0,<3.0.0", "reason": "core tensor ops, autograd, MLP field, optimizer"},
+      {"package": "numpy", "version": ">=1.24.0", "reason": "array utilities, metric computation"},
+      {"package": "opencv-python-headless", "version": ">=4.8.0", "reason": "HeuristicInpaintingBackend fallback (Telea/NS inpainting) since Stable Diffusion checkpoints are unreachable in this sandbox"},
+      {"package": "scikit-image", "version": ">=0.22.0", "reason": "SSIM implementation for evaluation metrics"},
+      {"package": "pyyaml", "version": ">=6.0", "reason": "config loading"},
+      {"package": "matplotlib", "version": ">=3.7.0", "reason": "notebook visualizations of rendered/edited scenes"}
+    ],
+    "dev": [
+      {"package": "pytest", "version": ">=7.4.0"},
+      {"package": "black", "version": ">=23.0.0"},
+      {"package": "ruff", "version": ">=0.1.0"}
+    ]
+  },
+  "entrypoints": [
+    {
+      "filename": "train.py",
+      "purpose": "Train the base joint scene+language NeRF F_Theta from a (synthetic) multi-view scan.",
+      "cli_args": [
+        {"flag": "--config", "type": "str", "required": false, "default": "configs/config.yaml", "help": "Path to YAML config"},
+        {"flag": "--scene-seed", "type": "int", "required": false, "default": 0, "help": "Seed for synthetic scene generation"},
+        {"flag": "--out-dir", "type": "str", "required": false, "default": "runs/base_nerf", "help": "Checkpoint/log output directory"}
+      ]
+    },
+    {
+      "filename": "edit.py",
+      "purpose": "Run one or more NEO edits (object removal + inpainting + relocation + distillation + language field update) given a trained base NeRF, a language prompt, and a relative motion.",
+      "cli_args": [
+        {"flag": "--checkpoint", "type": "str", "required": true, "default": null, "help": "Path to trained base NeRF checkpoint"},
+        {"flag": "--prompt", "type": "str", "required": true, "default": null, "help": "Language prompt identifying the target object"},
+        {"flag": "--motion", "type": "str", "required": true, "default": null, "help": "Comma-separated 6-DoF motion: x,y,z,roll,pitch,yaw"},
+        {"flag": "--config", "type": "str", "required": false, "default": "configs/config.yaml", "help": "Path to YAML config"},
+        {"flag": "--out-dir", "type": "str", "required": false, "default": "runs/edit_0", "help": "Output directory for edited checkpoint + renders"}
+      ]
+    },
+    {
+      "filename": "evaluate.py",
+      "purpose": "Compute PSNR/SSIM/depth-RMSE/E_rep between an edited NeRF's renders and ground-truth post-edit synthetic scans, over Full/Out/In regions.",
+      "cli_args": [
+        {"flag": "--edited-checkpoint", "type": "str", "required": true, "default": null, "help": "Path to edited NeRF checkpoint"},
+        {"flag": "--ground-truth-scene", "type": "str", "required": true, "default": null, "help": "Path to ground-truth post-edit synthetic scene"},
+        {"flag": "--out-json", "type": "str", "required": false, "default": "results/metrics.json", "help": "Where to write computed metrics"}
+      ]
+    },
+    {
+      "filename": "run_ablation.py",
+      "purpose": "Run the four ablation variants from Table III (w/o virtual view dist., w/o grid inp., w/o mask-cond. train., field-distill-only) and report metrics.",
+      "cli_args": [
+        {"flag": "--config", "type": "str", "required": false, "default": "configs/config.yaml", "help": "Path to YAML config"},
+        {"flag": "--out-dir", "type": "str", "required": false, "default": "runs/ablation", "help": "Output directory"}
+      ]
+    }
+  ],
+  "docker_spec": {
+    "base_image": "pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime",
+    "system_deps": ["libgl1", "libglib2.0-0"],
+    "workdir": "/workspace",
+    "default_cmd": "python train.py --config configs/config.yaml"
+  },
+  "risk_assessment": [
+    {
+      "severity": "High",
+      "description": "The NEO-Dataset benchmark (12 registered pre/post-edit tabletop scenes) is referenced as forthcoming/project-page-hosted but is not bundled with the paper and was not fetchable in this offline sandbox. All quantitative results in this repro are computed on a procedurally generated synthetic toy scene, NOT the real NEO-Dataset.",
+      "source": "evaluation_protocol.datasets",
+      "mitigation": "Built a self-contained ToySceneGenerator producing analogous pre/post-edit multi-view RGB-D scans with known ground truth, so the full pipeline and metric code are exercised and testable end-to-end; results are clearly labeled synthetic in the comparison report."
+    },
+    {
+      "severity": "High",
+      "description": "The real inpainting backend (Stable Diffusion, per Fig. 6 caption) and the real language field backbone (CLIP + DINO) require downloading large pretrained checkpoints from hosts not on this environment's network allowlist.",
+      "source": "implementation_assumptions (Stable Diffusion, CLIP/DINO assumptions)",
+      "mitigation": "Implemented a pluggable InpaintingBackend interface with a working OpenCV heuristic-fill default, and a pluggable language-embedding interface with a fixed deterministic hash-based embedding default. Both are one line swaps for real diffusers/CLIP/DINO models on a machine with internet + GPU access. This is the single biggest fidelity gap versus the paper and is called out explicitly in the reproducibility score."
+    },
+    {
+      "severity": "Medium",
+      "description": "Base NeRF backbone architecture (hash-grid vs plain MLP), all training hyperparameters (optimizer, LR, batch size, step counts), and the loss weights lambda_rec/lambda_reg are never stated numerically in the paper (SIR training_pipeline confidence 0.45).",
+      "source": "training_pipeline, mathematical_spec (combined objective)",
+      "mitigation": "Used a plain positional-encoding MLP (simplest faithful choice) and standard NeRF-literature defaults (Adam, 5e-4 LR, 1024 rays/batch, equal loss weights), all flagged '# ASSUMED' in config.yaml with the SIR confidence noted, and exposed as config fields so they are trivially swept/tuned."
+    },
+    {
+      "severity": "Medium",
+      "description": "AnyGrasp (external grasp-planning dependency) is a proprietary/licensed system and not reproducible here.",
+      "source": "architecture.modules['Grasp Planning (AnyGrasp, external)']",
+      "mitigation": "Implemented AnyGraspStub with an interface-compatible but explicitly non-faithful placeholder (simple top-down/side candidate generation at the bbox surface) so downstream pipeline code has a real call site to integrate against; never claimed as a reproduction of AnyGrasp's grasp quality."
+    },
+    {
+      "severity": "Low",
+      "description": "Exact virtual-viewpoint count for the inpainting hemisphere augmentation and the re-render interval n are unspecified (ambiguities #2 and #4).",
+      "source": "ambiguities",
+      "mitigation": "Exposed n_virtual_views and reinpaint_interval_n as config fields with documented assumptions; ablation harness can vary them directly."
+    },
+    {
+      "severity": "Low",
+      "description": "Numerical instability risk in the two-stage ray resampling when a ray's box intersection interval spans almost the entire ray (near-degenerate remaining intervals), potentially producing NaNs in the PDF-based hierarchical resample.",
+      "source": "architecture.modules['Neural Field Resampling (Object Removal)']",
+      "mitigation": "RayBoxExcluder.intersect clamps degenerate intervals and TwoStageResampler falls back to uniform sampling over the full ray when the valid-interval union is below a minimum length threshold; covered by a unit test."
+    }
+  ]
+}

@@ -1,0 +1,427 @@
+{
+  "paper_id": "arxiv_2607_24538",
+  "sir_version": 1,
+  "provenance": {
+    "title": "NEO: NeRF It Once, Edit It Many Times for Continuous Object Manipulation",
+    "authors": ["Mikolaj Zielinski", "David Hall", "Dominik Belter", "Peyman Moghadam"],
+    "affiliations": [
+      "Institute of Robotics and Machine Intelligence, Poznan University of Technology",
+      "CSIRO Robotics, CSIRO, Australia"
+    ],
+    "arxiv_id": "2607.24538",
+    "doi": null,
+    "submission_date": "2026-07-27",
+    "abstract": "We present NEO, a unified framework providing language-guided NeRF editing for robotic manipulation. It introduces (i) language-guided object removal via neural field resampling with multiview-consistent progressive inpainting, (ii) direct NeRF weight editing via knowledge distillation composing original and edited NeRFs through a teacher-student model, and (iii) the NEO-Dataset, the first benchmark for quantitatively evaluating NeRF scene editing for robot manipulation.",
+    "domain": "Multimodal",
+    "key_claims": [
+      "A unified NeRF editing framework that directly updates network weights for realistic, geometrically consistent, and persistent scene modifications without re-scanning",
+      "A scene-focused knowledge distillation method that reconfigures scenes by composing an original NeRF and an edited NeRF via a teacher-student model",
+      "The NEO-Dataset benchmark: 12 registered pre/post-edit tabletop scenes for quantitative NeRF-editing evaluation",
+      "Outperforms DFF, NeRFiller, and Seal-3D baselines on object removal and pick-and-place manipulation in PSNR/SSIM/RMSE/reprojection-error metrics",
+      "Demonstrates persistent multi-step (assembly) editing where the same edited representation is reused as input to subsequent edits"
+    ],
+    "parsed_at": "2026-07-28T15:12:38Z",
+    "arxivist_version": "1.0"
+  },
+  "architecture": {
+    "primary_variant": "NEO (full model: neural field resampling + progressive inpainting + teacher-student reconfiguration + language field update)",
+    "modules": [
+      {
+        "name": "F_Theta (base joint scene+language NeRF)",
+        "operation_type": "implicit_neural_field",
+        "input_shape": "images I=[N,H,W,3], poses Omega=[N,4,4]",
+        "output_shape": "S in R^4 (density+RGB) and L in R^{d_l} (language feature), queried per continuous 3D point",
+        "parameters": {"trained_from": "single-scan multi-view images and poses"},
+        "paper_section": "II, Eq. 1",
+        "confidence": 0.85,
+        "notes": "Exact backbone (MLP vs hash-grid) not specified; see implementation_assumptions."
+      },
+      {
+        "name": "Language field grounding / bounding-box retrieval",
+        "operation_type": "cosine_similarity_localization_and_clustering",
+        "input_shape": "text prompt embedding phi(p) in R^{d_l}; language feature field L(x)",
+        "output_shape": "oriented bounding box b=(c,theta), c in R^3, theta in SO(2)",
+        "parameters": {"method": "cosine similarity over surface points -> clustering -> largest cluster fit to oriented box"},
+        "paper_section": "II, Fig. 2",
+        "confidence": 0.85,
+        "notes": "Clustering algorithm (e.g. DBSCAN vs k-means) not specified."
+      },
+      {
+        "name": "Neural Field Resampling (Object Removal)",
+        "operation_type": "ray_resampling_and_hierarchical_pdf_sampling",
+        "input_shape": "camera poses, oriented bounding box b, densities along ray",
+        "output_shape": "resampled ray densities/weights excluding samples inside b",
+        "parameters": {"stages": "uniform resample over concatenated ray segments, then PDF-based hierarchical resample"},
+        "paper_section": "II-A, Fig. 4",
+        "confidence": 0.85,
+        "notes": "Fixed sample counts for each of the two sampling stages not given numerically."
+      },
+      {
+        "name": "Multiview-Consistent Progressive Inpainting",
+        "operation_type": "diffusion_based_inpainting_with_view_augmentation",
+        "input_shape": "virtual object-centered renderings I_v tiled 2x2, original images I_o, masks M_v/M_o",
+        "output_shape": "inpainted composite images split back into per-view completions",
+        "parameters": {"inpainting_model": "Stable Diffusion (per Fig. 6 caption)", "tiling": "2x2 grid composite inspired by NeRFiller", "view_augmentation": "virtual hemisphere at bbox center, 4 azimuths, upward spiral of elevations"},
+        "paper_section": "II-B, Fig. 6",
+        "confidence": 0.8,
+        "notes": "Exact count of virtual viewpoints and re-render interval n not given numerically."
+      },
+      {
+        "name": "Mask-conditioned NeRF F~_Theta (edited/removed-object NeRF)",
+        "operation_type": "mask_conditioned_nerf_training",
+        "input_shape": "training tuples (I,M,Omega) from D = {(I_o,M_o,Omega), (I_v,M_v,Omega)}",
+        "output_shape": "edited NeRF encoding scene with object removed and occluded regions reconstructed",
+        "parameters": {"objective": "L_masked = lambda_rec*L_rec + lambda_reg*L_reg"},
+        "paper_section": "II-B, Eq. 3-5",
+        "confidence": 0.85,
+        "notes": null
+      },
+      {
+        "name": "Density Regularization (anti-reappearance)",
+        "operation_type": "regularization_loss_module",
+        "input_shape": "predicted densities sigma~ at sample points p",
+        "output_shape": "penalized density field with near-zero density inside b",
+        "parameters": {"formula": "L_reg penalizes non-zero density predictions within bounding box b"},
+        "paper_section": "II-B, Eq. 4-5",
+        "confidence": 0.9,
+        "notes": null
+      },
+      {
+        "name": "Object Reconfiguration / Knowledge Distillation (teacher-student)",
+        "operation_type": "region_wise_multi_teacher_distillation",
+        "input_shape": "F_Theta (teacher, outside-bbox and relocated-object regions), F~_Theta (teacher, inside removal bbox), virtual object-centered views I_v",
+        "output_shape": "student NeRF F_hat_Theta (parameters Theta_hat) encoding reconfigured scene S'",
+        "parameters": {"student_init": "initialized from Theta", "language_field": "fixed during distillation", "stages": "phase 1: direct field (density/color) supervision; phase 2: + volumetric RGB and depth image supervision"},
+        "paper_section": "II-C, Fig. 7, Eq. 6",
+        "confidence": 0.85,
+        "notes": "Differs from Seal-3D by using region-wise composition from multiple teachers rather than a single fully-edited teacher."
+      },
+      {
+        "name": "Language Field Update",
+        "operation_type": "clip_dino_feature_distillation",
+        "input_shape": "images rendered from fixed F_hat_Theta at original camera poses Omega",
+        "output_shape": "updated language field L'",
+        "parameters": {"supervision_sources": "CLIP and DINO features"},
+        "paper_section": "II-D",
+        "confidence": 0.85,
+        "notes": "Converges in 'a small number of iterations' (not quantified)."
+      },
+      {
+        "name": "Grasp Planning (AnyGrasp, external)",
+        "operation_type": "external_grasp_generation",
+        "input_shape": "bounding box b / updated scene geometry",
+        "output_shape": "candidate grasps G",
+        "parameters": {"tool": "AnyGrasp [32]"},
+        "paper_section": "II",
+        "confidence": 0.9,
+        "notes": "Treated as an off-the-shelf external component, not re-derived by this paper."
+      },
+      {
+        "name": "Editable NEO Model Orchestrator (Editing Many Times)",
+        "operation_type": "iterative_pipeline_controller",
+        "input_shape": "(S,L), prompt p, planned motion tau",
+        "output_shape": "(S',L') reused as input for subsequent edits",
+        "parameters": {"invariant": "resulting representation retains same structure as original input, enabling reuse"},
+        "paper_section": "II-E, Eq. 2",
+        "confidence": 0.85,
+        "notes": null
+      }
+    ],
+    "connections": [
+      {"from": "Camera images I + poses Omega", "to": "F_Theta (base joint scene+language NeRF)", "tensor_name": "I,Omega"},
+      {"from": "F_Theta (base joint scene+language NeRF)", "to": "Language field grounding / bounding-box retrieval", "tensor_name": "L, F_Theta"},
+      {"from": "Language field grounding / bounding-box retrieval", "to": "Neural Field Resampling (Object Removal)", "tensor_name": "b"},
+      {"from": "Neural Field Resampling (Object Removal)", "to": "Mask-conditioned NeRF F~_Theta (edited/removed-object NeRF)", "tensor_name": "resampled densities"},
+      {"from": "Mask-conditioned NeRF F~_Theta (edited/removed-object NeRF)", "to": "Multiview-Consistent Progressive Inpainting", "tensor_name": "I_v renderings"},
+      {"from": "Multiview-Consistent Progressive Inpainting", "to": "Mask-conditioned NeRF F~_Theta (edited/removed-object NeRF)", "tensor_name": "inpainted I_v, masks"},
+      {"from": "Mask-conditioned NeRF F~_Theta (edited/removed-object NeRF)", "to": "Density Regularization (anti-reappearance)", "tensor_name": "sigma~"},
+      {"from": "F_Theta (base joint scene+language NeRF)", "to": "Object Reconfiguration / Knowledge Distillation (teacher-student)", "tensor_name": "S' outside-bbox + relocated-object supervision"},
+      {"from": "Mask-conditioned NeRF F~_Theta (edited/removed-object NeRF)", "to": "Object Reconfiguration / Knowledge Distillation (teacher-student)", "tensor_name": "S' inside-removal-bbox supervision"},
+      {"from": "Object Reconfiguration / Knowledge Distillation (teacher-student)", "to": "Language Field Update", "tensor_name": "F_hat_Theta"},
+      {"from": "Language Field Update", "to": "Grasp Planning (AnyGrasp, external)", "tensor_name": "L', updated geometry"},
+      {"from": "Object Reconfiguration / Knowledge Distillation (teacher-student)", "to": "Editable NEO Model Orchestrator (Editing Many Times)", "tensor_name": "(S',L')"},
+      {"from": "Editable NEO Model Orchestrator (Editing Many Times)", "to": "Language field grounding / bounding-box retrieval", "tensor_name": "(S',L') fed back as (S,L) for next edit"}
+    ],
+    "variants": [
+      {
+        "name": "NEO (full model)",
+        "differences": {"description": "All components enabled: virtual view distribution, 2x2 grid inpainting, mask-conditioned training, full L_distill."}
+      },
+      {
+        "name": "NEO w/o virtual view distribution (ablation)",
+        "differences": {"removed": "virtual object-centered view augmentation during inpainting/distillation"}
+      },
+      {
+        "name": "NEO w/o grid inpainting (ablation)",
+        "differences": {"removed": "2x2 grid tiling strategy for diffusion inpainting"}
+      },
+      {
+        "name": "NEO w/o mask-conditioned training (ablation)",
+        "differences": {"removed": "mask conditioning M in NeRF reconstruction loss"}
+      },
+      {
+        "name": "NEO field-distill-only (ablation)",
+        "differences": {"changed": "student trained only with first term of L_distill (density/color along rays), no RGB/depth image supervision"}
+      }
+    ]
+  },
+  "mathematical_spec": [
+    {
+      "name": "Joint scene and language field representation",
+      "latex": "(\\mathcal{S}, \\mathcal{L}) = F_{\\Theta}(\\mathcal{I}, \\Omega)",
+      "role": "other",
+      "used_in": "training",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "II, Eq. 1",
+      "confidence": 0.95
+    },
+    {
+      "name": "NEO scene editing operator",
+      "latex": "(\\mathcal{S}', \\mathcal{L}') = NEO\\big((\\mathcal{S}, \\mathcal{L}), p, \\tau\\big)",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "II, Eq. 2",
+      "confidence": 0.9
+    },
+    {
+      "name": "Mask-conditioned reconstruction loss",
+      "latex": "\\mathcal{L}_{rec} = \\mathbb{E}_{(I,M,\\Omega)\\sim\\mathcal{D}}\\left[\\ell\\big(\\mathcal{R}(\\tilde{F}_{\\Theta}, \\Omega), I; M\\big)\\right]",
+      "role": "loss",
+      "used_in": "training",
+      "hyperparameters": [],
+      "undefined_symbols": ["ell (pixel-wise reconstruction loss form, e.g. L1/L2, not explicitly stated)"],
+      "paper_section": "II-B, Eq. 3",
+      "confidence": 0.85
+    },
+    {
+      "name": "Density regularization loss",
+      "latex": "\\mathcal{L}_{reg} = \\frac{1}{n}\\sum_{i=1}^{n}(\\tilde{\\sigma}_i - \\tilde{\\sigma}'_i)^2",
+      "role": "loss",
+      "used_in": "training",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "II-B, Eq. 4",
+      "confidence": 0.9
+    },
+    {
+      "name": "Regularization target density definition",
+      "latex": "\\tilde{\\sigma}'(i) = \\begin{cases} 0, & \\mathbf{p}(i) \\in b \\\\ \\tilde{\\sigma}(i), & \\mathbf{p}(i) \\notin b \\end{cases}",
+      "role": "other",
+      "used_in": "training",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "II-B, Eq. 5",
+      "confidence": 0.9
+    },
+    {
+      "name": "Combined masked-training objective",
+      "latex": "\\mathcal{L}_{masked} = \\lambda_{rec}\\mathcal{L}_{rec} + \\lambda_{reg}\\mathcal{L}_{reg}",
+      "role": "objective",
+      "used_in": "training",
+      "hyperparameters": ["lambda_rec", "lambda_reg"],
+      "undefined_symbols": ["numeric values of lambda_rec, lambda_reg not given"],
+      "paper_section": "II-B",
+      "confidence": 0.75
+    },
+    {
+      "name": "Teacher-student distillation loss (two-phase)",
+      "latex": "\\mathcal{L}_{distill} = \\begin{cases} \\dfrac{1}{rm}\\sum_{j=1}^{r}\\sum_{k=1}^{m}\\left(|\\sigma_{j,k}-\\hat{\\sigma}_{j,k}| + \\|c_{j,k}-\\hat{c}_{j,k}\\|_1\\right) \\\\[6pt] \\dfrac{1}{n}\\sum_{i=1}^{n}\\left(\\|C_i-\\hat{C}_i\\|_2 + \\|D_i-\\hat{D}_i\\|_2\\right) \\end{cases}",
+      "role": "loss",
+      "used_in": "training",
+      "hyperparameters": ["r (rays)", "m (samples per ray)", "n (pixels)"],
+      "undefined_symbols": [],
+      "paper_section": "II-C, Eq. 6",
+      "confidence": 0.9
+    }
+  ],
+  "tensor_semantics": [
+    {"name": "I (camera images)", "shape_notation": "[N,H,W,3]", "dtype": "float32", "tensor_type": "input", "module": "F_Theta (base joint scene+language NeRF)", "confidence": 0.8},
+    {"name": "Omega (camera poses)", "shape_notation": "[N,4,4] (or [N,6] for 6-DoF pose)", "dtype": "float32", "tensor_type": "input", "module": "F_Theta (base joint scene+language NeRF)", "confidence": 0.6},
+    {"name": "S (scene field output)", "shape_notation": "[...,4] (density + RGB) per queried 3D point", "dtype": "float32", "tensor_type": "output", "module": "F_Theta (base joint scene+language NeRF)", "confidence": 0.85},
+    {"name": "L (language field output)", "shape_notation": "[...,d_l]", "dtype": "float32", "tensor_type": "output", "module": "F_Theta (base joint scene+language NeRF)", "confidence": 0.85},
+    {"name": "phi(p) (text prompt embedding)", "shape_notation": "[d_l]", "dtype": "float32", "tensor_type": "intermediate", "module": "Language field grounding / bounding-box retrieval", "confidence": 0.8},
+    {"name": "b (oriented bounding box)", "shape_notation": "c: [3], theta: [1] (SO(2) yaw)", "dtype": "float32", "tensor_type": "intermediate", "module": "Language field grounding / bounding-box retrieval", "confidence": 0.85},
+    {"name": "tau (planned object motion)", "shape_notation": "[6] (x,y,z,roll,pitch,yaw)", "dtype": "float32", "tensor_type": "input", "module": "Editable NEO Model Orchestrator (Editing Many Times)", "confidence": 0.9},
+    {"name": "sigma_{j,k}, sigma_hat_{j,k} (teacher/student densities)", "shape_notation": "[r,m]", "dtype": "float32", "tensor_type": "intermediate", "module": "Object Reconfiguration / Knowledge Distillation (teacher-student)", "confidence": 0.85},
+    {"name": "c_{j,k}, c_hat_{j,k} (teacher/student colors)", "shape_notation": "[r,m,3]", "dtype": "float32", "tensor_type": "intermediate", "module": "Object Reconfiguration / Knowledge Distillation (teacher-student)", "confidence": 0.85},
+    {"name": "C_i, C_hat_i (teacher/student rendered RGB)", "shape_notation": "[n,3]", "dtype": "float32", "tensor_type": "intermediate", "module": "Object Reconfiguration / Knowledge Distillation (teacher-student)", "confidence": 0.85},
+    {"name": "D_i, D_hat_i (teacher/student rendered depth)", "shape_notation": "[n]", "dtype": "float32", "tensor_type": "intermediate", "module": "Object Reconfiguration / Knowledge Distillation (teacher-student)", "confidence": 0.85},
+    {"name": "M (binary mask, M_v/M_o)", "shape_notation": "[H,W] rasterized from projected bbox faces", "dtype": "bool", "tensor_type": "intermediate", "module": "Mask-conditioned NeRF F~_Theta (edited/removed-object NeRF)", "confidence": 0.85},
+    {"name": "Theta (base NeRF parameters)", "shape_notation": "model-dependent (backbone unspecified)", "dtype": "float32", "tensor_type": "parameter", "module": "F_Theta (base joint scene+language NeRF)", "confidence": 0.5},
+    {"name": "Theta_hat (student NeRF parameters)", "shape_notation": "same as Theta (student initialized from teacher)", "dtype": "float32", "tensor_type": "parameter", "module": "Object Reconfiguration / Knowledge Distillation (teacher-student)", "confidence": 0.6}
+  ],
+  "training_pipeline": {
+    "optimizer": {
+      "name": null,
+      "learning_rate": null,
+      "beta1": null,
+      "beta2": null,
+      "weight_decay": null,
+      "confidence": 0.2
+    },
+    "lr_schedule": {
+      "type": null,
+      "warmup_steps": null,
+      "total_steps": null,
+      "confidence": 0.2
+    },
+    "batch_size": null,
+    "effective_batch_size": null,
+    "training_steps": null,
+    "epochs": null,
+    "mixed_precision": null,
+    "gradient_clipping": null,
+    "data_augmentation": [
+      "Virtual object-centered camera views synthesized on a hemisphere around the removed-object bounding box (4 azimuths, upward spiral of elevations) to concentrate supervision on previously occluded surfaces"
+    ],
+    "curriculum": "Progressive inpainting: virtual object-centered views are re-rendered every n steps and re-inpainted; the diffusion inpainting strength factor xi is decreased after each iteration so later iterations preserve more of the current rendering, promoting convergence.",
+    "confidence": 0.45
+  },
+  "evaluation_protocol": {
+    "datasets": [
+      {"name": "NEO-Dataset (proposed benchmark)", "split": "11 single-object scenes + 1 multi-object scene, pre/post-edit registered via ArUco markers", "size": 12, "publicly_available": true},
+      {"name": "YCB Object and Model Set", "split": "source of manipulated object classes", "size": null, "publicly_available": true}
+    ],
+    "metrics": ["PSNR", "SSIM", "Depth RMSE", "Photometric reprojection error (E_rep)"],
+    "reported_results": [
+      {"metric": "PSNR", "dataset": "NEO-Dataset (object removal, 5 scenes)", "split": "Full", "value": 27.20, "is_primary": true},
+      {"metric": "PSNR", "dataset": "NEO-Dataset (object removal, 5 scenes)", "split": "Out", "value": 25.43, "is_primary": true},
+      {"metric": "SSIM", "dataset": "NEO-Dataset (object removal, 5 scenes)", "split": "Full", "value": 0.881, "is_primary": true},
+      {"metric": "SSIM", "dataset": "NEO-Dataset (object removal, 5 scenes)", "split": "Out", "value": 0.845, "is_primary": true},
+      {"metric": "Depth RMSE (m)", "dataset": "NEO-Dataset (object removal, 5 scenes)", "split": "Full", "value": 0.056, "is_primary": true},
+      {"metric": "Depth RMSE (m)", "dataset": "NEO-Dataset (object removal, 5 scenes)", "split": "Out", "value": 0.033, "is_primary": true},
+      {"metric": "E_rep", "dataset": "NEO-Dataset (object removal, 5 scenes)", "split": "Full", "value": 0.067, "is_primary": true},
+      {"metric": "E_rep", "dataset": "NEO-Dataset (object removal, 5 scenes)", "split": "Out", "value": 0.071, "is_primary": true},
+      {"metric": "PSNR", "dataset": "NEO-Dataset (pick-and-place, 6 scenes)", "split": "Out", "value": 21.99, "is_primary": true},
+      {"metric": "PSNR", "dataset": "NEO-Dataset (pick-and-place, 6 scenes)", "split": "In", "value": 19.26, "is_primary": true},
+      {"metric": "SSIM", "dataset": "NEO-Dataset (pick-and-place, 6 scenes)", "split": "Out", "value": 0.783, "is_primary": true},
+      {"metric": "SSIM", "dataset": "NEO-Dataset (pick-and-place, 6 scenes)", "split": "In", "value": 0.619, "is_primary": true},
+      {"metric": "Depth RMSE (m)", "dataset": "NEO-Dataset (pick-and-place, 6 scenes)", "split": "Out", "value": 0.141, "is_primary": false},
+      {"metric": "Depth RMSE (m)", "dataset": "NEO-Dataset (pick-and-place, 6 scenes)", "split": "In", "value": 0.182, "is_primary": false},
+      {"metric": "E_rep", "dataset": "NEO-Dataset (pick-and-place, 6 scenes)", "split": "Out", "value": 0.046, "is_primary": false},
+      {"metric": "E_rep", "dataset": "NEO-Dataset (pick-and-place, 6 scenes)", "split": "In", "value": 0.080, "is_primary": false}
+    ],
+    "baselines": ["DFF", "NeRFiller", "NeRFiller_w/o_D", "Seal-3D"],
+    "compute": null,
+    "special_conditions": [
+      "Scene inpainting timing: NEO ~6 min vs DFF ~13 min vs NeRFiller ~1.5 hr (~15x speed-up)",
+      "Object manipulation timing: NEO ~1.5 min vs Seal-3D ~3 min (~2x speed-up)",
+      "Two robotic arm setups used for scene capture (Franka Emika Panda and UR5)"
+    ],
+    "confidence": 0.88
+  },
+  "implementation_assumptions": [
+    {
+      "assumption": "Base NeRF backbone is a modern efficient representation (e.g. Instant-NGP-style hash-grid MLP) rather than the original vanilla MLP NeRF, given emphasis on fast (minute-scale) editing/training times.",
+      "basis": "inferred from results (sub-2-hour full pipeline timings reported for inpainting and distillation)",
+      "confidence": 0.5,
+      "alternatives": ["Vanilla MLP NeRF (Mildenhall et al. 2020)", "TensoRF", "Plenoxels/voxel-grid hybrid"],
+      "affects_section": "architecture"
+    },
+    {
+      "assumption": "Optimizer is Adam (or AdamW), the near-universal default for NeRF and diffusion-adjacent training.",
+      "basis": "common practice",
+      "confidence": 0.6,
+      "alternatives": ["AdamW", "RAdam"],
+      "affects_section": "training_pipeline"
+    },
+    {
+      "assumption": "Diffusion inpainting model is Stable Diffusion, as explicitly labeled in Fig. 6's caption, likely used with an inpainting-specific checkpoint/pipeline (e.g. SD inpainting variant) rather than base text-to-image SD.",
+      "basis": "explicitly named in figure caption; specific checkpoint/version not stated in main text",
+      "confidence": 0.75,
+      "alternatives": ["Stable Diffusion 2 inpainting", "Stable Diffusion XL inpainting"],
+      "affects_section": "architecture"
+    },
+    {
+      "assumption": "Loss weighting constants lambda_rec and lambda_reg in L_masked are assumed roughly equal (e.g. both ~1.0) absent stated values.",
+      "basis": "inferred / common practice for combined reconstruction+regularization objectives",
+      "confidence": 0.4,
+      "alternatives": ["lambda_reg << lambda_rec (e.g. 0.1x)", "tuned per-scene weighting"],
+      "affects_section": "mathematical_spec"
+    },
+    {
+      "assumption": "Re-render interval n (iterative inpainting refresh) is on the order of hundreds of training iterations (e.g. ~250-500).",
+      "basis": "inferred from typical NeRF-refinement-with-inpainting literature (e.g. NeRFiller-style loops)",
+      "confidence": 0.35,
+      "alternatives": ["n ~ 100", "n ~ 1000"],
+      "affects_section": "training_pipeline"
+    },
+    {
+      "assumption": "Virtual viewpoint count for the object-centered hemisphere augmentation is approximately 8-16 views (4 azimuths x 2-4 elevation steps in the spiral).",
+      "basis": "inferred from qualitative description ('four opposing azimuths and varying elevations, forming a short upward spiral')",
+      "confidence": 0.45,
+      "alternatives": ["4 views (no elevation variation)", "20+ views for denser coverage"],
+      "affects_section": "architecture"
+    },
+    {
+      "assumption": "Language field embeddings d_l correspond to CLIP embedding dimensionality (e.g. 512 or 768), consistent with prior LERF-style language fields the paper builds on.",
+      "basis": "inferred from prior work (LERF [14]) and explicit later use of CLIP for language field update",
+      "confidence": 0.55,
+      "alternatives": ["DINO-only feature dimensionality", "joint CLIP+DINO concatenated dimensionality"],
+      "affects_section": "tensor_semantics"
+    },
+    {
+      "assumption": "Framework is PyTorch, consistent with the vast majority of contemporary NeRF/diffusion research codebases (e.g. nerfstudio-based).",
+      "basis": "common practice",
+      "confidence": 0.65,
+      "alternatives": ["JAX (e.g. if built on jaxnerf)"],
+      "affects_section": "implementation_assumptions"
+    }
+  ],
+  "ambiguities": [
+    {
+      "location": "Section II / Eq. 1",
+      "description": "Exact NeRF backbone architecture (network depth/width, positional encoding, hash-grid vs MLP) is never specified in the text or figures.",
+      "primary_assumption": "Instant-NGP-style multiresolution hash-grid MLP backbone",
+      "alternatives": ["Vanilla MLP NeRF", "TensoRF", "Plenoxels"],
+      "confidence": 0.5
+    },
+    {
+      "location": "Section II-B, Fig. 6 caption",
+      "description": "Number of virtual viewpoints sampled on the hemisphere ('four opposing azimuths and varying elevations, forming a short upward spiral') is described qualitatively but no exact count is given.",
+      "primary_assumption": 12,
+      "alternatives": [4, 8, 16],
+      "confidence": 0.5
+    },
+    {
+      "location": "Section II-B, Eq. 3-4 / combined objective",
+      "description": "Numeric values of the loss weighting constants lambda_rec and lambda_reg in L_masked are not provided anywhere in the paper.",
+      "primary_assumption": {"lambda_rec": 1.0, "lambda_reg": 1.0},
+      "alternatives": [{"lambda_rec": 1.0, "lambda_reg": 0.1}, {"lambda_rec": 1.0, "lambda_reg": 10.0}],
+      "confidence": 0.4
+    },
+    {
+      "location": "Section II-B, iterative inpainting description",
+      "description": "The re-render interval n ('virtual object-centered views I_v are re-rendered every n steps') is referenced symbolically but never assigned a numeric value; total number of inpainting iterations and the exact decay schedule of the inpainting strength factor xi are likewise unspecified.",
+      "primary_assumption": "n on the order of a few hundred iterations; xi linearly decayed from 1.0 toward a small residual value across iterations",
+      "alternatives": ["n=100 with exponential xi decay", "n=1000 with step-wise xi decay"],
+      "confidence": 0.35
+    },
+    {
+      "location": "Provenance / domain classification",
+      "description": "The paper spans robotics (manipulation), computer vision (NeRF/3D reconstruction), and language grounding (CLIP/DINO language fields); the fixed SIR domain enum has no 'Robotics' category, so classification is inherently approximate.",
+      "primary_assumption": "Multimodal",
+      "alternatives": ["CV", "Other"],
+      "confidence": 0.6
+    },
+    {
+      "location": "Section II-A, sampling stage counts",
+      "description": "The 'fixed number of uniform samples' and the 'second, fixed set of samples' for the two-stage neural field resampling procedure are referenced but no numeric sample counts are given.",
+      "primary_assumption": "64 uniform + 128 hierarchical samples per ray (typical NeRF defaults)",
+      "alternatives": ["32+64", "128+256"],
+      "confidence": 0.4
+    }
+  ],
+  "confidence_annotations": {
+    "architecture": 0.72,
+    "mathematical_spec": 0.85,
+    "tensor_semantics": 0.7,
+    "training_pipeline": 0.45,
+    "evaluation_protocol": 0.88,
+    "implementation_assumptions": 0.55,
+    "overall_sir_confidence": 0.69
+  }
+}
