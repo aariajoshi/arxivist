@@ -1,0 +1,16 @@
+name: fcdf_diagonal_frog
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy>=1.26,<2.0
+  - scipy>=1.11
+  - matplotlib>=3.8
+  - pyyaml>=6.0
+  - pandas>=2.0
+  - pip
+  - pip:
+      - pytest>=7.4
+      - pytest-cov>=4.1
+      - black>=24.1
+      - ruff>=0.4

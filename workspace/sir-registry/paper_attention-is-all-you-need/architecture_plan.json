@@ -1,0 +1,374 @@
+{
+  "paper_id": "paper_attention-is-all-you-need",
+  "plan_version": 1,
+  "created_at": "2026-07-10T23:56:28+05:30",
+  "framework": {
+    "primary": "pytorch",
+    "python_version": "3.10",
+    "cuda_required": true,
+    "cuda_min_version": "11.8",
+    "use_huggingface": false,
+    "config_library": "yaml",
+    "reasoning": "PyTorch is the standard framework for NLP research and effectively supports custom tensor operations and attention mechanisms. We avoid HuggingFace's `transformers` abstractions to implement the pure architecture from scratch, matching the paper strictly."
+  },
+  "module_hierarchy": [
+    {
+      "path": "src/transformer/models/transformer.py",
+      "description": "Primary Transformer model and encoder/decoder stacks.",
+      "sir_modules_mapped": [
+        "Encoder Stack",
+        "Decoder Stack"
+      ],
+      "classes": [
+        {
+          "name": "Transformer",
+          "base_class": "nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(src: torch.Tensor, tgt: torch.Tensor, src_mask: torch.Tensor, tgt_mask: torch.Tensor)",
+              "returns": "torch.Tensor"
+            }
+          ]
+        },
+        {
+          "name": "Encoder",
+          "base_class": "nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(src: torch.Tensor, mask: torch.Tensor)",
+              "returns": "torch.Tensor"
+            }
+          ]
+        },
+        {
+          "name": "Decoder",
+          "base_class": "nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(x: torch.Tensor, memory: torch.Tensor, src_mask: torch.Tensor, tgt_mask: torch.Tensor)",
+              "returns": "torch.Tensor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/transformer/models/attention.py",
+      "description": "Attention mechanisms.",
+      "sir_modules_mapped": [
+        "Multi-Head Attention",
+        "Scaled Dot-Product Attention"
+      ],
+      "classes": [
+        {
+          "name": "MultiHeadAttention",
+          "base_class": "nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, mask: Optional[torch.Tensor] = None)",
+              "returns": "torch.Tensor"
+            }
+          ]
+        },
+        {
+          "name": "ScaledDotProductAttention",
+          "base_class": "nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, mask: Optional[torch.Tensor] = None)",
+              "returns": "Tuple[torch.Tensor, torch.Tensor]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/transformer/models/layers.py",
+      "description": "Feed-forward networks and positional encodings.",
+      "sir_modules_mapped": [
+        "Position-wise Feed-Forward Network",
+        "Positional Encoding (Sine)",
+        "Positional Encoding (Cosine)"
+      ],
+      "classes": [
+        {
+          "name": "PositionwiseFeedForward",
+          "base_class": "nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(x: torch.Tensor)",
+              "returns": "torch.Tensor"
+            }
+          ]
+        },
+        {
+          "name": "PositionalEncoding",
+          "base_class": "nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(x: torch.Tensor)",
+              "returns": "torch.Tensor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/transformer/training/trainer.py",
+      "description": "Training loop and custom learning rate scheduler.",
+      "sir_modules_mapped": [
+        "Learning Rate Schedule"
+      ],
+      "classes": [
+        {
+          "name": "Trainer",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "train",
+              "signature": "()",
+              "returns": "None"
+            },
+            {
+              "name": "train_epoch",
+              "signature": "(epoch: int)",
+              "returns": "float"
+            }
+          ]
+        },
+        {
+          "name": "NoamLRScheduler",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "step",
+              "signature": "()",
+              "returns": "None"
+            },
+            {
+              "name": "get_lr",
+              "signature": "()",
+              "returns": "float"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tensor_flows": [
+    {
+      "name": "Transformer Forward Pass",
+      "input": {
+        "name": "src_tokens",
+        "shape": "[B, T_src]",
+        "dtype": "int64"
+      },
+      "output": {
+        "name": "logits",
+        "shape": "[B, T_tgt, vocab_size]",
+        "dtype": "float32"
+      },
+      "steps": [
+        "src_emb = embedding(src_tokens) * sqrt(d_model) + positional_encoding",
+        "memory = encoder(src_emb, src_mask)",
+        "tgt_emb = embedding(tgt_tokens) * sqrt(d_model) + positional_encoding",
+        "decoder_out = decoder(tgt_emb, memory, src_mask, tgt_mask)",
+        "logits = linear_out(decoder_out)"
+      ]
+    },
+    {
+      "name": "Multi-Head Attention",
+      "input": {
+        "name": "query, key, value",
+        "shape": "[B, T, d_model]",
+        "dtype": "float32"
+      },
+      "output": {
+        "name": "attn_out",
+        "shape": "[B, T, d_model]",
+        "dtype": "float32"
+      },
+      "steps": [
+        "Q = query @ W_q, K = key @ W_k, V = value @ W_v  -> [B, T, d_model]",
+        "Reshape Q, K, V to [B, h, T, d_k] (and d_v for V)",
+        "scores = Q @ K^T / sqrt(d_k)",
+        "scores = apply_mask(scores, mask)",
+        "attn = softmax(scores) @ V  -> [B, h, T, d_v]",
+        "Reshape attn to [B, T, d_model]",
+        "attn_out = attn @ W_o"
+      ]
+    }
+  ],
+  "config_schema": {
+    "model": {
+      "N": 6,
+      "d_model": 512,
+      "d_ff": 2048,
+      "h": 8,
+      "d_k": 64,
+      "d_v": 64,
+      "P_drop": 0.1,
+      "vocab_size": 37000
+    },
+    "training": {
+      "optimizer": "Adam",
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "eps": 1e-9,
+      "warmup_steps": 4000,
+      "train_steps": 100000,
+      "label_smoothing": 0.1
+    },
+    "data": {
+      "dataset": "WMT 2014 English-German",
+      "batch_size_tokens": 4096,
+      "max_length": 256
+    },
+    "evaluation": {
+      "metrics": [
+        "BLEU",
+        "perplexity"
+      ],
+      "beam_size": 4,
+      "length_penalty_alpha": 0.6
+    },
+    "hardware": {
+      "device": "cuda",
+      "num_workers": 4,
+      "mixed_precision": true
+    }
+  },
+  "dependencies": {
+    "runtime": [
+      {
+        "package": "torch",
+        "version": "2.1.0",
+        "reason": "Primary deep learning framework"
+      },
+      {
+        "package": "pyyaml",
+        "version": "6.0",
+        "reason": "Configuration management"
+      },
+      {
+        "package": "sacrebleu",
+        "version": "2.3.1",
+        "reason": "Standardized BLEU metric computation"
+      },
+      {
+        "package": "tokenizers",
+        "version": "0.14.0",
+        "reason": "Fast subword tokenization for dataset preparation"
+      }
+    ],
+    "dev": [
+      {
+        "package": "pytest",
+        "version": "7.4.0"
+      },
+      {
+        "package": "black",
+        "version": "23.9.1"
+      }
+    ]
+  },
+  "entrypoints": [
+    {
+      "filename": "train.py",
+      "purpose": "Main training script for the Transformer model",
+      "cli_args": [
+        {
+          "flag": "--config",
+          "type": "string",
+          "required": true,
+          "help": "Path to config YAML"
+        },
+        {
+          "flag": "--resume",
+          "type": "string",
+          "required": false,
+          "help": "Path to checkpoint to resume training"
+        }
+      ]
+    },
+    {
+      "filename": "evaluate.py",
+      "purpose": "Compute BLEU and perplexity on test sets using beam search",
+      "cli_args": [
+        {
+          "flag": "--config",
+          "type": "string",
+          "required": true,
+          "help": "Path to config YAML"
+        },
+        {
+          "flag": "--checkpoint",
+          "type": "string",
+          "required": true,
+          "help": "Path to model checkpoint"
+        },
+        {
+          "flag": "--split",
+          "type": "string",
+          "required": false,
+          "default": "test",
+          "help": "Dataset split to evaluate"
+        }
+      ]
+    },
+    {
+      "filename": "inference.py",
+      "purpose": "Translate single sentences from the command line",
+      "cli_args": [
+        {
+          "flag": "--checkpoint",
+          "type": "string",
+          "required": true,
+          "help": "Path to model checkpoint"
+        },
+        {
+          "flag": "--text",
+          "type": "string",
+          "required": true,
+          "help": "Input sentence to translate"
+        }
+      ]
+    }
+  ],
+  "docker_spec": {
+    "base_image": "pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime",
+    "system_deps": [
+      "git",
+      "build-essential"
+    ],
+    "workdir": "/workspace",
+    "default_cmd": "python train.py --config configs/base.yaml"
+  },
+  "risk_assessment": [
+    {
+      "severity": "Low",
+      "description": "Masking uses -1e9 instead of -inf to avoid NaN gradients in half-precision or when exponentiated.",
+      "source": "Ambiguities section in SIR",
+      "mitigation": "Explicitly implement masking by adding the mask (with 0s and -1e9) rather than multiplying."
+    },
+    {
+      "severity": "Medium",
+      "description": "Custom Noam Learning Rate scheduler is coupled strictly with d_model.",
+      "source": "Mathematical Spec in SIR",
+      "mitigation": "Create a wrapper for PyTorch's `LambdaLR` or write a custom scheduler `NoamLRScheduler` that faithfully implements the equation."
+    },
+    {
+      "severity": "Medium",
+      "description": "Handling variable sequence lengths and batching by token count (~4096 tokens/batch).",
+      "source": "Training Pipeline in SIR",
+      "mitigation": "Implement a custom batch sampler in PyTorch DataLoader that yields batches grouped by similar sequence lengths to approximate token limits safely."
+    }
+  ]
+}

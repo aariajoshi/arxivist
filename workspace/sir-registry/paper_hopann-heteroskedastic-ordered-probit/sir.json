@@ -1,0 +1,506 @@
+{
+  "paper_id": "paper_hopann-heteroskedastic-ordered-probit",
+  "sir_version": 1,
+  "provenance": {
+    "title": "Heteroskedastic Ordered Probit Models with an Artificial Neural Network",
+    "authors": ["Jikhan Jeong"],
+    "affiliations": ["Missouri University of Science and Technology"],
+    "arxiv_id": null,
+    "doi": "10.1007/s10614-024 (Springer Computational Economics, 2024)",
+    "submission_date": "2024",
+    "abstract": "This paper presents the Ordered Probit model with an ANN (OPANN) for ordinal classification and introduces the Heteroskedastic Ordered Probit model with an ANN (HOPANN). The HOPANN generalizes the OPANN by allowing heteroskedasticity in the variance of the latent ordinal dependent variable. Four predictive experiments are conducted on Amazon software product review star ratings.",
+    "domain": "Tabular",
+    "key_claims": [
+      "HOPANN is the first model combining heteroskedastic ordered probit with ANN for ordinal classification",
+      "HOPANN and OPANN achieve best/second-best macro F1 scores on all imbalanced datasets",
+      "All other models (ANN, SVM, RF, XGB, ordered probit) fail to predict the minority class in imbalanced datasets",
+      "RF performs best in accuracy on balanced datasets; XGB is best on PR AUC, MSE, MAE for imbalanced datasets",
+      "HOPANN/OPANN are particularly effective for predicting ordinal responses in imbalanced datasets by leveraging the ordered probit probability structure"
+    ],
+    "parsed_at": "2026-07-16T09:07:58Z",
+    "arxivist_version": "1.0"
+  },
+  "architecture": {
+    "primary_variant": "HOPANN",
+    "modules": [
+      {
+        "name": "input_layer",
+        "operation_type": "passthrough",
+        "input_shape": "[B, K]",
+        "output_shape": "[B, K]",
+        "parameters": {"K": 12, "note": "12 tabular features plus time-fixed-effect binary dummies"},
+        "paper_section": "Implementation Details",
+        "confidence": 0.85,
+        "notes": "K=12 base features; time dummies add extra columns; exact total K depends on number of day dummies (unspecified count)"
+      },
+      {
+        "name": "ann_hidden_layer",
+        "operation_type": "linear + activation",
+        "input_shape": "[B, K]",
+        "output_shape": "[B, Q]",
+        "parameters": {
+          "weight_matrix": "W [Q, K]",
+          "bias": "b [Q]",
+          "activation": "one of {sigmoid, tanh, ReLU, ELU, GELU} — chosen by hyperparameter search",
+          "Q": "hyperparameter (number of hidden nodes, searched)"
+        },
+        "paper_section": "OPANN Architecture",
+        "confidence": 0.88,
+        "notes": "Single hidden layer. Q selected via validation set hyperparameter search."
+      },
+      {
+        "name": "ann_output_layer",
+        "operation_type": "linear (scalar output)",
+        "input_shape": "[B, Q]",
+        "output_shape": "[B, 1]",
+        "parameters": {
+          "weight_vector": "v [Q]",
+          "bias": "c (scalar)"
+        },
+        "paper_section": "OPANN Architecture",
+        "confidence": 0.90,
+        "notes": "Single output node; produces the latent index f(x_i, theta). No nonlinear activation at output."
+      },
+      {
+        "name": "hopann_variance_hidden_layer",
+        "operation_type": "linear + activation",
+        "input_shape": "[B, M]",
+        "output_shape": "[B, Q_z]",
+        "parameters": {
+          "note": "Separate heteroskedasticity ANN; M = dimensionality of z_i vector",
+          "activation": "same family as main ANN hidden layer (assumed)"
+        },
+        "paper_section": "HOPANN Architecture",
+        "confidence": 0.62,
+        "notes": "Paper states sigma_i is modeled using a separate ANN; exact architecture (depth, Q_z, whether z_i == x_i) not fully specified."
+      },
+      {
+        "name": "hopann_variance_output_layer",
+        "operation_type": "linear + exp activation",
+        "input_shape": "[B, Q_z]",
+        "output_shape": "[B, 1]",
+        "parameters": {
+          "activation": "exp()",
+          "note": "Ensures sigma_i > 0"
+        },
+        "paper_section": "HOPANN Architecture",
+        "confidence": 0.80,
+        "notes": "exp() output activation explicitly stated to ensure positivity of sigma_i."
+      },
+      {
+        "name": "ordered_probit_log_likelihood_layer",
+        "operation_type": "custom loss (ordered probit negative log-likelihood)",
+        "input_shape": "[B, 1] (latent index), [B, 1] (sigma_i for HOPANN), [J-1] (cutting points)",
+        "output_shape": "scalar",
+        "parameters": {
+          "cutting_points": "c_1 ... c_{J-1}, learnable parameters",
+          "J": "number of ordinal classes (5 for 5-star; 3 for three-class experiments)"
+        },
+        "paper_section": "Mathematical Specification",
+        "confidence": 0.92,
+        "notes": "The log-likelihood layer is a differentiable custom loss through which backprop flows. Cutting points are jointly learned with ANN weights."
+      },
+      {
+        "name": "ann_baseline",
+        "operation_type": "feedforward neural network with softmax output",
+        "input_shape": "[B, K]",
+        "output_shape": "[B, J]",
+        "parameters": {"output_activation": "softmax", "regularization": "Dropout"},
+        "paper_section": "Baselines",
+        "confidence": 0.72,
+        "notes": "Baseline ANN; hidden layer count and sizes not specified beyond 'standard feedforward'."
+      },
+      {
+        "name": "svm_baseline",
+        "operation_type": "Support Vector Machine (ordinal extension)",
+        "input_shape": "[B, K]",
+        "output_shape": "[B, 1]",
+        "parameters": {},
+        "paper_section": "Baselines",
+        "confidence": 0.65,
+        "notes": "Exact SVM kernel and ordinal extension method not specified."
+      },
+      {
+        "name": "rf_baseline",
+        "operation_type": "Random Forest classifier",
+        "input_shape": "[B, K]",
+        "output_shape": "[B, J]",
+        "parameters": {},
+        "paper_section": "Baselines",
+        "confidence": 0.70
+      },
+      {
+        "name": "xgb_baseline",
+        "operation_type": "Extreme Gradient Boosting classifier",
+        "input_shape": "[B, K]",
+        "output_shape": "[B, J]",
+        "parameters": {},
+        "paper_section": "Baselines",
+        "confidence": 0.70
+      },
+      {
+        "name": "ordered_probit_baseline",
+        "operation_type": "Maximum Likelihood ordered probit (linear latent variable)",
+        "input_shape": "[B, K]",
+        "output_shape": "[B, J]",
+        "parameters": {"framework": "Statsmodels"},
+        "paper_section": "Baselines",
+        "confidence": 0.88,
+        "notes": "Standard linear ordered probit; latent y*_i = x_i beta + epsilon_i."
+      }
+    ],
+    "connections": [
+      {"from": "input_layer", "to": "ann_hidden_layer", "tensor_name": "x_i"},
+      {"from": "ann_hidden_layer", "to": "ann_output_layer", "tensor_name": "h_q"},
+      {"from": "ann_output_layer", "to": "ordered_probit_log_likelihood_layer", "tensor_name": "f(x_i, theta)"},
+      {"from": "input_layer", "to": "hopann_variance_hidden_layer", "tensor_name": "z_i"},
+      {"from": "hopann_variance_hidden_layer", "to": "hopann_variance_output_layer", "tensor_name": "variance_hidden_activations"},
+      {"from": "hopann_variance_output_layer", "to": "ordered_probit_log_likelihood_layer", "tensor_name": "sigma_i"}
+    ],
+    "variants": [
+      {
+        "name": "OPANN",
+        "differences": {
+          "heteroskedasticity": false,
+          "sigma_i": "fixed to 1.0 (homoskedastic)",
+          "variance_network": "absent",
+          "description": "Ordered Probit with ANN latent index; no variance network"
+        }
+      },
+      {
+        "name": "HOPANN",
+        "differences": {
+          "heteroskedasticity": true,
+          "sigma_i": "exp(z_i gamma) or ANN-modeled variance",
+          "variance_network": "present (separate ANN for sigma_i)",
+          "description": "Primary variant; extends OPANN with observation-specific variance"
+        }
+      },
+      {
+        "name": "Ordered Probit (baseline)",
+        "differences": {
+          "latent_index": "linear x_i beta (no ANN)",
+          "heteroskedasticity": false,
+          "framework": "Statsmodels"
+        }
+      },
+      {
+        "name": "ANN (baseline)",
+        "differences": {
+          "output": "softmax over J classes",
+          "loss": "cross-entropy",
+          "no_ordinal_structure": true
+        }
+      }
+    ]
+  },
+  "mathematical_spec": [
+    {
+      "name": "Standard Ordered Probit Latent Variable",
+      "latex": "y^*_i = \\mathbf{x}_i \\boldsymbol{\\beta} + \\varepsilon_i, \\quad \\varepsilon_i \\sim \\mathcal{N}(0, 1)",
+      "role": "other",
+      "used_in": "both",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "Ordered Probit Model",
+      "confidence": 0.97
+    },
+    {
+      "name": "Ordered Probit Observable Mapping",
+      "latex": "y_i = j \\iff c_{j-1} < y^*_i \\leq c_j, \\quad j = 1, \\ldots, J",
+      "role": "other",
+      "used_in": "both",
+      "hyperparameters": ["J", "c_1, ..., c_{J-1}"],
+      "undefined_symbols": [],
+      "paper_section": "Ordered Probit Model",
+      "confidence": 0.97
+    },
+    {
+      "name": "Ordered Probit Class Probability",
+      "latex": "P(y_i = j \\mid \\mathbf{x}_i) = \\Phi(c_j - \\mathbf{x}_i \\boldsymbol{\\beta}) - \\Phi(c_{j-1} - \\mathbf{x}_i \\boldsymbol{\\beta})",
+      "role": "other",
+      "used_in": "both",
+      "hyperparameters": ["c_j"],
+      "undefined_symbols": [],
+      "paper_section": "Ordered Probit Model",
+      "confidence": 0.97
+    },
+    {
+      "name": "OPANN ANN Hidden Layer Activation",
+      "latex": "h_q = \\sigma\\!\\left(\\sum_{k} w_{qk} x_{ik} + b_q\\right), \\quad q = 1, \\ldots, Q",
+      "role": "activation",
+      "used_in": "both",
+      "hyperparameters": ["Q", "activation function sigma"],
+      "undefined_symbols": [],
+      "paper_section": "OPANN Architecture",
+      "confidence": 0.92
+    },
+    {
+      "name": "OPANN ANN Output (Latent Index)",
+      "latex": "f(\\mathbf{x}_i, \\boldsymbol{\\theta}) = \\sum_{q=1}^{Q} v_q h_q + c",
+      "role": "other",
+      "used_in": "both",
+      "hyperparameters": ["Q"],
+      "undefined_symbols": [],
+      "paper_section": "OPANN Architecture",
+      "confidence": 0.92
+    },
+    {
+      "name": "OPANN Class Probability",
+      "latex": "P(y_i = j \\mid \\mathbf{x}_i) = \\Phi\\!\\left(c_j - f(\\mathbf{x}_i, \\boldsymbol{\\theta})\\right) - \\Phi\\!\\left(c_{j-1} - f(\\mathbf{x}_i, \\boldsymbol{\\theta})\\right)",
+      "role": "other",
+      "used_in": "both",
+      "hyperparameters": ["c_j"],
+      "undefined_symbols": [],
+      "paper_section": "OPANN Architecture",
+      "confidence": 0.93
+    },
+    {
+      "name": "HOPANN Heteroskedastic Variance",
+      "latex": "\\sigma_i = \\exp(\\mathbf{z}_i \\boldsymbol{\\gamma})",
+      "role": "other",
+      "used_in": "both",
+      "hyperparameters": [],
+      "undefined_symbols": ["z_i — not confirmed to equal x_i or be a subset; see ambiguities"],
+      "paper_section": "HOPANN Architecture",
+      "confidence": 0.82
+    },
+    {
+      "name": "HOPANN Class Probability",
+      "latex": "P(y_i = j \\mid \\mathbf{x}_i, \\mathbf{z}_i) = \\Phi\\!\\left(\\frac{c_j - f(\\mathbf{x}_i, \\boldsymbol{\\theta})}{\\sigma_i}\\right) - \\Phi\\!\\left(\\frac{c_{j-1} - f(\\mathbf{x}_i, \\boldsymbol{\\theta})}{\\sigma_i}\\right)",
+      "role": "other",
+      "used_in": "both",
+      "hyperparameters": ["c_j"],
+      "undefined_symbols": [],
+      "paper_section": "HOPANN Architecture",
+      "confidence": 0.90
+    },
+    {
+      "name": "Ordered Probit Log-Likelihood (MLE Objective)",
+      "latex": "\\ln LL(\\boldsymbol{\\theta}) = \\sum_{i} \\sum_{j} \\mathbf{1}(y_i = j) \\ln P(y_i = j \\mid \\mathbf{x}_i)",
+      "role": "loss",
+      "used_in": "training",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "Mathematical Specification",
+      "confidence": 0.95
+    }
+  ],
+  "tensor_semantics": [
+    {"name": "x_i", "shape_notation": "[B, K]", "dtype": "float32", "tensor_type": "input", "module": "input_layer", "confidence": 0.85},
+    {"name": "z_i", "shape_notation": "[B, M]", "dtype": "float32", "tensor_type": "input", "module": "hopann_variance_hidden_layer", "confidence": 0.65},
+    {"name": "W (input-to-hidden weights)", "shape_notation": "[Q, K]", "dtype": "float32", "tensor_type": "parameter", "module": "ann_hidden_layer", "confidence": 0.90},
+    {"name": "b (hidden bias)", "shape_notation": "[Q]", "dtype": "float32", "tensor_type": "parameter", "module": "ann_hidden_layer", "confidence": 0.90},
+    {"name": "h_q (hidden activations)", "shape_notation": "[B, Q]", "dtype": "float32", "tensor_type": "intermediate", "module": "ann_hidden_layer", "confidence": 0.90},
+    {"name": "v (output weights)", "shape_notation": "[Q]", "dtype": "float32", "tensor_type": "parameter", "module": "ann_output_layer", "confidence": 0.90},
+    {"name": "c (output bias)", "shape_notation": "[]", "dtype": "float32", "tensor_type": "parameter", "module": "ann_output_layer", "confidence": 0.88},
+    {"name": "f(x_i, theta) — latent index", "shape_notation": "[B, 1]", "dtype": "float32", "tensor_type": "intermediate", "module": "ann_output_layer", "confidence": 0.92},
+    {"name": "sigma_i — heteroskedasticity term", "shape_notation": "[B, 1]", "dtype": "float32", "tensor_type": "intermediate", "module": "hopann_variance_output_layer", "confidence": 0.80},
+    {"name": "cutting_points c_j", "shape_notation": "[J-1]", "dtype": "float32", "tensor_type": "parameter", "module": "ordered_probit_log_likelihood_layer", "confidence": 0.92},
+    {"name": "P(y_i = j) — class probabilities", "shape_notation": "[B, J]", "dtype": "float32", "tensor_type": "output", "module": "ordered_probit_log_likelihood_layer", "confidence": 0.92}
+  ],
+  "training_pipeline": {
+    "optimizer": {
+      "name": "Adam",
+      "learning_rate": null,
+      "beta1": null,
+      "beta2": null,
+      "weight_decay": null,
+      "confidence": 0.82
+    },
+    "lr_schedule": {
+      "type": null,
+      "warmup_steps": null,
+      "total_steps": null,
+      "confidence": 0.20
+    },
+    "batch_size": null,
+    "effective_batch_size": null,
+    "training_steps": null,
+    "epochs": null,
+    "mixed_precision": null,
+    "gradient_clipping": null,
+    "data_augmentation": [],
+    "curriculum": "Hyperparameter search on validation set for Q (hidden nodes) and activation function; final model retrained on full training set",
+    "confidence": 0.58,
+    "notes": "Adam optimizer confirmed (Kingma 2014 cited). Learning rate, beta1, beta2, batch size, epochs, gradient clipping all unspecified. Early stopping cited (Prechelt 2002) but not formally described. Hardware: T4 GPU, Google Colab."
+  },
+  "evaluation_protocol": {
+    "datasets": [
+      {
+        "name": "Amazon Software Product Reviews (Ni et al. 2019) — Experiment 1: 5-star imbalanced",
+        "split": "train/test (approx 80:20, time-ordered)",
+        "size": 6173,
+        "publicly_available": true
+      },
+      {
+        "name": "Amazon Software Product Reviews — Experiment 2: Three-class imbalanced",
+        "split": "train/test (approx 80:20, time-ordered)",
+        "size": 6173,
+        "publicly_available": true
+      },
+      {
+        "name": "Amazon Software Product Reviews — Experiment 3: Modified three-class imbalanced",
+        "split": "train/test (80.6:19.4, time-ordered)",
+        "size": 6173,
+        "publicly_available": true
+      },
+      {
+        "name": "Amazon Software Product Reviews — Experiment 4: Modified three-class balanced",
+        "split": "train/test (80:20)",
+        "size": 4380,
+        "publicly_available": true
+      }
+    ],
+    "metrics": ["F1 score (macro)", "Accuracy", "PR AUC", "MSE", "MAE", "Cohen's Kappa", "ROC AUC"],
+    "reported_results": [
+      {"metric": "F1 (macro)", "dataset": "Imbalanced datasets (Exp 1, 2, 3)", "model": "HOPANN/OPANN", "result": "Best or second-best across all imbalanced experiments", "is_primary": true},
+      {"metric": "Accuracy", "dataset": "Balanced dataset (Exp 4)", "model": "RF", "result": "Best accuracy on balanced dataset", "is_primary": false},
+      {"metric": "PR AUC / MSE / MAE", "dataset": "Imbalanced datasets", "model": "XGB", "result": "Frequently best", "is_primary": false}
+    ],
+    "baselines": [
+      "Ordered Probit (linear, Statsmodels)",
+      "ANN (standard feedforward, softmax, PyTorch)",
+      "SVM (Support Vector Machine with ordinal extension, scikit-learn)",
+      "RF (Random Forest, scikit-learn)",
+      "XGB (Extreme Gradient Boosting, XGBoost)"
+    ],
+    "compute": "T4 GPU, Google Colab",
+    "special_conditions": [
+      "Time-ordered train/test split to prevent data leakage",
+      "Feature standardization fit on training set only; applied to val/test",
+      "Asin_verified_share and day dummy variables not standardized",
+      "Validation set used for hyperparameter selection (Q, activation function, learning rate)",
+      "Final model retrained on full training set after hyperparameter selection"
+    ],
+    "confidence": 0.88
+  },
+  "implementation_assumptions": [
+    {
+      "assumption": "Adam optimizer default hyperparameters: lr=1e-3, beta1=0.9, beta2=0.999, epsilon=1e-8, weight_decay=0",
+      "basis": "Kingma & Ba (2014) paper defaults; paper does not specify these values",
+      "confidence": 0.72,
+      "alternatives": ["lr=1e-4", "lr=5e-4", "weight_decay=1e-4"],
+      "affects_section": "training_pipeline"
+    },
+    {
+      "assumption": "Q (hidden nodes) is a small integer, likely in range {8, 16, 32, 64} based on dataset size (~6k samples)",
+      "basis": "Common practice for tabular datasets; paper says Q is hyperparameter-searched",
+      "confidence": 0.60,
+      "alternatives": ["4", "128", "256"],
+      "affects_section": "architecture"
+    },
+    {
+      "assumption": "z_i (variance features for HOPANN) is identical to x_i (same input features)",
+      "basis": "Paper does not distinguish z_i from x_i explicitly; simplest implementation uses same inputs for both ANN and variance network",
+      "confidence": 0.55,
+      "alternatives": ["z_i is a subset of x_i", "z_i is a separate engineered feature set"],
+      "affects_section": "architecture"
+    },
+    {
+      "assumption": "Variance ANN (heteroskedasticity network) has the same depth (1 hidden layer) and comparable Q as the mean ANN",
+      "basis": "Paper only explicitly states the mean ANN architecture; symmetric design is common practice",
+      "confidence": 0.50,
+      "alternatives": ["single linear layer for variance (z_i gamma)", "deeper variance network"],
+      "affects_section": "architecture"
+    },
+    {
+      "assumption": "Batch size: full-batch or large mini-batch (dataset is ~6k samples, GPU is T4)",
+      "basis": "Dataset small enough for full-batch; T4 has 16GB VRAM; paper does not state batch size",
+      "confidence": 0.55,
+      "alternatives": ["batch_size=32", "batch_size=64", "batch_size=128", "batch_size=256"],
+      "affects_section": "training_pipeline"
+    },
+    {
+      "assumption": "Early stopping is applied with a patience-based criterion on validation loss",
+      "basis": "Prechelt (2002) is cited in the paper; standard practice",
+      "confidence": 0.68,
+      "alternatives": ["fixed epoch count", "no early stopping"],
+      "affects_section": "training_pipeline"
+    },
+    {
+      "assumption": "Cutting points c_j are initialized in sorted order (e.g. evenly spaced quantiles of training labels)",
+      "basis": "Sorted initialization required for ordered probit identifiability; common practice",
+      "confidence": 0.65,
+      "alternatives": ["random initialization with sorting constraint enforced via softplus/cumsum", "learned free parameters with ordering constraint"],
+      "affects_section": "architecture"
+    },
+    {
+      "assumption": "Weight initialization follows PyTorch defaults (Kaiming uniform for ReLU; Xavier uniform for sigmoid/tanh)",
+      "basis": "PyTorch is the stated framework; default initialization is framework standard",
+      "confidence": 0.70,
+      "alternatives": ["Xavier normal", "orthogonal", "custom"],
+      "affects_section": "architecture"
+    },
+    {
+      "assumption": "ANN baseline uses cross-entropy loss (not ordered probit likelihood)",
+      "basis": "Standard multiclass ANN with softmax implies cross-entropy; paper confirms ANN is a separate baseline",
+      "confidence": 0.85,
+      "alternatives": ["MSE loss", "ordinal cross-entropy"],
+      "affects_section": "architecture"
+    },
+    {
+      "assumption": "Total input feature dimension K is approximately 12-19 (12 base features + unspecified number of day binary dummies)",
+      "basis": "Paper lists 7 named variables; 'Day' expanded to binary dummies; exact count of days not given",
+      "confidence": 0.55,
+      "alternatives": ["K=12", "K=14", "K=19"],
+      "affects_section": "architecture"
+    }
+  ],
+  "ambiguities": [
+    {
+      "location": "HOPANN Architecture description",
+      "description": "Paper describes sigma_i = exp(z_i gamma) but also says it is modeled using 'a separate ANN.' It is unclear whether the variance ANN is: (a) a literal ANN replacing the linear z_i*gamma term, or (b) a linear model with exp output.",
+      "primary_assumption": "sigma_i is produced by a small ANN (hidden layer + exp output) where z_i = x_i",
+      "alternatives": [
+        "sigma_i = exp(z_i * gamma) where gamma is a simple learned vector (no hidden layer)",
+        "sigma_i modeled by a separate ANN with different inputs than x_i"
+      ],
+      "confidence": 0.55
+    },
+    {
+      "location": "Training Pipeline — batch size",
+      "description": "Batch size is not stated anywhere in the paper.",
+      "primary_assumption": "Mini-batch with batch_size=64 (common default for tabular tasks in PyTorch)",
+      "alternatives": ["full-batch", "batch_size=32", "batch_size=128", "batch_size=256"],
+      "confidence": 0.45
+    },
+    {
+      "location": "Training Pipeline — learning rate",
+      "description": "The paper says learning rate is searched as a hyperparameter but does not report the final chosen value.",
+      "primary_assumption": "1e-3 (Adam default, most common for tabular tasks)",
+      "alternatives": ["1e-4", "5e-4", "3e-3"],
+      "confidence": 0.55
+    },
+    {
+      "location": "Training Pipeline — number of epochs / training steps",
+      "description": "No epoch count or step count is reported. Early stopping is cited but not described with specific patience or delta thresholds.",
+      "primary_assumption": "Training runs until early stopping triggers (patience=10-20 epochs on validation loss)",
+      "alternatives": ["fixed 100 epochs", "fixed 200 epochs", "patience=5", "patience=50"],
+      "confidence": 0.40
+    },
+    {
+      "location": "Implementation Details — feature engineering / day dummies",
+      "description": "The 'Day' variable is described as a time-fixed effect implemented as binary dummies, but the exact number of dummies is not stated.",
+      "primary_assumption": "Day-of-week dummies (7 binary columns) or a condensed set of time dummies",
+      "alternatives": ["Full daily dummies (~269 columns)", "Week-of-year dummies (~39 columns)", "Month dummies (9 columns)"],
+      "confidence": 0.40
+    },
+    {
+      "location": "OPANN/HOPANN — cutting point enforcement",
+      "description": "The ordered probit requires c_1 < c_2 < ... < c_{J-1}. The paper does not specify how this ordering constraint is enforced during gradient-based training.",
+      "primary_assumption": "Cumulative sum parameterization: c_j = c_1 + sum_{k=2}^{j} softplus(delta_k) to ensure strict ordering",
+      "alternatives": ["Sorting operation after each gradient step", "Free parameters with penalty for ordering violation"],
+      "confidence": 0.50
+    }
+  ],
+  "confidence_annotations": {
+    "architecture": 0.78,
+    "mathematical_spec": 0.91,
+    "tensor_semantics": 0.82,
+    "training_pipeline": 0.52,
+    "evaluation_protocol": 0.88,
+    "implementation_assumptions": 0.63,
+    "overall_sir_confidence": 0.76
+  }
+}

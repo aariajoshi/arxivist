@@ -3,15 +3,15 @@
   "total_papers": 1,
   "papers": [
     {
-      "paper_id": "arxiv_2604_002064",
-      "title": "Quantitative Universal Approximation for Noisy Quantum Neural Networks",
-      "domain": "Other",
+      "paper_id": "paper_2605-09842v1",
+      "title": "Yield Curve Forecasting using Machine Learning and Econometrics: A Comparative Analysis",
+      "domain": "Tabular",
       "sir_version": 1,
-      "sir_confidence": 0.70,
-      "has_repo": true,
-      "has_notebook": true,
-      "has_comparison": true,
-      "last_updated": "2026-07-22T00:45:00Z"
+      "sir_confidence": 0.85,
+      "has_repo": false,
+      "has_notebook": false,
+      "has_comparison": false,
+      "last_updated": "2026-07-26T23:56:51+05:30"
     }
   ]
 }

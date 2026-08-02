@@ -1,0 +1,29 @@
+{
+  "paper_id": "arxiv_2607_20415",
+  "title": "Flux-Corrected Diagonal Frog: second order and positivity at all time steps",
+  "authors": ["Andrey Itkin"],
+  "domain": "Numerical Analysis / Computational Finance (Fokker-Planck PDE discretization)",
+  "arxiv_id": "2607.20415v1",
+  "version": 1,
+  "created_at": "2026-07-25T16:03:58Z",
+  "last_updated": "2026-07-25T16:03:58Z",
+  "sir_confidence": 0.84,
+  "stages_with_data": [1, 2, 3, 4, 5, 6],
+  "has_comparison_report": true,
+  "reproducibility_score": 0.71,
+  "repo_path": "paper-repos/arxiv_2607_20415/",
+  "update_history": [
+    {
+      "version": 1,
+      "timestamp": "2026-07-25T16:03:58Z",
+      "reason": "initial commit (Stage 1 Paper Parser output, committed by Stage 2 SIR Registry)",
+      "changed_sections": ["all"]
+    },
+    {
+      "version": 1,
+      "timestamp": "2026-07-26T12:40:00Z",
+      "reason": "Stages 3-6 completed: architecture plan, code repo (7 schemes, 14 passing tests, 1 real bug caught+fixed), notebook, comparison report (reproducibility_score=0.71)",
+      "changed_sections": ["architecture_plan", "paper_repo", "notebooks", "comparison"]
+    }
+  ]
+}

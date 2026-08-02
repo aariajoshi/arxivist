@@ -1,0 +1,74 @@
+# Physics-Guided Motion Loss — Configuration
+# Paper: arXiv 2506.02244v2 — "Physics-Guided Motion Loss for Video Generation Model"
+# All SIR confidence scores annotated as comments.
+
+spectral:
+  low_pass_rho: 0.3          # Fraction of freqs retained per dim → 0.3^3 = 2.7% coeffs (Sec 4.1, conf 0.97)
+  Nr_rings: 20               # Concentric rings for polar/ring analysis (App A.6/A.8, conf 0.85)
+  M_angular_bins: 24         # Angular bins for polar resampling (App A.6/A.8, conf 0.85)
+  Nxi_log_radius_bins: 24    # Log-radius bins for scaling branch (App A.6/A.8, conf 0.85)
+  delta_tolerance: 1         # Tilted-line band tolerance in temporal-freq bins (App A.8, conf 0.99)
+  temporal_window: hann      # Window applied before temporal DFT (App A.1, conf 0.99)
+  T_min_scaling: 3           # Min frames for scaling loss; else default to 0.5 (Sec 3.6, conf 0.99)
+
+gates:
+  energy_threshold_tau_E: 0.10   # Energy gate sigmoid threshold (Table 5, conf 0.90)
+  energy_smoothing_f: 10.0       # Sigmoid sharpness factor (Table 5, conf 0.90)
+  observability_lambda_rot: 1.0  # g_obs(m) = m^2/(m^2+lambda) for rotation (App A.6, conf 0.90)
+  observability_lambda_scale: 1.0
+
+losses:
+  softmax_temperature: 0.1   # Adaptive weighting temperature tau (Table 5, conf 0.97)
+  physics_loss_weight: 0.1   # Mixing weight: total = denoising + weight * L_motion (Table 5, conf 0.78)
+                             # ASSUMED: constant throughout training — no schedule described
+  ridge_lambda: 1.0e-3       # Ridge regularization for WLS solvers (App A.6, conf 0.97)
+  numeric_epsilon: 1.0e-8    # Jitter for numerical stability (App A.6, conf 0.97)
+  epsilon_stab: 1.0e-8       # Stability epsilon for centroid denominator (Sec 3.6, conf 0.97)
+  stop_grad_weights: false   # Whether to stop-grad through adaptive softmax weights
+                             # ASSUMED: false (fully differentiable) — not stated in paper (conf 0.70)
+
+training:
+  learning_rate: 2.0e-5      # Initial LR, cosine-annealed (Sec 4.1, conf 0.97)
+  lr_schedule: cosine        # (Sec 4.1, conf 0.97)
+  epochs: 4                  # (Sec 4.1, conf 0.97)
+  backbone: open_sora        # {open_sora, mvdit, hunyuan}
+  mixed_precision_backbone: bf16   # (Sec 4.1, conf 0.97)
+  mixed_precision_spectral: fp32   # Spectral/solver blocks always FP32 (Sec 4.1, conf 0.97)
+  optimizer: adamw           # ASSUMED: AdamW — not named in paper (conf 0.65)
+  optimizer_betas: [0.9, 0.999]   # ASSUMED: standard AdamW defaults (conf 0.65)
+  weight_decay: 0.01         # ASSUMED: standard AdamW default (conf 0.65)
+  gradient_clip: null        # Not specified in paper
+  log_every_n_steps: 50
+  save_every_n_steps: 500
+  seed: 42
+  deterministic: false       # torch.use_deterministic_algorithms — may slow training
+
+lora:
+  enabled: false             # Set true for Hunyuan backbone
+  rank: 16                   # ASSUMED: not specified in paper (conf < 0.60) — make swappable
+  alpha: 32                  # ASSUMED: 2x rank, common default (conf < 0.60)
+  target_modules:            # ASSUMED: attention + time-embed layers (conf < 0.60)
+    - attn
+    - time_embed
+  dropout: 0.1               # ASSUMED: standard default (conf < 0.60)
+
+data:
+  dataset: openvid1m
+  data_root: data/openvid1m  # Override with absolute path
+  T: 16                      # Temporal window length — ASSUMED: 16 (range 12-16, conf 0.72)
+  H: 256
+  W: 256
+  num_workers: 4
+  max_samples: null          # Set integer for debug/subset mode
+  motion_split: all          # {all, simple, complex} for stratified eval
+
+hardware:
+  device: cuda
+  num_gpus: 4                # (Sec 4.1: 4× A100)
+  compile: false             # torch.compile — experimental
+
+evaluation:
+  use_evalcrafter: true
+  evalcrafter_root: third_party/evalcrafter
+  flow_baseline_enabled: false   # Enable RAFT-based ℒ_flow ablation baseline
+  raft_checkpoint: null          # Path to RAFT weights if flow_baseline_enabled

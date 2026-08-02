@@ -1,0 +1,406 @@
+{
+  "paper_id": "paper_hopann-heteroskedastic-ordered-probit",
+  "plan_version": 1,
+  "created_at": "2026-07-16T09:27:00Z",
+  "framework": {
+    "primary": "pytorch",
+    "python_version": "3.10",
+    "cuda_required": true,
+    "cuda_min_version": "11.8",
+    "use_huggingface": false,
+    "config_library": "yaml",
+    "reasoning": "Paper explicitly implements OPANN and HOPANN in PyTorch on a T4 GPU. Baselines use Statsmodels, scikit-learn, and XGBoost. No Transformers involved."
+  },
+  "module_hierarchy": [
+    { "path": "src/hopann/__init__.py", "description": "Package init", "classes": [] },
+    { "path": "src/hopann/models/__init__.py", "description": "Models sub-package init", "classes": [] },
+    {
+      "path": "src/hopann/models/mean_network.py",
+      "description": "Single-hidden-layer ANN computing latent index f(x, theta). Used by OPANN and HOPANN.",
+      "sir_modules_mapped": ["ann_hidden_layer", "ann_output_layer"],
+      "classes": [{"name": "MeanNetwork", "base_class": "torch.nn.Module",
+        "public_methods": [{"name": "forward", "signature": "(self, x: Tensor) -> Tensor", "returns": "[B, 1] latent index"}]}]
+    },
+    {
+      "path": "src/hopann/models/variance_network.py",
+      "description": "Variance ANN for HOPANN sigma_i. Swappable: ANN hidden layer or linear fallback. SIR confidence 0.62 — design supports both.",
+      "sir_modules_mapped": ["hopann_variance_hidden_layer", "hopann_variance_output_layer"],
+      "classes": [
+        {"name": "VarianceNetworkBase", "base_class": "torch.nn.Module",
+          "public_methods": [{"name": "forward", "signature": "(self, z: Tensor) -> Tensor", "returns": "[B, 1] log-sigma"}]},
+        {"name": "VarianceNetworkANN", "base_class": "VarianceNetworkBase",
+          "public_methods": [{"name": "forward", "signature": "(self, z: Tensor) -> Tensor", "returns": "[B, 1] log-sigma via ANN hidden layer"}]},
+        {"name": "VarianceNetworkLinear", "base_class": "VarianceNetworkBase",
+          "public_methods": [{"name": "forward", "signature": "(self, z: Tensor) -> Tensor", "returns": "[B, 1] log-sigma via linear layer"}]}
+      ]
+    },
+    {
+      "path": "src/hopann/models/cutting_points.py",
+      "description": "Learnable ordered cutting points c_1 < c_2 < ... < c_{J-1} via cumsum + softplus reparameterisation.",
+      "sir_modules_mapped": ["ordered_probit_log_likelihood_layer"],
+      "classes": [{"name": "CuttingPoints", "base_class": "torch.nn.Module",
+        "public_methods": [
+          {"name": "forward", "signature": "(self) -> Tensor", "returns": "[J-1] strictly ordered cutting points"},
+          {"name": "num_classes", "signature": "(self) -> int", "returns": "J"}
+        ]}]
+    },
+    {
+      "path": "src/hopann/models/opann.py",
+      "description": "OPANN: MeanNetwork + CuttingPoints. P(y=j|x) = Phi(c_j - f(x)) - Phi(c_{j-1} - f(x)).",
+      "sir_modules_mapped": ["OPANN"],
+      "classes": [{"name": "OPANN", "base_class": "torch.nn.Module",
+        "public_methods": [
+          {"name": "forward", "signature": "(self, x: Tensor) -> Tensor", "returns": "[B, J] class probabilities"},
+          {"name": "predict", "signature": "(self, x: Tensor) -> Tensor", "returns": "[B] predicted class index"},
+          {"name": "latent_index", "signature": "(self, x: Tensor) -> Tensor", "returns": "[B, 1] f(x, theta)"}
+        ]}]
+    },
+    {
+      "path": "src/hopann/models/hopann.py",
+      "description": "HOPANN: MeanNetwork + VarianceNetworkBase + CuttingPoints. P(y=j|x,z) = Phi((c_j-f)/sigma) - Phi((c_{j-1}-f)/sigma).",
+      "sir_modules_mapped": ["HOPANN"],
+      "classes": [{"name": "HOPANN", "base_class": "torch.nn.Module",
+        "public_methods": [
+          {"name": "forward", "signature": "(self, x: Tensor, z: Tensor) -> Tensor", "returns": "[B, J] heteroskedastic probabilities"},
+          {"name": "predict", "signature": "(self, x: Tensor, z: Tensor) -> Tensor", "returns": "[B] predicted class index"},
+          {"name": "sigma", "signature": "(self, z: Tensor) -> Tensor", "returns": "[B, 1] per-sample sigma_i"},
+          {"name": "latent_index", "signature": "(self, x: Tensor) -> Tensor", "returns": "[B, 1] f(x, theta)"}
+        ]}]
+    },
+    {
+      "path": "src/hopann/models/baselines.py",
+      "description": "Unified wrappers for all 5 baselines: OrderedProbit, ANN, SVM, RF, XGB. All implement BaselineModel ABC.",
+      "sir_modules_mapped": ["ordered_probit_baseline", "ann_baseline", "svm_baseline", "rf_baseline", "xgb_baseline"],
+      "classes": [
+        {"name": "BaselineModel", "base_class": "abc.ABC",
+          "public_methods": [
+            {"name": "fit", "signature": "(self, X_train: np.ndarray, y_train: np.ndarray) -> None", "returns": "None"},
+            {"name": "predict", "signature": "(self, X: np.ndarray) -> np.ndarray", "returns": "[N] predicted labels"},
+            {"name": "predict_proba", "signature": "(self, X: np.ndarray) -> np.ndarray", "returns": "[N, J] class probabilities"}
+          ]},
+        {"name": "OrderedProbitBaseline", "base_class": "BaselineModel", "public_methods": []},
+        {"name": "ANNBaseline", "base_class": "BaselineModel", "public_methods": []},
+        {"name": "SVMBaseline", "base_class": "BaselineModel", "public_methods": []},
+        {"name": "RandomForestBaseline", "base_class": "BaselineModel", "public_methods": []},
+        {"name": "XGBoostBaseline", "base_class": "BaselineModel", "public_methods": []}
+      ]
+    },
+    { "path": "src/hopann/data/__init__.py", "description": "Data sub-package init", "classes": [] },
+    {
+      "path": "src/hopann/data/dataset.py",
+      "description": "AmazonReviewDataset (PyTorch Dataset) + ExperimentSplitter for all 4 experiment configurations.",
+      "sir_modules_mapped": ["evaluation_protocol.datasets"],
+      "classes": [
+        {"name": "AmazonReviewDataset", "base_class": "torch.utils.data.Dataset",
+          "public_methods": [
+            {"name": "__len__", "signature": "(self) -> int", "returns": "N samples"},
+            {"name": "__getitem__", "signature": "(self, idx: int) -> tuple", "returns": "(features [K], label [])"},
+            {"name": "to_numpy", "signature": "(self) -> tuple", "returns": "(X [N,K], y [N]) for sklearn/statsmodels"}
+          ]},
+        {"name": "ExperimentSplitter", "base_class": "object",
+          "public_methods": [
+            {"name": "get_splits", "signature": "(self, experiment_id: int) -> tuple", "returns": "(train, val, test) AmazonReviewDatasets"}
+          ]}
+      ]
+    },
+    {
+      "path": "src/hopann/data/transforms.py",
+      "description": "SelectiveStandardScaler: standardises numeric features only. Excludes Asin_verified_share and Day dummy columns per paper spec.",
+      "classes": [{"name": "SelectiveStandardScaler", "base_class": "object",
+        "public_methods": [
+          {"name": "fit", "signature": "(self, X: np.ndarray, exclude_cols: list[int]) -> SelectiveStandardScaler", "returns": "self"},
+          {"name": "transform", "signature": "(self, X: np.ndarray) -> np.ndarray", "returns": "[N, K] standardised"},
+          {"name": "fit_transform", "signature": "(self, X: np.ndarray, exclude_cols: list[int]) -> np.ndarray", "returns": "[N, K]"}
+        ]}]
+    },
+    { "path": "src/hopann/training/__init__.py", "description": "Training sub-package init", "classes": [] },
+    {
+      "path": "src/hopann/training/losses.py",
+      "description": "OrderedProbitNLL: negative log-likelihood for ordered probit. Numerically stable via log-clamp (min=1e-7).",
+      "classes": [{"name": "OrderedProbitNLL", "base_class": "torch.nn.Module",
+        "public_methods": [{"name": "forward", "signature": "(self, probs: Tensor, targets: Tensor) -> Tensor", "returns": "scalar NLL"}]}]
+    },
+    {
+      "path": "src/hopann/training/trainer.py",
+      "description": "EarlyStopping + HyperparameterSearcher + Trainer. Grid search over Q, activation, lr on val set; retrains on full data after selection.",
+      "classes": [
+        {"name": "EarlyStopping", "base_class": "object",
+          "public_methods": [
+            {"name": "step", "signature": "(self, val_loss: float) -> bool", "returns": "True if should stop"},
+            {"name": "best_epoch", "signature": "(self) -> int", "returns": "epoch of best val loss"}
+          ]},
+        {"name": "HyperparameterSearcher", "base_class": "object",
+          "public_methods": [
+            {"name": "run", "signature": "(self, train_ds, val_ds, search_grid: dict) -> dict", "returns": "best {Q, activation, lr}"}
+          ]},
+        {"name": "Trainer", "base_class": "object",
+          "public_methods": [
+            {"name": "train", "signature": "(self, model, train_loader, val_loader, config: dict) -> dict", "returns": "training history"},
+            {"name": "retrain_on_full", "signature": "(self, model, full_loader, n_epochs: int, config: dict) -> None", "returns": "None"}
+          ]}
+      ]
+    },
+    { "path": "src/hopann/evaluation/__init__.py", "description": "Evaluation sub-package init", "classes": [] },
+    {
+      "path": "src/hopann/evaluation/metrics.py",
+      "description": "OrdinalMetrics: computes all 7 paper metrics (F1-macro, Accuracy, PR AUC, MSE, MAE, Cohen's Kappa, ROC AUC).",
+      "classes": [{"name": "OrdinalMetrics", "base_class": "object",
+        "public_methods": [
+          {"name": "compute", "signature": "(self, y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray) -> dict", "returns": "metrics dict"},
+          {"name": "to_dataframe", "signature": "(self, results: dict) -> pd.DataFrame", "returns": "single-row DataFrame"}
+        ]}]
+    },
+    { "path": "src/hopann/utils/__init__.py", "description": "Utils sub-package init", "classes": [] },
+    {
+      "path": "src/hopann/utils/config.py",
+      "description": "YAML config loader with typed dataclass views.",
+      "classes": [{"name": "Config", "base_class": "object",
+        "public_methods": [
+          {"name": "from_yaml", "signature": "(cls, path: str) -> Config", "returns": "Config instance"},
+          {"name": "to_dict", "signature": "(self) -> dict", "returns": "plain dict"}
+        ]}]
+    },
+    {
+      "path": "src/hopann/utils/reproducibility.py",
+      "description": "Seed-setting for torch, numpy, random. Optionally enables CUDA deterministic mode.",
+      "classes": [{"name": "ReproducibilityManager", "base_class": "object",
+        "public_methods": [{"name": "seed_everything", "signature": "(cls, seed: int, deterministic: bool) -> None", "returns": "None"}]}]
+    }
+  ],
+  "tensor_flows": [
+    {
+      "name": "OPANN Forward Pass",
+      "input": {"name": "x", "shape": "[B, K]", "dtype": "float32"},
+      "output": {"name": "class_probs", "shape": "[B, J]", "dtype": "float32"},
+      "steps": [
+        "x: [B, K] — standardised features",
+        "h = activation(x @ W1.T + b1)   → [B, Q]  (hidden layer; activation hyperparameter-searched)",
+        "f = h @ v + c                   → [B, 1]  (latent index f(x_i, theta))",
+        "cuts = CuttingPoints()           → [J-1]  (strictly ordered via softplus+cumsum)",
+        "phi_upper = Phi(cuts - f)        → [B, J-1]  (standard normal CDF)",
+        "class_probs = phi_upper[:,1:] - phi_upper[:,:-1]  → [B, J]  (boundary terms: Phi(-inf)=0, Phi(+inf)=1)",
+        "return class_probs: [B, J]"
+      ]
+    },
+    {
+      "name": "HOPANN Forward Pass",
+      "input": {"name": "x_and_z", "shape": "[B, K] and [B, K]", "dtype": "float32"},
+      "output": {"name": "class_probs", "shape": "[B, J]", "dtype": "float32"},
+      "steps": [
+        "x: [B, K], z: [B, K]  (z=x by default — TODO: verify from paper)",
+        "h_mean = activation(x @ W1.T + b1)   → [B, Q]",
+        "f = h_mean @ v + c                   → [B, 1]  (latent index)",
+        "h_var = activation(z @ W1_var.T + b1_var)   → [B, Q_z]  (variance hidden; TODO: confirm from paper)",
+        "log_sigma = h_var @ v_var + c_var    → [B, 1]",
+        "sigma = exp(log_sigma)               → [B, 1]  (positive per-sample std)",
+        "cuts = CuttingPoints()               → [J-1]",
+        "scaled = (cuts - f) / sigma          → [B, J-1]",
+        "phi_upper = Phi(scaled)              → [B, J-1]",
+        "class_probs = phi_upper[:,1:] - phi_upper[:,:-1]  → [B, J]",
+        "return class_probs: [B, J]"
+      ]
+    },
+    {
+      "name": "CuttingPoints Reparameterisation",
+      "input": {"name": "raw_params", "shape": "[J-1]", "dtype": "float32"},
+      "output": {"name": "ordered_cuts", "shape": "[J-1]", "dtype": "float32"},
+      "steps": [
+        "raw_params[0] → c_1 (unconstrained)",
+        "increments = softplus(raw_params[1:])   → [J-2]  (all > 0)",
+        "c_k = c_1 + cumsum(increments)          → [J-2]  (strictly ordered)",
+        "return [c_1, c_2, ..., c_{J-1}]"
+      ]
+    },
+    {
+      "name": "OrderedProbitNLL",
+      "input": {"name": "probs + targets", "shape": "[B, J] + [B]", "dtype": "float32 + long"},
+      "output": {"name": "loss", "shape": "[]", "dtype": "float32"},
+      "steps": [
+        "log_probs = log(clamp(probs, min=1e-7))   → [B, J]",
+        "selected = gather(log_probs, targets)       → [B, 1]",
+        "nll = -mean(selected)                       → scalar",
+        "return nll"
+      ]
+    }
+  ],
+  "config_schema": {
+    "model": {
+      "model_type": "hopann",
+      "num_classes": 5,
+      "hidden_size_mean": {"value": 16, "comment": "ASSUMED: Q hyperparameter-searched on val set"},
+      "hidden_size_variance": {"value": 16, "comment": "ASSUMED: Q_z — TODO: verify from paper (confidence 0.62)"},
+      "activation": {"value": "relu", "comment": "ASSUMED: searched over {sigmoid, tanh, relu, elu, gelu}"},
+      "variance_network_type": {"value": "ann", "comment": "ASSUMED: ann or linear (confidence 0.62)"}
+    },
+    "training": {
+      "optimizer": "adam",
+      "learning_rate": {"value": 0.001, "comment": "ASSUMED: Adam default — searched (confidence 0.52)"},
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "batch_size": {"value": 64, "comment": "ASSUMED: unspecified in paper (confidence 0.52)"},
+      "max_epochs": {"value": 500, "comment": "ASSUMED: upper bound; early stopping terminates training"},
+      "early_stopping_patience": {"value": 15, "comment": "ASSUMED: Prechelt 2002 criterion (confidence 0.52)"},
+      "retrain_on_full": true,
+      "search_grid": {
+        "hidden_sizes": [8, 16, 32, 64],
+        "activations": ["sigmoid", "tanh", "relu", "elu", "gelu"],
+        "learning_rates": [0.001, 0.0005, 0.0001]
+      }
+    },
+    "data": {
+      "data_path": "data/amazon_software_reviews.csv",
+      "experiment_id": 1,
+      "exclude_standardisation_cols": ["Asin_verified_share"],
+      "seed": 42
+    },
+    "evaluation": {
+      "metrics": ["f1_macro", "accuracy", "pr_auc", "mse", "mae", "cohens_kappa", "roc_auc"],
+      "save_predictions": true,
+      "output_dir": "outputs/"
+    },
+    "hardware": {
+      "device": "cuda",
+      "num_workers": 2,
+      "mixed_precision": false
+    }
+  },
+  "dependencies": {
+    "runtime": [
+      {"package": "torch", "version": ">=2.1.0", "reason": "OPANN/HOPANN/ANN baseline"},
+      {"package": "numpy", "version": ">=1.24.0", "reason": "Array ops, sklearn interface"},
+      {"package": "pandas", "version": ">=2.0.0", "reason": "CSV loading, results tables"},
+      {"package": "scikit-learn", "version": ">=1.3.0", "reason": "SVM, RF, metrics (F1, Kappa, ROC AUC, PR AUC)"},
+      {"package": "xgboost", "version": ">=2.0.0", "reason": "XGB baseline"},
+      {"package": "statsmodels", "version": ">=0.14.0", "reason": "Ordered Probit baseline (OrderedModel)"},
+      {"package": "scipy", "version": ">=1.11.0", "reason": "Standard normal CDF for ordered probit probabilities"},
+      {"package": "pyyaml", "version": ">=6.0", "reason": "Config loading"},
+      {"package": "tqdm", "version": ">=4.65.0", "reason": "Training progress bars"},
+      {"package": "matplotlib", "version": ">=3.7.0", "reason": "Loss curves, plots"},
+      {"package": "seaborn", "version": ">=0.12.0", "reason": "Metric visualisations"}
+    ],
+    "dev": [
+      {"package": "pytest", "version": ">=7.4.0"},
+      {"package": "pytest-cov", "version": ">=4.1.0"},
+      {"package": "black", "version": ">=23.0.0"},
+      {"package": "isort", "version": ">=5.12.0"},
+      {"package": "flake8", "version": ">=6.0.0"},
+      {"package": "mypy", "version": ">=1.5.0"},
+      {"package": "jupyter", "version": ">=1.0.0"},
+      {"package": "ipykernel", "version": ">=6.25.0"}
+    ]
+  },
+  "entrypoints": [
+    {
+      "filename": "train.py",
+      "purpose": "Train OPANN or HOPANN for a single experiment. Runs hyperparameter search, selects best config, retrains on full training data, saves checkpoint.",
+      "cli_args": [
+        {"flag": "--config", "type": "str", "default": "config.yaml"},
+        {"flag": "--model", "type": "str", "default": "hopann", "help": "opann or hopann"},
+        {"flag": "--experiment", "type": "int", "default": 1, "help": "1-4"},
+        {"flag": "--data-path", "type": "str", "default": "data/amazon_software_reviews.csv"},
+        {"flag": "--output-dir", "type": "str", "default": "outputs/"},
+        {"flag": "--seed", "type": "int", "default": 42},
+        {"flag": "--device", "type": "str", "default": "cuda"},
+        {"flag": "--no-search", "type": "bool", "default": false, "help": "Skip hyperparameter search"}
+      ]
+    },
+    {
+      "filename": "evaluate.py",
+      "purpose": "Load checkpoint and compute all 7 metrics on test set.",
+      "cli_args": [
+        {"flag": "--checkpoint", "type": "str", "required": true},
+        {"flag": "--config", "type": "str", "default": "config.yaml"},
+        {"flag": "--experiment", "type": "int", "default": 1},
+        {"flag": "--data-path", "type": "str", "default": "data/amazon_software_reviews.csv"},
+        {"flag": "--output-dir", "type": "str", "default": "outputs/"},
+        {"flag": "--device", "type": "str", "default": "cuda"}
+      ]
+    },
+    {
+      "filename": "run_baselines.py",
+      "purpose": "Train and evaluate all 5 baselines for one experiment.",
+      "cli_args": [
+        {"flag": "--experiment", "type": "int", "default": 1},
+        {"flag": "--data-path", "type": "str", "default": "data/amazon_software_reviews.csv"},
+        {"flag": "--output-dir", "type": "str", "default": "outputs/"},
+        {"flag": "--seed", "type": "int", "default": 42}
+      ]
+    },
+    {
+      "filename": "run_experiments.py",
+      "purpose": "Full paper reproduction: all 4 experiments x all 7 models.",
+      "cli_args": [
+        {"flag": "--data-path", "type": "str", "default": "data/amazon_software_reviews.csv"},
+        {"flag": "--output-dir", "type": "str", "default": "outputs/"},
+        {"flag": "--seed", "type": "int", "default": 42},
+        {"flag": "--device", "type": "str", "default": "cuda"},
+        {"flag": "--skip-baselines", "type": "bool", "default": false}
+      ]
+    },
+    {
+      "filename": "inference.py",
+      "purpose": "Single-sample or batch inference from saved checkpoint.",
+      "cli_args": [
+        {"flag": "--checkpoint", "type": "str", "required": true},
+        {"flag": "--input", "type": "str", "required": true, "help": "CSV with feature columns"},
+        {"flag": "--config", "type": "str", "default": "config.yaml"},
+        {"flag": "--device", "type": "str", "default": "cpu"}
+      ]
+    }
+  ],
+  "docker_spec": {
+    "base_image": "pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime",
+    "system_deps": ["git", "wget", "curl", "build-essential"],
+    "workdir": "/workspace",
+    "setup_steps": [
+      "COPY requirements.txt .",
+      "RUN pip install --no-cache-dir -r requirements.txt",
+      "COPY . .",
+      "RUN pip install -e . --no-deps"
+    ],
+    "volume_mounts": ["/workspace/data", "/workspace/outputs"],
+    "default_cmd": "python run_experiments.py --data-path /workspace/data/amazon_software_reviews.csv --output-dir /workspace/outputs"
+  },
+  "risk_assessment": [
+    {
+      "severity": "High",
+      "description": "Training pipeline hyperparameters all assumed (batch size, LR, patience). SIR confidence 0.52.",
+      "mitigation": "All exposed in config.yaml with ASSUMED comments. Sweep-friendly design."
+    },
+    {
+      "severity": "High",
+      "description": "Variance network architecture ambiguous: linear layer vs ANN hidden layer. SIR confidence 0.62.",
+      "mitigation": "Both VarianceNetworkANN and VarianceNetworkLinear implemented. Switchable via config flag."
+    },
+    {
+      "severity": "High",
+      "description": "Dataset: exact 6,173-review Amazon subset may differ from any public download. Feature engineering steps partially inferred.",
+      "mitigation": "data/README.md with download instructions. data/preprocess.py with documented steps. Synthetic data fallback for smoke tests."
+    },
+    {
+      "severity": "Medium",
+      "description": "Feature count K unknown (12-19); day dummy column count ambiguous.",
+      "mitigation": "Input dim inferred dynamically from loaded dataset. Never hardcoded."
+    },
+    {
+      "severity": "Medium",
+      "description": "Cutting-point initialisation unspecified. Risk of degenerate NLL at training start.",
+      "mitigation": "Evenly spaced init in [-2, 2]. Softplus ordering. NLL clamp at 1e-7."
+    },
+    {
+      "severity": "Medium",
+      "description": "Exact Prechelt early stopping variant unspecified.",
+      "mitigation": "Generalisation-loss variant. Configurable patience and threshold."
+    },
+    {
+      "severity": "Low",
+      "description": "statsmodels API version compatibility.",
+      "mitigation": "Pinned >=0.14.0. Version check in OrderedProbitBaseline."
+    },
+    {
+      "severity": "Low",
+      "description": "Multi-class ROC/PR AUC averaging strategy unspecified.",
+      "mitigation": "sklearn OvR macro as default. Documented in metrics.py."
+    }
+  ]
+}

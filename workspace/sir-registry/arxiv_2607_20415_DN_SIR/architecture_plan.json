@@ -1,0 +1,340 @@
+{
+  "paper_id": "arxiv_2607_20415",
+  "plan_version": 1,
+  "created_at": "2026-07-25T16:15:00Z",
+  "project_name": "fcdf_diagonal_frog",
+  "framework": {
+    "primary": "Python + NumPy/SciPy (scipy.linalg.solve_banded / scipy.sparse for the banded M-matrix and generalized-Jacobian solves)",
+    "python_version": "3.10+",
+    "cuda_required": false,
+    "cuda_min_version": null,
+    "use_huggingface": false,
+    "config_library": "yaml",
+    "reasoning": "This is a numerical PDE / finite-difference scheme paper, not a neural-network paper. All linear algebra is 1D banded (tridiagonal/pentadiagonal) systems solved exactly at O(n) cost -- scipy.linalg.solve_banded is the direct match for the paper's repeated claim of 'one banded M-matrix solve at O(n) cost'. No GPU, no autograd, no dataset loader are needed. matplotlib is used for the two paper figures (coverage thresholds, limiter localization)."
+  },
+  "module_hierarchy": [
+    {
+      "path": "src/fcdf_diagonal_frog/operators/grid.py",
+      "description": "Uniform 1D grid construction and drift/diffusion coefficient evaluation, including the sign-changing-drift handling needed for the OU benchmark (Ambiguity #4 in the SIR).",
+      "sir_modules_mapped": ["eq_fpe"],
+      "classes": [
+        { "name": "Grid1D", "base_class": "object", "public_methods": [
+          { "name": "__init__", "signature": "(self, x_min: float, x_max: float, n: int)", "returns": "None" },
+          { "name": "cell_peclet", "signature": "(self, mu: np.ndarray, D: np.ndarray) -> np.ndarray", "returns": "elementwise |mu|*h/D" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/operators/df_operator.py",
+      "description": "Assembles the full 2nd-order DF operator A2 (Eqs. 4-5), the monotone M-matrix core A1 (Eq. 7), and the antidiffusive correction C = A2-A1 (Eqs. 8-9), all with the zero-flux conservative boundary closure (Section 2). Directional (sign-of-mu) upwinding is applied per node.",
+      "sir_modules_mapped": ["eq_A2_rows", "eq_A1_rows", "eq_correction_flux", "eq_split"],
+      "classes": [
+        { "name": "DFOperator", "base_class": "object", "public_methods": [
+          { "name": "assemble", "signature": "(self, grid: Grid1D, mu: np.ndarray, D: np.ndarray) -> DFOperator", "returns": "self, with A1_bands, A2_bands, correction fluxes precomputed" },
+          { "name": "unlimited_flux", "signature": "(self, p: np.ndarray) -> np.ndarray", "returns": "d_{i+1/2}(p), the unlimited antidiffusive interface flux, Eq. 9" },
+          { "name": "core_solve", "signature": "(self, rhs: np.ndarray, gamma: float) -> np.ndarray", "returns": "(I-gamma*A1)^-1 rhs via scipy.linalg.solve_banded" },
+          { "name": "apply_A2", "signature": "(self, p: np.ndarray) -> np.ndarray", "returns": "A2 @ p (banded matvec, used by FCDF-DC)" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/operators/chang_cooper.py",
+      "description": "Exponentially-fitted Chang-Cooper (1970) baseline scheme, assembled interface-by-interface to remain valid under variable/sign-changing drift (Section 6, baseline comparator).",
+      "sir_modules_mapped": [],
+      "classes": [
+        { "name": "ChangCooperOperator", "base_class": "object", "public_methods": [
+          { "name": "assemble", "signature": "(self, grid: Grid1D, mu: np.ndarray, D: np.ndarray) -> ChangCooperOperator", "returns": "self" },
+          { "name": "step", "signature": "(self, p: np.ndarray, gamma: float) -> np.ndarray", "returns": "backward-Euler step on the CC operator" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/limiter/zalesak.py",
+      "description": "Two-point Zalesak budget rule (Eq. 15) and its clamp-form equivalent (Lemma 4 / Eq. A.2), plus the combined clamp with a fixed defect-flux offset used by FCDF-DC (Eq. 21, Lemma 5).",
+      "sir_modules_mapped": ["eq_zalesak_limiter", "eq_combined_clamp"],
+      "classes": [
+        { "name": "ZalesakLimiter", "base_class": "object", "public_methods": [
+          { "name": "clamp", "signature": "(self, flux: np.ndarray, b: np.ndarray, gamma: float) -> np.ndarray", "returns": "Lambda_{i+1/2}(p), clamped flux, even budget split kappa_j=2" },
+          { "name": "clamp_with_offset", "signature": "(self, flux: np.ndarray, offset: np.ndarray, p_n: np.ndarray) -> np.ndarray", "returns": "combined clamp for FCDF-DC (Eq. 21)" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/schemes/fcdf_a.py",
+      "description": "Scheme FCDF-A: global-stopping-rule Picard iteration (Eq. 12).",
+      "sir_modules_mapped": ["eq_fcdfA_picard"],
+      "classes": [
+        { "name": "FCDF_A_Solver", "base_class": "object", "public_methods": [
+          { "name": "step", "signature": "(self, op: DFOperator, b: np.ndarray, gamma: float, max_sweeps: int = 50) -> np.ndarray", "returns": "one implicit time step, positive by construction" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/schemes/fcdf_b.py",
+      "description": "Scheme FCDF-B (primary): per-interface Zalesak-limited Picard sweep (Eqs. 13-15), implementing Proposition 1 (positivity, conservation, contraction, conditional consistency).",
+      "sir_modules_mapped": ["eq_fcdfB_limited_correction", "eq_fcdfB_sweep"],
+      "classes": [
+        { "name": "FCDF_B_Solver", "base_class": "object", "public_methods": [
+          { "name": "step", "signature": "(self, op: DFOperator, limiter: ZalesakLimiter, b: np.ndarray, gamma: float, tol: float = 1e-12, max_sweeps: int = 200) -> dict", "returns": "{'p': solution, 'sweeps': int, 'residual': float}" },
+          { "name": "picard_contraction_bound", "signature": "(self, op: DFOperator, mu_bar: float, h: float) -> float", "returns": "gamma_pic = h/(2*mu_bar), Proposition 1(iii)" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/schemes/fcdf_dc.py",
+      "description": "FCDF-DC defect-corrected 2-stage time stepper (Eqs. 17-21, Lemma 1, Proposition 3): limited predictor + limited corrector sharing one factorization of (I-dt*A2)... realized via the banded core-plus-correction Picard machinery, not a literal dense A2 factorization.",
+      "sir_modules_mapped": ["eq_predictor", "eq_corrector", "eq_defect_identity", "eq_stability_function"],
+      "classes": [
+        { "name": "FCDF_DC_Solver", "base_class": "FCDF_B_Solver", "public_methods": [
+          { "name": "step", "signature": "(self, op: DFOperator, limiter: ZalesakLimiter, p_n: np.ndarray, dt: float) -> dict", "returns": "{'p_next': ..., 'Y0': predictor, 'sweeps_predictor': int, 'sweeps_corrector': int}" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/schemes/active_set.py",
+      "description": "Active-set semismooth-Newton solver (Eqs. 24-26, Proposition 5, Lemma 2). Warm-starts from the unlimited solve; if not nonnegative, iterates clamp-pattern updates, each one banded solve. Includes an explicit runtime nonsingularity/iteration-cap safeguard because Proposition 5's general mixed-pattern nonsingularity above gamma_pic is an OPEN question in the paper (SIR implementation_assumption #4) -- NOT a proved guarantee, so the solver must not assume unconditional convergence.",
+      "sir_modules_mapped": ["eq_residual_F", "eq_generalized_jacobian"],
+      "classes": [
+        { "name": "ActiveSetSolver", "base_class": "object", "public_methods": [
+          { "name": "solve", "signature": "(self, op: DFOperator, b: np.ndarray, gamma: float, max_pattern_updates: int = 25) -> dict", "returns": "{'p': ..., 'pattern_updates': int, 'unlimited_accepted': bool, 'residual': float, 'converged': bool}" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/schemes/monotone_core.py",
+      "description": "Baseline: backward Euler on A1 alone (the unconditional first-order positivity floor).",
+      "sir_modules_mapped": ["eq_A1_rows"],
+      "classes": [
+        { "name": "MonotoneCoreSolver", "base_class": "object", "public_methods": [
+          { "name": "step", "signature": "(self, op: DFOperator, b: np.ndarray, gamma: float) -> np.ndarray", "returns": "(I-gamma*A1)^-1 b" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/schemes/unlimited.py",
+      "description": "Baseline: backward Euler on the full A2 operator, included specifically to reproduce the paper's positivity-failure demonstration (Table 7).",
+      "sir_modules_mapped": ["eq_implicit_step_abstract"],
+      "classes": [
+        { "name": "UnlimitedSolver", "base_class": "object", "public_methods": [
+          { "name": "step", "signature": "(self, op: DFOperator, b: np.ndarray, gamma: float) -> np.ndarray", "returns": "(I-gamma*A2)^-1 b, may be negative" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/linear_windows/thresholds.py",
+      "description": "Numerically computes gamma_0 (backward-Euler resolvent positivity threshold) and gamma_r (Pade(0,2) positivity threshold) by bisection on the most-negative entry of the respective map, exactly as Section 6.1 describes operationally (SIR implementation_assumption #1 and ambiguity #1 -- these thresholds are NOT re-derived analytically here, only measured numerically, since the closed-form derivation lives in an unavailable companion preprint).",
+      "sir_modules_mapped": ["eq_backward_euler_resolvent", "eq_pade02"],
+      "classes": [
+        { "name": "LinearWindowThresholds", "base_class": "object", "public_methods": [
+          { "name": "gamma_0", "signature": "(self, op: DFOperator, search_hi: float = 1e6) -> float", "returns": "bisection threshold for (I-gamma*A2)^-1 >= 0" },
+          { "name": "gamma_r", "signature": "(self, op: DFOperator, search_hi: float = 1e6) -> float | None", "returns": "bisection threshold for Pade(0,2) map >= 0, or None if not found below search_hi" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/benchmarks/ou_process.py",
+      "description": "Ornstein-Uhlenbeck benchmark: exact Gaussian evolution (mean x0*e^{-alpha t}, variance (sigma^2/2alpha)(1-e^{-2alpha t})+v0*e^{-2alpha t}), sign-changing drift mu(x)=-alpha*x, domain = 6 stationary std devs either side of the origin (Section 6.1-6.2).",
+      "sir_modules_mapped": [],
+      "classes": [
+        { "name": "OUBenchmark", "base_class": "object", "public_methods": [
+          { "name": "exact_density", "signature": "(self, x: np.ndarray, t: float) -> np.ndarray", "returns": "analytic Gaussian pdf at time t" },
+          { "name": "initial_condition", "signature": "(self, x: np.ndarray) -> np.ndarray", "returns": "Gaussian IC with x0=0.5, v0=1e-2" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/benchmarks/advection_diffusion.py",
+      "description": "Two variants: (a) smooth constant-coefficient advection-diffusion (Gaussian stays Gaussian, Peclet sweep, Section 6.3 Table 5), (b) unresolved-front benchmark (plateau IC on [0.1,0.4], mu=1, D=1e-4, Section 6.3-6.4, Tables 6/8/9).",
+      "sir_modules_mapped": [],
+      "classes": [
+        { "name": "SmoothAdvectionDiffusionBenchmark", "base_class": "object", "public_methods": [
+          { "name": "exact_density", "signature": "(self, x: np.ndarray, t: float) -> np.ndarray", "returns": "Gaussian(x0+mu*t, v0+2*D*t)" }
+        ] },
+        { "name": "FrontBenchmark", "base_class": "object", "public_methods": [
+          { "name": "initial_condition", "signature": "(self, x: np.ndarray) -> np.ndarray", "returns": "unit-height plateau on [0.1, 0.4]" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/evaluation/metrics.py",
+      "description": "Discrete L1 error ||v||_{1,h}, successive-halving observed order, mass-defect check (1^T p), positivity check (min nodal value), limiter-localization diagnostics (active-interface fraction, mass fraction under the limiter).",
+      "sir_modules_mapped": [],
+      "classes": [
+        { "name": "Metrics", "base_class": "object", "public_methods": [
+          { "name": "l1_error", "signature": "(p: np.ndarray, p_exact: np.ndarray, h: float) -> float", "returns": "float" },
+          { "name": "observed_order", "signature": "(errors: list[float]) -> list[float]", "returns": "successive-halving log2 ratios" },
+          { "name": "mass_defect", "signature": "(p: np.ndarray, p0: np.ndarray) -> float", "returns": "|sum(p)-sum(p0)|" }
+        ] }
+      ]
+    },
+    {
+      "path": "src/fcdf_diagonal_frog/utils/config.py",
+      "description": "YAML config loading, global RNG seeding (numpy only -- the schemes are deterministic given b, gamma; no stochastic training exists in this paper).",
+      "sir_modules_mapped": [],
+      "classes": [
+        { "name": "Config", "base_class": "object", "public_methods": [
+          { "name": "load", "signature": "(path: str) -> dict", "returns": "parsed config dict, validated" }
+        ] }
+      ]
+    }
+  ],
+  "tensor_flows": [
+    {
+      "name": "FCDF-B single implicit step (Proposition 1)",
+      "input": { "name": "b", "shape": "[n]", "dtype": "float64, >=0" },
+      "output": { "name": "p_star", "shape": "[n]", "dtype": "float64, >=0" },
+      "steps": [
+        "p = b.copy()  # p^[0] = b, Eq. 14",
+        "for sweep in range(max_sweeps):",
+        "    d = op.unlimited_flux(p)                      # Eq. 9",
+        "    Lambda = limiter.clamp(d, b, gamma)            # Eq. 15 / clamp form Eq. A.2",
+        "    rhs = b + gamma * divergence(Lambda)           # Eq. 13-14 assembled RHS",
+        "    p_new = op.core_solve(rhs, gamma)              # (I-gamma*A1)^-1 rhs, banded solve",
+        "    if ||p_new - p||_1 < tol: p = p_new; break",
+        "    p = p_new",
+        "return p  # nonnegative, mass-conservative by Proposition 1(i)-(ii)"
+      ]
+    },
+    {
+      "name": "FCDF-DC one full time step (Proposition 3)",
+      "input": { "name": "p_n", "shape": "[n]", "dtype": "float64, >=0" },
+      "output": { "name": "p_next", "shape": "[n]", "dtype": "float64, >=0" },
+      "steps": [
+        "Y0 = FCDF_B_step_with_offset(op, limiter, base=p_n, offset=0, gamma=dt)   # Eq. 17, predictor",
+        "w = op.apply_A2(Y0)",
+        "G = (dt**2/2) * flux_of(op.apply_A2(w))    # defect flux, Section 4.2",
+        "p_next = FCDF_B_step_with_offset(op, limiter, base=p_n, offset=G, gamma=dt)  # Eq. 18, corrector",
+        "return p_next  # 2nd-order in time where caps are slack, Proposition 3(iv)"
+      ]
+    },
+    {
+      "name": "Active-set solve (Proposition 5)",
+      "input": { "name": "b", "shape": "[n]", "dtype": "float64, >=0" },
+      "output": { "name": "p", "shape": "[n]", "dtype": "float64, >=0" },
+      "steps": [
+        "p_unlimited = solve_banded(I - gamma*A2, b)   # try the unlimited system first",
+        "if p_unlimited >= 0 (elementwise, tolerance): return p_unlimited, pattern_updates=0",
+        "else: label each interface's clamp pattern from p_unlimited",
+        "for update in range(max_pattern_updates):",
+        "    V_S = I - gamma*(A1 + C_restricted_to_free_interfaces(pattern))   # Eq. 25-26",
+        "    p = solve_banded(V_S, adjusted_rhs(pattern, b))",
+        "    new_pattern = relabel(p)",
+        "    if new_pattern == pattern: break   # F is piecewise-linear -> terminates on pattern match",
+        "    pattern = new_pattern",
+        "return p  # nonnegative by construction since any zero of F is a Prop.1(i) fixed point"
+      ]
+    }
+  ],
+  "config_schema": {
+    "model": {
+      "scheme": "fcdf_b   # options: fcdf_a, fcdf_b, fcdf_dc, active_set, monotone_core, unlimited, chang_cooper",
+      "zalesak_kappa": "2   # even budget split, per SIR eq_zalesak_limiter (confidence 0.93)",
+      "picard_tol": "1e-12  # ASSUMED: not stated numerically in the paper (SIR implementation_assumption #6, confidence 0.5)",
+      "picard_max_sweeps": "200  # ASSUMED, generous upper bound; paper reports convergence in a handful of sweeps below gamma_pic",
+      "active_set_max_pattern_updates": "25  # ASSUMED safeguard given open nonsingularity question (SIR implementation_assumption #4)"
+    },
+    "training": {
+      "note": "No learned parameters exist in this paper. This section instead configures the time-marching loop.",
+      "time_scheme": "backward_euler   # theta=1 for FCDF-B/-A/monotone/unlimited/CC; two_stage for fcdf_dc",
+      "dt": "2.0e-4   # small-step default matching Tables 3/4/6",
+      "dt_large": "5.0e-2  # large-step default matching Table 7",
+      "T_horizon": "0.2"
+    },
+    "data": {
+      "benchmark": "ou_process   # options: ou_process, smooth_advection_diffusion, front",
+      "ou": { "alpha": 1.0, "sigma": 1.0, "x0": 0.5, "v0": 1.0e-2, "domain_std_devs": 6 },
+      "front": { "mu": 1.0, "D": 1.0e-4, "plateau_lo": 0.1, "plateau_hi": 0.4 },
+      "smooth_advection": { "D_sweep": [1.0e-1, 1.0e-2, 1.0e-3, 3.0e-4] },
+      "mesh_sizes": [51, 101, 201, 401, 801]
+    },
+    "evaluation": {
+      "metrics": ["l1_error", "observed_order", "mass_defect", "min_nodal_value", "pattern_updates"],
+      "reference_tables": "comparison/paper_reported_values.json   # Stage 6 compares against this"
+    },
+    "hardware": { "device": "cpu", "num_workers": 0, "precision": "float64" }
+  },
+  "dependencies": {
+    "runtime": [
+      { "package": "numpy", "version": ">=1.26,<2.0", "reason": "array ops, banded matvecs" },
+      { "package": "scipy", "version": ">=1.11", "reason": "scipy.linalg.solve_banded for all O(n) banded solves; scipy.optimize.bisect for gamma_0/gamma_r thresholds" },
+      { "package": "matplotlib", "version": ">=3.8", "reason": "reproduce Figure 1 (coverage thresholds) and Figure 2 (limiter localization)" },
+      { "package": "pyyaml", "version": ">=6.0", "reason": "config.yaml loading" },
+      { "package": "pandas", "version": ">=2.0", "reason": "assembling and exporting the Table 2-9 comparison CSVs" }
+    ],
+    "dev": [
+      { "package": "pytest", "version": ">=7.4" },
+      { "package": "pytest-cov", "version": ">=4.1" },
+      { "package": "black", "version": ">=24.1" },
+      { "package": "ruff", "version": ">=0.4" }
+    ]
+  },
+  "entrypoints": [
+    {
+      "filename": "train.py",
+      "purpose": "Misnomer kept for ArXivist repo-template consistency: there is no training. This script runs one scheme through one time-marching benchmark to a horizon T and saves the resulting density (and diagnostics) to results/ -- the numerical-PDE analogue of a 'training run'.",
+      "cli_args": [
+        { "flag": "--config", "type": "str", "required": true, "help": "Path to config YAML" },
+        { "flag": "--scheme", "type": "str", "required": false, "default": "fcdf_b", "help": "Override config.model.scheme" },
+        { "flag": "--seed", "type": "int", "required": false, "default": 0, "help": "NumPy RNG seed (no stochastic solver components exist, kept for template consistency / future MC extensions)" },
+        { "flag": "--debug", "type": "bool", "required": false, "default": false, "help": "Use n=51, T=0.02 for a fast smoke run" },
+        { "flag": "--dry-run", "type": "bool", "required": false, "default": false, "help": "Assemble operators and validate config without integrating in time" }
+      ]
+    },
+    {
+      "filename": "evaluate.py",
+      "purpose": "Reproduce the paper's Tables 2-9 (coverage thresholds, spatial/temporal convergence orders, Peclet sweep, positivity/conservation, active-set solver cost) and Figures 1-2.",
+      "cli_args": [
+        { "flag": "--config", "type": "str", "required": true, "help": "Path to config YAML" },
+        { "flag": "--table", "type": "str", "required": false, "default": "all", "help": "One of: 2,3,4,5,6,7,8,9,all" },
+        { "flag": "--out-dir", "type": "str", "required": false, "default": "results/", "help": "Where to write CSVs/figures" }
+      ]
+    },
+    {
+      "filename": "inference.py",
+      "purpose": "Single implicit step (or single full-horizon integration) of a chosen scheme given a user-supplied initial density and drift/diffusion callables -- the 'single-sample inference' analogue for a PDE solver.",
+      "cli_args": [
+        { "flag": "--config", "type": "str", "required": true },
+        { "flag": "--scheme", "type": "str", "required": false, "default": "fcdf_b" },
+        { "flag": "--gamma", "type": "float", "required": false, "default": null, "help": "Override implicit step parameter for a single-step demo" }
+      ]
+    }
+  ],
+  "docker_spec": {
+    "base_image": "python:3.11-slim",
+    "system_deps": ["build-essential", "libopenblas-dev"],
+    "workdir": "/workspace",
+    "default_cmd": "python evaluate.py --config configs/config.yaml --table all"
+  },
+  "risk_assessment": [
+    {
+      "risk": "gamma_0 / gamma_r linear-window thresholds cannot be cross-checked against the (unavailable) companion paper's closed form.",
+      "severity": "Medium",
+      "description": "SIR ambiguity #1 / implementation_assumption #1: only the bisection-on-resolvent-sign procedure is specified in this paper. If the bisection search bracket or tolerance differs from the authors', the exact threshold values in Table 2 may not reproduce to full precision, though the qualitative coverage conclusion (condition (a) holds from n=101, condition (b) never holds) should still reproduce.",
+      "mitigation": "Implement bisection with a wide default bracket (1e-8, 1e6) and report both the threshold and a coverage-condition boolean; treat exact threshold digits as approximate, not exact, in any comparison report."
+    },
+    {
+      "risk": "Active-set solver's mixed-pattern nonsingularity is an open question above gamma_pic (Proposition 5).",
+      "severity": "Medium",
+      "description": "A pathological pattern could in principle produce a singular or ill-conditioned V_S for gamma>gamma_pic; the paper only reports empirical non-failure.",
+      "mitigation": "Wrap each banded solve in a condition-number / LinAlgError guard; if a solve fails, fall back to halving the pattern-update step or reporting non-convergence rather than crashing or silently returning garbage."
+    },
+    {
+      "risk": "Sign-changing drift (OU benchmark) stencil at/near the sign-change node is not spelled out explicitly.",
+      "severity": "Medium",
+      "description": "SIR ambiguity #4: the paper states mu>0 stencils and says mu<0 is 'fully symmetric' and sign-changing drift is handled 'directionally at each node' without giving the exact per-node rule.",
+      "mitigation": "Implement per-node upwind selection based on the sign of mu at each node (or interface-averaged mu), matching the donor-node convention already given for the Zalesak rule (j=i for d>0, j=i+1 for d<0); unit-test mass conservation (1^T A2 = 0) and unconditional-positivity-of-core (A1 remains an M-matrix) hold under this convention before trusting downstream results."
+    },
+    {
+      "risk": "No numeric Picard/Newton convergence tolerance is stated in the paper.",
+      "severity": "Low",
+      "description": "SIR implementation_assumption #6: achieved residuals of ~1e-13 to 1e-15 are reported but not a target tolerance.",
+      "mitigation": "Default tol=1e-12 on the l1 sweep-increment norm; expose as a config value; confirm reproduced residuals land in the same 1e-13 to 1e-15 ballpark as Tables 8-9 before trusting exact match."
+    },
+    {
+      "risk": "Sub-cell boundary-mass-accumulation regime (Proposition 2 caveat) is outside nodal L1 assessment.",
+      "severity": "Low",
+      "description": "If a benchmark configuration drives the boundary-layer width below h, nodal L1 comparisons saturate at O(1) regardless of scheme correctness -- not a bug.",
+      "mitigation": "None of the reproduced benchmarks (OU, smooth advection, front) enter this regime at the tested D values, so this is documented as a known limitation in the README rather than specially handled in code."
+    }
+  ]
+}

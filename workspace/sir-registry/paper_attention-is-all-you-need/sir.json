@@ -1,0 +1,377 @@
+{
+  "paper_id": "paper_attention-is-all-you-need",
+  "sir_version": 1,
+  "provenance": {
+    "title": "Attention Is All You Need",
+    "authors": [
+      "Ashish Vaswani",
+      "Noam Shazeer",
+      "Niki Parmar",
+      "Jakob Uszkoreit",
+      "Llion Jones",
+      "Aidan N. Gomez",
+      "Łukasz Kaiser",
+      "Illia Polosukhin"
+    ],
+    "affiliations": [
+      "Google Brain",
+      "Google Research",
+      "University of Toronto"
+    ],
+    "arxiv_id": null,
+    "doi": null,
+    "submission_date": null,
+    "abstract": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality.",
+    "domain": "NLP",
+    "key_claims": [
+      "The Transformer is the first transduction model relying entirely on self-attention to compute representations of its input and output.",
+      "Dispenses with recurrence and convolutions entirely.",
+      "Significantly more parallelizable and requires significantly less time to train.",
+      "Establishes new state-of-the-art BLEU scores on WMT 2014 English-to-German and English-to-French tasks."
+    ],
+    "parsed_at": "2026-07-10T23:53:29+05:30",
+    "arxivist_version": "1.0"
+  },
+  "architecture": {
+    "primary_variant": "Transformer (base model)",
+    "modules": [
+      {
+        "name": "Encoder Stack",
+        "operation_type": "stack",
+        "input_shape": "[B, T, d_model]",
+        "output_shape": "[B, T, d_model]",
+        "parameters": {
+          "N": 6
+        },
+        "paper_section": "3.1",
+        "confidence": 0.95,
+        "notes": "Stack of 6 identical layers"
+      },
+      {
+        "name": "Decoder Stack",
+        "operation_type": "stack",
+        "input_shape": "[B, T, d_model]",
+        "output_shape": "[B, T, d_model]",
+        "parameters": {
+          "N": 6
+        },
+        "paper_section": "3.1",
+        "confidence": 0.95,
+        "notes": "Stack of 6 identical layers with masked self-attention"
+      },
+      {
+        "name": "Multi-Head Attention",
+        "operation_type": "attention",
+        "input_shape": null,
+        "output_shape": null,
+        "parameters": {
+          "h": 8,
+          "d_model": 512,
+          "d_k": 64,
+          "d_v": 64
+        },
+        "paper_section": "3.2.2",
+        "confidence": 0.95,
+        "notes": null
+      },
+      {
+        "name": "Position-wise Feed-Forward Network",
+        "operation_type": "feed-forward",
+        "input_shape": "[B, T, d_model]",
+        "output_shape": "[B, T, d_model]",
+        "parameters": {
+          "d_ff": 2048
+        },
+        "paper_section": "3.3",
+        "confidence": 0.95,
+        "notes": "Two linear transformations with a ReLU activation in between"
+      }
+    ],
+    "connections": [
+      {
+        "from": "Input Embedding",
+        "to": "Encoder Stack",
+        "tensor_name": "embedded_inputs"
+      },
+      {
+        "from": "Output Embedding",
+        "to": "Decoder Stack",
+        "tensor_name": "embedded_outputs"
+      },
+      {
+        "from": "Encoder Stack",
+        "to": "Decoder Stack",
+        "tensor_name": "encoder_output"
+      },
+      {
+        "from": "Decoder Stack",
+        "to": "Linear & Softmax",
+        "tensor_name": "decoder_output"
+      }
+    ],
+    "variants": [
+      {
+        "name": "Transformer (base model)",
+        "differences": {
+          "N": 6,
+          "d_model": 512,
+          "d_ff": 2048,
+          "h": 8,
+          "d_k": 64,
+          "d_v": 64,
+          "P_drop": 0.1,
+          "train_steps": 100000
+        }
+      },
+      {
+        "name": "Transformer (big)",
+        "differences": {
+          "N": 6,
+          "d_model": 1024,
+          "d_ff": 4096,
+          "h": 16,
+          "d_k": 64,
+          "d_v": 64,
+          "P_drop": 0.3,
+          "train_steps": 300000
+        }
+      }
+    ]
+  },
+  "mathematical_spec": [
+    {
+      "name": "Scaled Dot-Product Attention",
+      "latex": "\\text{Attention}(Q, K, V) = \\text{softmax}(\\frac{QK^T}{\\sqrt{d_k}})V",
+      "role": "attention",
+      "used_in": "both",
+      "hyperparameters": [
+        "d_k"
+      ],
+      "undefined_symbols": [],
+      "paper_section": "3.2.1",
+      "confidence": 0.95
+    },
+    {
+      "name": "Multi-Head Attention",
+      "latex": "\\text{MultiHead}(Q, K, V) = \\text{Concat}(\\text{head}_1, ..., \\text{head}_h)W^O",
+      "role": "attention",
+      "used_in": "both",
+      "hyperparameters": [
+        "h"
+      ],
+      "undefined_symbols": [
+        "W^O"
+      ],
+      "paper_section": "3.2.2",
+      "confidence": 0.95
+    },
+    {
+      "name": "Position-wise Feed-Forward Network",
+      "latex": "\\text{FFN}(x) = \\max(0, xW_1 + b_1)W_2 + b_2",
+      "role": "activation",
+      "used_in": "both",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "3.3",
+      "confidence": 0.95
+    },
+    {
+      "name": "Positional Encoding (Sine)",
+      "latex": "PE_{(pos, 2i)} = \\sin(pos/10000^{2i/d_{\\text{model}}})",
+      "role": "other",
+      "used_in": "both",
+      "hyperparameters": [
+        "d_model"
+      ],
+      "undefined_symbols": [],
+      "paper_section": "3.5",
+      "confidence": 0.95
+    },
+    {
+      "name": "Positional Encoding (Cosine)",
+      "latex": "PE_{(pos, 2i+1)} = \\cos(pos/10000^{2i/d_{\\text{model}}})",
+      "role": "other",
+      "used_in": "both",
+      "hyperparameters": [
+        "d_model"
+      ],
+      "undefined_symbols": [],
+      "paper_section": "3.5",
+      "confidence": 0.95
+    },
+    {
+      "name": "Learning Rate Schedule",
+      "latex": "lrate = d_{\\text{model}}^{-0.5} \\cdot \\min(step\\_num^{-0.5}, step\\_num \\cdot warmup\\_steps^{-1.5})",
+      "role": "other",
+      "used_in": "training",
+      "hyperparameters": [
+        "d_model",
+        "warmup_steps"
+      ],
+      "undefined_symbols": [],
+      "paper_section": "5.3",
+      "confidence": 0.95
+    }
+  ],
+  "tensor_semantics": [
+    {
+      "name": "Query (Q)",
+      "shape_notation": "[B, h, T, d_k]",
+      "dtype": null,
+      "tensor_type": "intermediate",
+      "module": "Multi-Head Attention",
+      "confidence": 0.8
+    },
+    {
+      "name": "Key (K)",
+      "shape_notation": "[B, h, T, d_k]",
+      "dtype": null,
+      "tensor_type": "intermediate",
+      "module": "Multi-Head Attention",
+      "confidence": 0.8
+    },
+    {
+      "name": "Value (V)",
+      "shape_notation": "[B, h, T, d_v]",
+      "dtype": null,
+      "tensor_type": "intermediate",
+      "module": "Multi-Head Attention",
+      "confidence": 0.8
+    },
+    {
+      "name": "Encoder Output (z)",
+      "shape_notation": "[B, T, d_model]",
+      "dtype": null,
+      "tensor_type": "intermediate",
+      "module": "Encoder Stack",
+      "confidence": 0.9
+    }
+  ],
+  "training_pipeline": {
+    "optimizer": {
+      "name": "Adam",
+      "learning_rate": null,
+      "beta1": 0.9,
+      "beta2": 0.98,
+      "weight_decay": null,
+      "confidence": 0.95
+    },
+    "lr_schedule": {
+      "type": "custom_noam",
+      "warmup_steps": 4000,
+      "total_steps": 100000,
+      "confidence": 0.95
+    },
+    "batch_size": null,
+    "effective_batch_size": null,
+    "training_steps": 100000,
+    "epochs": null,
+    "mixed_precision": null,
+    "gradient_clipping": null,
+    "data_augmentation": [],
+    "curriculum": null,
+    "confidence": 0.85
+  },
+  "evaluation_protocol": {
+    "datasets": [
+      {
+        "name": "WMT 2014 English-German",
+        "split": "train",
+        "size": 4500000,
+        "publicly_available": true
+      },
+      {
+        "name": "WMT 2014 English-French",
+        "split": "train",
+        "size": 36000000,
+        "publicly_available": true
+      },
+      {
+        "name": "newstest2013",
+        "split": "dev",
+        "size": null,
+        "publicly_available": true
+      },
+      {
+        "name": "newstest2014",
+        "split": "test",
+        "size": null,
+        "publicly_available": true
+      }
+    ],
+    "metrics": [
+      "BLEU",
+      "perplexity"
+    ],
+    "reported_results": [
+      {
+        "metric": "BLEU",
+        "dataset": "WMT 2014 English-German",
+        "split": "test",
+        "value": 28.4,
+        "is_primary": true
+      },
+      {
+        "metric": "BLEU",
+        "dataset": "WMT 2014 English-French",
+        "split": "test",
+        "value": 41.0,
+        "is_primary": true
+      }
+    ],
+    "baselines": [
+      "ByteNet",
+      "Deep-Att + PosUnk",
+      "GNMT + RL",
+      "ConvS2S",
+      "MoE"
+    ],
+    "compute": "8 NVIDIA P100 GPUs",
+    "special_conditions": [
+      "Checkpoint averaging",
+      "Beam search with beam size 4 and length penalty alpha=0.6"
+    ],
+    "confidence": 0.95
+  },
+  "implementation_assumptions": [
+    {
+      "assumption": "Batch dimension is the first dimension in tensors (e.g., [B, T, D])",
+      "basis": "Common practice in deep learning frameworks.",
+      "confidence": 0.9,
+      "alternatives": [
+        "[T, B, D]"
+      ],
+      "affects_section": "tensor_semantics"
+    },
+    {
+      "assumption": "Weights are initialized using standard initialization schemes like Xavier/Glorot.",
+      "basis": "Literature default; paper does not explicitly detail weight initialization.",
+      "confidence": 0.8,
+      "alternatives": [
+        "He initialization",
+        "Normal distribution with small standard deviation"
+      ],
+      "affects_section": "training_pipeline"
+    }
+  ],
+  "ambiguities": [
+    {
+      "location": "Section 3.2.1",
+      "description": "Masking out illegal connections sets values to -infinity. Implementation in practice uses a very large negative number.",
+      "primary_assumption": "Use -1e9 for masking",
+      "alternatives": [
+        "-inf"
+      ],
+      "confidence": 0.85
+    }
+  ],
+  "confidence_annotations": {
+    "architecture": 0.95,
+    "mathematical_spec": 0.95,
+    "tensor_semantics": 0.85,
+    "training_pipeline": 0.85,
+    "evaluation_protocol": 0.95,
+    "implementation_assumptions": 0.85,
+    "overall_sir_confidence": 0.90
+  }
+}

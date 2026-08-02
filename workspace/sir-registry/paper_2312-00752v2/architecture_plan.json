@@ -1,0 +1,280 @@
+{
+  "paper_id": "paper_2312-00752v2",
+  "plan_version": 1,
+  "created_at": "2026-07-27T21:08:42+05:30",
+  "framework": {
+    "primary": "pytorch",
+    "python_version": "3.10+",
+    "cuda_required": true,
+    "cuda_min_version": "11.8",
+    "use_huggingface": true,
+    "config_library": "yaml",
+    "reasoning": "PyTorch is the standard framework for foundation models and custom CUDA operations. Mamba's hardware-aware scan (S6) typically relies on custom CUDA kernels (e.g., mamba-ssm package) that require PyTorch. HuggingFace integration is useful for evaluation on standard NLP tasks."
+  },
+  "module_hierarchy": [
+    {
+      "path": "src/mamba/__init__.py",
+      "description": "Root module",
+      "sir_modules_mapped": [],
+      "classes": []
+    },
+    {
+      "path": "src/mamba/models/mamba.py",
+      "description": "Primary Mamba language model definition",
+      "sir_modules_mapped": [],
+      "classes": [
+        {
+          "name": "MambaLMHeadModel",
+          "base_class": "nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(self, input_ids: torch.Tensor)",
+              "returns": "torch.Tensor"
+            },
+            {
+              "name": "generate",
+              "signature": "(self, input_ids: torch.Tensor, max_length: int)",
+              "returns": "torch.Tensor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/mamba/models/blocks.py",
+      "description": "Core Mamba blocks and SSM implementations",
+      "sir_modules_mapped": [
+        "Mamba Block",
+        "Input Projections",
+        "1D Convolution",
+        "Selective SSM (S6)",
+        "Nonlinearity",
+        "Output Projection"
+      ],
+      "classes": [
+        {
+          "name": "MambaBlock",
+          "base_class": "nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(self, x: torch.Tensor)",
+              "returns": "torch.Tensor"
+            }
+          ]
+        },
+        {
+          "name": "MambaMixer",
+          "base_class": "nn.Module",
+          "public_methods": [
+            {
+              "name": "forward",
+              "signature": "(self, x: torch.Tensor)",
+              "returns": "torch.Tensor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/mamba/data/dataset.py",
+      "description": "Data loading for The Pile and other datasets",
+      "sir_modules_mapped": [],
+      "classes": [
+        {
+          "name": "MambaDataset",
+          "base_class": "torch.utils.data.Dataset",
+          "public_methods": [
+            {
+              "name": "__getitem__",
+              "signature": "(self, idx: int)",
+              "returns": "dict"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/mamba/training/trainer.py",
+      "description": "Training loop and optimization",
+      "sir_modules_mapped": [],
+      "classes": [
+        {
+          "name": "Trainer",
+          "base_class": "object",
+          "public_methods": [
+            {
+              "name": "train",
+              "signature": "(self)",
+              "returns": "None"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tensor_flows": [
+    {
+      "name": "Mamba Block Forward Pass",
+      "input": {
+        "name": "x",
+        "shape": "[B, L, D]",
+        "dtype": "bfloat16"
+      },
+      "output": {
+        "name": "out",
+        "shape": "[B, L, D]",
+        "dtype": "bfloat16"
+      },
+      "steps": [
+        "x_expanded = Input_Projections(x)  -> [B, L, E]",
+        "conv_out = 1D_Convolution(x_expanded)  -> [B, L, E]",
+        "ssm_out = Selective_SSM(conv_out)  -> [B, L, E]",
+        "activation_out = Nonlinearity(ssm_out)  -> [B, L, E]",
+        "out = Output_Projection(activation_out)  -> [B, L, D]"
+      ]
+    }
+  ],
+  "config_schema": {
+    "model": {
+      "d_model": 2560,
+      "n_layer": 64,
+      "expansion_factor": 2,
+      "state_dimension_N": 16,
+      "conv_kernel_size": 4
+    },
+    "training": {
+      "optimizer": "AdamW",
+      "learning_rate": 0.002,
+      "beta1": 0.9,
+      "beta2": 0.95,
+      "weight_decay": 0.1,
+      "batch_size": 1024,
+      "training_steps": 200000,
+      "mixed_precision": "bfloat16",
+      "gradient_clipping": 0.1
+    },
+    "data": {
+      "dataset_name": "The Pile",
+      "seq_length": 2048
+    },
+    "evaluation": {
+      "metrics": ["Perplexity", "Accuracy"]
+    },
+    "hardware": {
+      "device": "cuda",
+      "num_workers": 8
+    }
+  },
+  "dependencies": {
+    "runtime": [
+      {
+        "package": "torch",
+        "version": ">=2.1.0",
+        "reason": "Core deep learning framework"
+      },
+      {
+        "package": "transformers",
+        "version": ">=4.36.0",
+        "reason": "HuggingFace integration for evaluation and tokenizers"
+      },
+      {
+        "package": "mamba-ssm",
+        "version": ">=1.0.1",
+        "reason": "Custom CUDA kernels for selective state spaces (S6)"
+      },
+      {
+        "package": "causal-conv1d",
+        "version": ">=1.1.0",
+        "reason": "Optimized 1D causal convolution for Mamba"
+      },
+      {
+        "package": "pyyaml",
+        "version": ">=6.0",
+        "reason": "Configuration management"
+      }
+    ],
+    "dev": [
+      {
+        "package": "pytest",
+        "version": ">=7.0.0"
+      },
+      {
+        "package": "black",
+        "version": ">=23.0.0"
+      }
+    ]
+  },
+  "entrypoints": [
+    {
+      "filename": "train.py",
+      "purpose": "Main training script for Mamba",
+      "cli_args": [
+        {
+          "flag": "--config",
+          "type": "string",
+          "required": true,
+          "default": "config.yaml",
+          "help": "Path to the YAML configuration file"
+        }
+      ]
+    },
+    {
+      "filename": "evaluate.py",
+      "purpose": "Evaluation script for computing Perplexity and other metrics",
+      "cli_args": [
+        {
+          "flag": "--checkpoint",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "help": "Path to the model checkpoint"
+        }
+      ]
+    },
+    {
+      "filename": "inference.py",
+      "purpose": "Single-sample generation script",
+      "cli_args": [
+        {
+          "flag": "--prompt",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "help": "Input prompt for generation"
+        }
+      ]
+    }
+  ],
+  "docker_spec": {
+    "base_image": "pytorch/pytorch:2.1.2-cuda11.8-cudnn8-devel",
+    "system_deps": [
+      "git",
+      "build-essential",
+      "ninja-build"
+    ],
+    "workdir": "/workspace/mamba",
+    "default_cmd": "python train.py --config config.yaml"
+  },
+  "risk_assessment": [
+    {
+      "severity": "High",
+      "description": "Hardware-aware parallel algorithm (S6) requires complex custom CUDA kernels (mamba-ssm, causal-conv1d) which might be difficult to compile or adapt to different hardware.",
+      "source": "SIR / architecture / Selective SSM",
+      "mitigation": "Use official `mamba-ssm` and `causal-conv1d` Python packages as dependencies instead of implementing the CUDA kernels from scratch. Provide a fallback pure PyTorch implementation for CPU/debugging."
+    },
+    {
+      "severity": "Medium",
+      "description": "Batch size for language modeling is ambiguous in the paper (implied 1024, but may vary).",
+      "source": "SIR / ambiguities",
+      "mitigation": "Expose batch size and gradient accumulation steps clearly in `config.yaml` to allow easy tuning for different memory constraints."
+    },
+    {
+      "severity": "Low",
+      "description": "1D Depthwise Convolution kernel size is assumed as 4.",
+      "source": "SIR / implementation_assumptions",
+      "mitigation": "Parameterize the kernel size in `config.yaml` (default 4) so it can be changed if needed."
+    }
+  ]
+}

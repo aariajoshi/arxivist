@@ -1,0 +1,32 @@
+# DiscDiff — EPD-GenDNA generation config
+# Absorb-Escape parameters (Table 3) + LDM structure (Sec 4.1). The generation metrics
+# (S-FID/CorTATA on 50k samples) require trained weights + Sei + EPD-GenDNA (see README).
+
+data:
+  dataset: EPD-GenDNA        # HuggingFace Zehui127/* ; falls back to synthetic smoke test
+  variant: small             # small=256bp (EPD-GenDNA-small) | large=2048bp
+  seq_len: 256
+  n_eval: 200                # paper uses 50,000 for Table 5
+
+vae:                         # CNN-VAE (best generation per Table 4)
+  k_channels: 128
+  c_channels: 16
+  beta: 1.0e-4               # KL mixing weight (Sec 4.1.2)
+
+denoiser:                    # latent U-Net (Sec 4.1.3, Eq 2)
+  ch: 16
+  emb_dim: 128
+  n_species: 15
+  use_self_attention: true
+  n_steps: 1000              # DDPM steps
+
+absorb_escape:               # Table 3
+  t_absorb: 0.9              # absorb where diffusion confidence < this
+  escape: natural            # natural (default) | threshold | random | max_length
+  t_escape: 0.5
+  t_random: 0.9
+  max_sub_length: 32
+
+eval:
+  metrics: [cortata, delta_div, sfid]   # sfid computed only if a Sei embedder is supplied
+  motif: TATA

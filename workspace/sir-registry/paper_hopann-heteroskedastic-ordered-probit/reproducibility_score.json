@@ -1,0 +1,22 @@
+{
+  "paper_id": "paper_hopann-heteroskedastic-ordered-probit",
+  "comparison_date": "2026-07-16",
+  "reproducibility_score": 0.0,
+  "score_confidence": "low",
+  "metrics_compared": 0,
+  "metrics_matched": 0,
+  "deviation_summary": {
+    "excellent": 0,
+    "good": 0,
+    "moderate": 0,
+    "significant": 0,
+    "critical": 0
+  },
+  "hallucination_count": {
+    "structural": 0,
+    "parametric": 3,
+    "omission": 0
+  },
+  "sir_version_used": 1,
+  "requires_manual_review": true
+}

@@ -1,0 +1,31 @@
+{
+  "paper_id": "arxiv_2607_24538",
+  "title": "NEO: NeRF It Once, Edit It Many Times for Continuous Object Manipulation",
+  "authors": ["Mikolaj Zielinski", "David Hall", "Dominik Belter", "Peyman Moghadam"],
+  "domain": "Multimodal",
+  "arxiv_id": "2607.24538",
+  "version": 1,
+  "created_at": "2026-07-28T15:12:38Z",
+  "last_updated": "2026-07-29T09:20:00Z",
+  "sir_confidence": 0.69,
+  "stages_with_data": [1, 2, 3, 4, 5, 6],
+  "has_comparison_report": true,
+  "reproducibility_score": 0.0,
+  "reproducibility_score_note": "Near-zero score reflects unavailability of real NEO-Dataset / Stable Diffusion / CLIP-DINO in this sandbox, not a demonstrated implementation defect. See comparison/benchmark_comparison.md.",
+  "repo_path": "paper-repos/arxiv_2607_24538/",
+  "update_history": [
+    {
+      "version": 1,
+      "timestamp": "2026-07-28T15:12:38Z",
+      "reason": "initial commit",
+      "changed_sections": []
+    },
+    {
+      "version": 1,
+      "timestamp": "2026-07-29T09:20:00Z",
+      "reason": "full pipeline run through Stage 6 (architecture plan, code repo, notebooks, comparison report)",
+      "changed_sections": ["stages_with_data", "has_comparison_report", "reproducibility_score"]
+    }
+  ]
+}
+

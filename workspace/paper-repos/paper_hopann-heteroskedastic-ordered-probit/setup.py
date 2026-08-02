@@ -1,0 +1,24 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="hopann",
+    version="1.0.0",
+    description="Heteroskedastic Ordered Probit Models with an Artificial Neural Network (Jeong, 2024)",
+    author="ArXivist reproduction — original paper by Jikhan Jeong",
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
+    python_requires=">=3.10",
+    install_requires=[
+        "torch>=2.1.0",
+        "numpy>=1.24.0",
+        "pandas>=2.0.0",
+        "scikit-learn>=1.3.0",
+        "xgboost>=2.0.0",
+        "statsmodels>=0.14.0",
+        "scipy>=1.11.0",
+        "pyyaml>=6.0",
+        "tqdm>=4.65.0",
+        "matplotlib>=3.7.0",
+        "seaborn>=0.12.0",
+    ],
+)

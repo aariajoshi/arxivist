@@ -1,0 +1,24 @@
+{
+  "paper_id": "arxiv_2607_24538",
+  "paper_title": "NEO: NeRF It Once, Edit It Many Times for Continuous Object Manipulation",
+  "current_stage": 6,
+  "stages_completed": [1, 2, 3, 4, 5, 6],
+  "sir_path": "sir-registry/arxiv_2607_24538/sir.json",
+  "repo_path": "paper-repos/arxiv_2607_24538/",
+  "artifacts": {
+    "sir": "sir-registry/arxiv_2607_24538/sir.json",
+    "architecture_plan": "sir-registry/arxiv_2607_24538/architecture_plan.json",
+    "repo_initialized": true,
+    "notebook_path": "paper-repos/arxiv_2607_24538/notebooks/reproduce_arxiv_2607_24538.ipynb",
+    "comparison_report": "paper-repos/arxiv_2607_24538/comparison/benchmark_comparison.md"
+  },
+  "confidence_flags": {
+    "training_pipeline": 0.45,
+    "note": "training_pipeline confidence below 0.5 threshold (optimizer/lr/batch/steps unspecified in paper) - flagged for human review at Stage 1; carried through to Stage 6's reproducibility_score of 0.00, which reflects real-dataset/pretrained-model unavailability, not implementation defects (see comparison/benchmark_comparison.md)"
+  },
+  "human_review_required": true,
+  "loop_count": 0,
+  "created_at": "2026-07-28T15:12:38Z",
+  "last_updated": "2026-07-29T09:20:00Z"
+}
+

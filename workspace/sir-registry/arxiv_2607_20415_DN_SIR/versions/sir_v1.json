@@ -1,0 +1,649 @@
+{
+  "paper_id": "arxiv_2607_20415",
+  "schema_version": "1.0",
+  "sir_version": 1,
+  "provenance": {
+    "title": "Flux-Corrected Diagonal Frog: second order and positivity at all time steps",
+    "authors": [
+      { "name": "Andrey Itkin", "affiliation": "FREE department, Tandon School of Engineering, New York University", "email": "aitkin@nyu.edu" }
+    ],
+    "arxiv_id": "2607.20415v1",
+    "doi": null,
+    "submission_date": "2026-07-22",
+    "revision_date": "2026-07-23",
+    "abstract_truncated": "By Godunov's theorem, linear second-order finite-difference schemes for the Fokker-Planck equation cannot preserve positivity. The Diagonal Frog (DF) framework previously bypassed this barrier using eventual positivity, but required a strict minimum time step. This paper resolves the small-step limitation using a nonlinear extension of the DF solvers. We split the second-order directional operator into a monotone M-matrix core and an antidiffusive flux correction. A Zalesak-type limiter is applied iteratively within the implicit banded solve.",
+    "primary_domain": "Numerical Analysis / Computational Finance (Fokker-Planck PDE discretization)",
+    "is_ml_paper": false,
+    "paper_series_context": "Third of three companion papers: [Itkin, 2026] (Diagonal Frog, eventual positivity of matrix exponential), [Itkin and Kazbek, 2026] (Diagonal Frog meets ADI, resolvent positivity windows), and this paper (nonlinear flux-corrected small-step regime).",
+    "key_claims": [
+      "Scheme FCDF-B (per-interface Zalesak-type flux limiting inside an implicit banded M-matrix solve) is unconditionally positive and exactly mass-conservative for every time step and every limiter value.",
+      "FCDF-B's Picard sweep contracts in discrete l1 norm under a purely convective step restriction gamma < gamma_pic = h/(2*mu_bar), with no parabolic (diffusion) contribution to the contraction constant.",
+      "The scheme achieves Peclet-uniform second-order L1 accuracy away from unresolved layers (O(h^2) globally for smooth densities), unlike the Chang-Cooper scheme which degrades to first order globally as the cell Peclet number grows.",
+      "A defect-corrected two-stage scheme (FCDF-DC) restores second-order time accuracy using only limited backward-Euler-type solves, without ever forming an explicit (potentially sign-indefinite) half-step.",
+      "An active-set semismooth-Newton solver removes the Picard step-size restriction entirely, giving positive, conservative, second-order (where resolved) solutions at every step size, with cost governed by the number of nodes where the positivity constraint binds rather than by the step size or mesh size."
+    ],
+    "parsed_at": "2026-07-25T16:03:58Z"
+  },
+
+  "architecture": {
+    "description": "Not a neural-network architecture; this is a numerical-scheme / algorithmic pipeline for solving the 1D Fokker-Planck equation. The 'components' below are the operator split, the two Picard-based schemes (FCDF-A, FCDF-B), the defect-corrected time integrator (FCDF-DC), the active-set/semismooth-Newton solver, and the two linear companion branches (backward-Euler resolvent, Pade(0,2)) into which the nonlinear schemes hand over at large steps.",
+    "confidence": 0.9,
+    "primary_variant": "FCDF-B (per-interface Zalesak limiting, recomputed every sweep)",
+    "components": [
+      {
+        "name": "Operator core-correction split (A2 = A1 + C)",
+        "type": "linear_operator_decomposition",
+        "role": "Splits the full 2nd-order DF spatial operator A2 into a monotone M-matrix core A1 (centered diffusion + 1st-order upwind convection, tridiagonal, Metzler, unit column sums) and an antidiffusive correction C (flux form, no diffusion, telescoping, zero column sums).",
+        "inputs": ["drift mu(x,t)", "diffusion D(x,t)", "uniform grid x_i, spacing h"],
+        "outputs": ["A1 (M-matrix core)", "C (antidiffusive correction, flux form)"],
+        "key_equations": ["eq_fpe", "eq_adv_upwind2", "eq_diff_centered", "eq_A2_rows", "eq_split", "eq_A1_rows", "eq_correction_flux"],
+        "paper_section": "Section 2",
+        "confidence": 0.93
+      },
+      {
+        "name": "Scheme FCDF-A (global stopping rule)",
+        "type": "iterative_solver_nonlinear",
+        "role": "Picard iteration (I - gamma*A1) p^[k+1] = b + gamma*C*p^[k], p^[0]=b, terminated at the last iterate whose right-hand side is entrywise nonnegative. Simple/cheap but a single node's sign failure discards the whole sweep's correction.",
+        "inputs": ["b (nonnegative RHS)", "gamma = theta*dt", "A1", "C"],
+        "outputs": ["p (positive, mass-conservative iterate)"],
+        "key_equations": ["eq_fcdfA_picard"],
+        "paper_section": "Section 3 (Scheme FCDF-A)",
+        "confidence": 0.9
+      },
+      {
+        "name": "Scheme FCDF-B (per-interface Zalesak limiting) -- primary scheme",
+        "type": "iterative_solver_nonlinear",
+        "role": "Introduces per-interface limiters theta_{i+1/2} in [0,1] via a two-point Zalesak budget rule, clamping each antidiffusive interface flux individually so withdrawal from any node never exceeds half its budget per adjacent interface. Recomputed every sweep by default (frozen variant loses the positivity guarantee at intermediate iterates).",
+        "inputs": ["b (nonnegative RHS)", "gamma", "A1", "C", "current iterate p^[k]"],
+        "outputs": ["p (unconditionally positive, exactly mass-conservative fixed point p*)"],
+        "key_equations": ["eq_fcdfB_limited_correction", "eq_fcdfB_sweep", "eq_zalesak_limiter"],
+        "theoretical_guarantee": "Proposition 1 (see theoretical_results)",
+        "paper_section": "Section 3 (Scheme FCDF-B)",
+        "confidence": 0.95
+      },
+      {
+        "name": "FCDF-DC (defect-corrected 2nd-order-in-time scheme)",
+        "type": "time_integrator",
+        "role": "Two-stage predictor-corrector built only from limited backward-Euler-type solves at the frozen midpoint operator A2. Predictor: (I - dt*A2) Y0 = p^n. Corrector: (I - dt*A2) p^{n+1} = p^n - (dt^2/2) A2^2 Y0, using the closed-form defect identity (Lemma 1). Both stages realized via a combined-clamp limited iteration (Eq. 21) that adds a fixed defect flux G to the iterated antidiffusive flux before clamping.",
+        "inputs": ["p^n (nonnegative)", "dt", "A1", "A2", "C"],
+        "outputs": ["Y0 (predictor)", "p^{n+1} (2nd-order-in-time, unconditionally positive, mass-conservative)"],
+        "key_equations": ["eq_predictor", "eq_corrector", "eq_defect_identity", "eq_stability_function", "eq_combined_clamp"],
+        "theoretical_guarantee": "Proposition 3",
+        "paper_section": "Section 4",
+        "confidence": 0.88
+      },
+      {
+        "name": "Active-set semismooth Newton solver",
+        "type": "nonlinear_root_finder",
+        "role": "Reformulates the fixed points of the FCDF-B sweep map as zeros of a piecewise-linear, globally Lipschitz, semismooth residual F(p) = (I - gamma*A1)p - gamma*D_Lambda(p) - b, where the clamped flux at each interface is the median of two caps and the unlimited flux. Labels each interface's clamp pattern (lower cap / free / upper cap); for a fixed pattern S the generalized Jacobian V_S = I - gamma(A1 + C_S) is banded and solved directly; iteration count = number of pattern updates (not a convergence rate), independent of step size and mesh in the reported experiments.",
+        "inputs": ["residual F(p)", "clamp pattern S", "unlimited solution as warm start"],
+        "outputs": ["exact zero of F (nonnegative fixed point), at any step size gamma"],
+        "key_equations": ["eq_residual_F", "eq_generalized_jacobian"],
+        "theoretical_guarantee": "Proposition 5, Lemma 2 (nonsingularity of mixed-pattern Newton matrices)",
+        "paper_section": "Section 5.2",
+        "confidence": 0.82,
+        "notes": "Global well-posedness / uniqueness of zeros for gamma strictly between gamma_pic and the linear-window thresholds, and local superlinear convergence of the semismooth Newton iteration in this specific banded/clamped setting, are used in the 'standard for complementarity problems' sense but not proved from scratch in this paper (explicitly flagged as open by the authors in Section 7)."
+      },
+      {
+        "name": "Linear companion branches (backward-Euler resolvent; Pade(0,2))",
+        "type": "linear_operator_map",
+        "role": "From the companion paper [Itkin and Kazbek, 2026]: (I - gamma*A2)^-1 is entrywise nonnegative for gamma >= gamma_0 (1st order in time); Pade(0,2) map r02(gamma*A2) = (I - gamma*A2 + gamma^2/2*A2^2)^-1 is entrywise nonnegative for gamma >= gamma_r (2nd order in time, L-stable). These are NOT derived in this paper -- they are imported thresholds used for the hand-over/coverage argument.",
+        "inputs": ["A2", "gamma", "thresholds gamma_0, gamma_r (computed by bisection on the most negative resolvent entry)"],
+        "outputs": ["positive linear solve above threshold"],
+        "key_equations": ["eq_backward_euler_resolvent", "eq_pade02"],
+        "paper_section": "Section 5.1 (imported from companion paper)",
+        "confidence": 0.75,
+        "notes": "This paper treats gamma_0 and gamma_r as externally supplied/measured quantities (Table 2), not as objects it re-derives. A faithful reproduction needs the companion paper's construction or must reproduce gamma_0/gamma_r purely numerically by bisection on resolvent positivity, which this paper does describe operationally (bisection on the most negative resolvent entry) -- flagged in implementation_assumptions."
+      },
+      {
+        "name": "Coverage synthesis (Corollary 4)",
+        "type": "algorithm_selection_logic",
+        "role": "Two computable per-mesh conditions decide which branch to use at which step size: (a) gamma_pic >= min(gamma_0, gamma_r) => positivity+conservation available for every step size (FCDF-B below gamma_pic, linear branch above); (b) gamma_pic >= gamma_r => full 2nd order in time and space available for every step size (FCDF-DC below gamma_pic, Pade(0,2) above). Empirically (Section 6.1) condition (a) holds from n=101 upward on the OU benchmark but condition (b) fails on every tested mesh, so the active-set solver -- not the Pade window -- delivers full 2nd order at large steps in practice.",
+        "key_equations": ["eq_condition_a", "eq_condition_b"],
+        "paper_section": "Section 5.1, Corollary 4",
+        "confidence": 0.9
+      }
+    ],
+    "connections": [
+      { "from": "Operator core-correction split (A2 = A1 + C)", "to": "Scheme FCDF-A (global stopping rule)", "tensor_name": "A1, C" },
+      { "from": "Operator core-correction split (A2 = A1 + C)", "to": "Scheme FCDF-B (per-interface Zalesak limiting) -- primary scheme", "tensor_name": "A1, C" },
+      { "from": "Scheme FCDF-B (per-interface Zalesak limiting) -- primary scheme", "to": "FCDF-DC (defect-corrected 2nd-order-in-time scheme)", "tensor_name": "limited-iteration machinery (frozen at G=0 recovers FCDF-B predictor)" },
+      { "from": "Scheme FCDF-B (per-interface Zalesak limiting) -- primary scheme", "to": "Active-set semismooth Newton solver", "tensor_name": "sweep-map fixed point <-> residual zero" },
+      { "from": "FCDF-DC (defect-corrected 2nd-order-in-time scheme)", "to": "Active-set semismooth Newton solver", "tensor_name": "stage-wise application via combined clamp" },
+      { "from": "Active-set semismooth Newton solver", "to": "Coverage synthesis (Corollary 4)", "tensor_name": "closes gap where linear windows / Picard contraction do not overlap" },
+      { "from": "Linear companion branches (backward-Euler resolvent; Pade(0,2))", "to": "Coverage synthesis (Corollary 4)", "tensor_name": "gamma_0, gamma_r thresholds" }
+    ],
+    "variants": [
+      { "name": "FCDF-A", "differences": { "limiting_granularity": "global (all-or-nothing per sweep)", "cost": "cheapest", "correction_retention": "poor -- discards entire correction on a single sign failure" } },
+      { "name": "FCDF-B", "differences": { "limiting_granularity": "per-interface (Zalesak budget rule)", "cost": "one banded M-matrix solve per sweep, limiter recomputed every sweep", "correction_retention": "optimal given the per-node budget constraint" } },
+      { "name": "FCDF-B frozen-limiter variant", "differences": { "limiting_granularity": "per-interface but computed once on first sweep and frozen", "cost": "marginally cheaper (subsequent sweeps linear)", "caveat": "loses the positivity guarantee at intermediate iterates; only guaranteed at first sweep and, if caps remain slack, at the limit" } },
+      { "name": "FCDF-DC", "differences": { "temporal_order": 2, "mechanism": "defect-corrected predictor/corrector using the same limited-solve machinery" } }
+    ]
+  },
+
+  "mathematical_spec": {
+    "confidence": 0.94,
+    "equations": [
+      {
+        "id": "eq_fpe",
+        "name": "1D Fokker-Planck equation (divergence form)",
+        "latex": "\\partial_t p = -\\partial_x J,\\quad J(x,t) = \\mu(x,t)p - \\partial_x(D(x,t)p),\\quad D(x,t)\\ge 0",
+        "role": "other",
+        "used_in": "both",
+        "hyperparameters": [],
+        "undefined_symbols": [],
+        "paper_section": "Section 2",
+        "confidence": 0.97
+      },
+      {
+        "id": "eq_adv_upwind2",
+        "name": "2nd-order backward (upwind) advective difference",
+        "latex": "\\partial_x[\\mu p]\\big|_{x_i} \\approx \\frac{3(\\mu p)_i - 4(\\mu p)_{i-1} + (\\mu p)_{i-2}}{2h}",
+        "role": "other",
+        "used_in": "both",
+        "hyperparameters": ["h (mesh spacing)"],
+        "undefined_symbols": [],
+        "paper_section": "Section 2, Eq. (2)",
+        "confidence": 0.97
+      },
+      {
+        "id": "eq_diff_centered",
+        "name": "Centered diffusive difference",
+        "latex": "\\partial_x^2[Dp]\\big|_{x_i} \\approx \\frac{(Dp)_{i+1} - 2(Dp)_i + (Dp)_{i-1}}{h^2}",
+        "role": "other",
+        "used_in": "both",
+        "hyperparameters": ["h"],
+        "undefined_symbols": [],
+        "paper_section": "Section 2, Eq. (3)",
+        "confidence": 0.97
+      },
+      {
+        "id": "eq_A2_rows",
+        "name": "Assembled 2nd-order DF operator A2 (interior rows)",
+        "latex": "\\dot p_i = \\alpha_i p_{i-2} + \\beta_i p_{i-1} + \\gamma_i p_i + \\delta_i p_{i+1};\\ \\alpha_i=-\\frac{\\mu_{i-2}}{2h},\\ \\beta_i=\\frac{D_{i-1}}{h^2}+\\frac{2\\mu_{i-1}}{h},\\ \\gamma_i=-\\frac{2D_i}{h^2}-\\frac{3\\mu_i}{2h},\\ \\delta_i=\\frac{D_{i+1}}{h^2}",
+        "role": "other",
+        "used_in": "both",
+        "hyperparameters": ["h", "mu_i", "D_i"],
+        "undefined_symbols": [],
+        "paper_section": "Section 2, Eqs. (4)-(5)",
+        "confidence": 0.95,
+        "notes": "alpha_i < 0 sits below the subdiagonal, so A2 is not a Metzler matrix -- this is the wrong-signed band responsible for loss of monotonicity; A2 is an eventually-nonnegative (EM) generator, not an M-matrix."
+      },
+      {
+        "id": "eq_split",
+        "name": "Core-correction split",
+        "latex": "A_2 = A_1 + C",
+        "role": "other",
+        "used_in": "both",
+        "hyperparameters": [],
+        "undefined_symbols": [],
+        "paper_section": "Section 2, Eq. (6)",
+        "confidence": 0.97
+      },
+      {
+        "id": "eq_A1_rows",
+        "name": "Monotone M-matrix core A1 (interior rows)",
+        "latex": "\\dot p_i = \\beta'_i p_{i-1} + \\gamma'_i p_i + \\delta'_i p_{i+1};\\ \\beta'_i=\\frac{D_{i-1}}{h^2}+\\frac{\\mu_{i-1}}{h},\\ \\gamma'_i=-\\frac{2D_i}{h^2}-\\frac{\\mu_i}{h},\\ \\delta'_i=\\frac{D_{i+1}}{h^2}",
+        "role": "other",
+        "used_in": "both",
+        "hyperparameters": ["h", "mu_i", "D_i"],
+        "undefined_symbols": [],
+        "paper_section": "Section 2, Eq. (7)",
+        "confidence": 0.96,
+        "notes": "A1 is tridiagonal, Metzler, irreducible; under zero-flux closure it is a nonsingular M-matrix generator with 1^T A1 = 0 (Lemma 3)."
+      },
+      {
+        "id": "eq_correction_flux",
+        "name": "Antidiffusive correction (flux form)",
+        "latex": "(Cp)_i = \\frac{-\\mu_{i-2}p_{i-2}+2\\mu_{i-1}p_{i-1}-\\mu_i p_i}{2h} = -\\frac{d_{i+1/2}(p)-d_{i-1/2}(p)}{h},\\quad d_{i+1/2}(p)=\\hat g^{(2)}_{i+1/2}-\\hat g^{(1)}_{i+1/2}=\\frac{(\\mu p)_i-(\\mu p)_{i-1}}{2}",
+        "role": "other",
+        "used_in": "both",
+        "hyperparameters": ["h"],
+        "undefined_symbols": [],
+        "paper_section": "Section 2, Eqs. (8)-(9)",
+        "confidence": 0.95,
+        "notes": "C telescopes (1^T C = 0); mirrored form for mu<0 uses nodes to the right of the interface."
+      },
+      {
+        "id": "eq_theta_scheme",
+        "name": "One-parameter theta time-stepping scheme",
+        "latex": "(I-\\theta\\Delta t A_2)p^{n+1} = (I+(1-\\theta)\\Delta t A_2)p^n,\\quad \\theta\\in[0,1]",
+        "role": "other",
+        "used_in": "both",
+        "hyperparameters": ["theta", "dt"],
+        "undefined_symbols": [],
+        "paper_section": "Section 2, Eq. (10)",
+        "confidence": 0.96,
+        "notes": "theta=1: backward Euler (1st order); theta=1/2: trapezoidal/Crank-Nicolson (2nd order, but explicit half can be sign-indefinite -- motivates Section 4)."
+      },
+      {
+        "id": "eq_implicit_step_abstract",
+        "name": "Abstracted implicit directional step",
+        "latex": "(I-\\gamma A_2)p = b,\\quad \\gamma=\\theta\\Delta t",
+        "role": "other",
+        "used_in": "both",
+        "hyperparameters": ["gamma"],
+        "undefined_symbols": [],
+        "paper_section": "Section 2, Eq. (11)",
+        "confidence": 0.97
+      },
+      {
+        "id": "eq_fcdfA_picard",
+        "name": "FCDF-A Picard iteration on the correction",
+        "latex": "(I-\\gamma A_1)p^{[k+1]} = b + \\gamma C p^{[k]},\\quad p^{[0]}=b",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["gamma"],
+        "undefined_symbols": [],
+        "paper_section": "Section 3, Eq. (12)",
+        "confidence": 0.95
+      },
+      {
+        "id": "eq_fcdfB_limited_correction",
+        "name": "FCDF-B limited correction (per-interface limiters)",
+        "latex": "(C_\\theta p)_i = -\\frac{\\theta_{i+1/2}d_{i+1/2}(p)-\\theta_{i-1/2}d_{i-1/2}(p)}{h},\\quad \\theta_{i+1/2}\\in[0,1]",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["gamma"],
+        "undefined_symbols": [],
+        "paper_section": "Section 3, Eq. (13)",
+        "confidence": 0.95
+      },
+      {
+        "id": "eq_fcdfB_sweep",
+        "name": "FCDF-B sweep iteration",
+        "latex": "(I-\\gamma A_1)p^{[k+1]} = b + \\gamma C_\\theta(p^{[k]}),\\quad p^{[0]}=b",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["gamma"],
+        "undefined_symbols": [],
+        "paper_section": "Section 3, Eq. (14)",
+        "confidence": 0.95
+      },
+      {
+        "id": "eq_zalesak_limiter",
+        "name": "Two-point Zalesak budget rule for theta_{i+1/2}",
+        "latex": "\\theta_{i+1/2} = \\min\\left(1, \\frac{h\\, b_{j(i+1/2)}}{\\kappa_j\\, \\gamma\\, |d_{i+1/2}(p^{[k]})|}\\right)",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["kappa_j (interfaces drawing on node j; even split kappa_j=2)"],
+        "undefined_symbols": [],
+        "paper_section": "Section 3, Eq. (15)",
+        "confidence": 0.93,
+        "notes": "j(i+1/2) is the donor node: j=i if d_{i+1/2}>0, j=i+1 if d_{i+1/2}<0. Clamp form equivalent (Lemma 4, Appendix A): Lambda_{i+1/2}(p) = median(-c^-_{i+1/2}, d_{i+1/2}(p), c^+_{i+1/2}) with c^+_{i+1/2}=h*b_i/(2*gamma), c^-_{i+1/2}=h*b_{i+1}/(2*gamma)."
+      },
+      {
+        "id": "eq_predictor",
+        "name": "FCDF-DC predictor (limited backward Euler at midpoint operator)",
+        "latex": "(I-\\Delta t A_2)Y_0 = p^n",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["dt"],
+        "undefined_symbols": [],
+        "paper_section": "Section 4.1, Eq. (17)",
+        "confidence": 0.94
+      },
+      {
+        "id": "eq_corrector",
+        "name": "FCDF-DC corrector (defect-corrected)",
+        "latex": "(I-\\Delta t A_2)p^{n+1} = p^n - \\frac{\\Delta t^2}{2}A_2^2 Y_0",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["dt"],
+        "undefined_symbols": [],
+        "paper_section": "Section 4.1, Eq. (18)",
+        "confidence": 0.94
+      },
+      {
+        "id": "eq_defect_identity",
+        "name": "Defect identity (Lemma 1)",
+        "latex": "(I-\\tfrac{\\Delta t}{2}A_2)Y_0 - (I+\\tfrac{\\Delta t}{2}A_2)p^n = \\tfrac{\\Delta t^2}{2}A_2^2 Y_0",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["dt"],
+        "undefined_symbols": [],
+        "paper_section": "Section 4.1, Eq. (19), Lemma 1",
+        "confidence": 0.93
+      },
+      {
+        "id": "eq_stability_function",
+        "name": "FCDF-DC stability function on a scalar eigenvalue z=dt*lambda",
+        "latex": "R(z) = \\frac{1-z-z^2/2}{(1-z)^2} = 1+z+\\frac{z^2}{2}+0\\cdot z^3+O(z^4)",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": [],
+        "undefined_symbols": [],
+        "paper_section": "Section 4.1, Eq. (20)",
+        "confidence": 0.93,
+        "notes": "A-stable (|R(iy)|<=1 on imaginary axis, only pole z=1 in RHP); R(infinity) = -1/2, so the unlimited two-stage linear map only has a bounded positivity window -- FCDF-DC is not a large-step competitor to Pade(0,2); its small-step positivity comes from the budgets, not the sign of the linear map."
+      },
+      {
+        "id": "eq_combined_clamp",
+        "name": "Combined clamp for FCDF-DC limited realization",
+        "latex": "F_{i+1/2}(p) = \\Delta t\\, d_{i+1/2}(p) + G_{i+1/2},\\quad \\tilde\\Lambda_{i+1/2}(p) = \\text{median}\\left(-\\tfrac{h p^n_{i+1}}{2},\\ F_{i+1/2}(p),\\ \\tfrac{h p^n_i}{2}\\right)",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["dt"],
+        "undefined_symbols": ["G_{i+1/2} = fixed defect flux = (dt^2/2) * Jhat_{i+1/2}(w), w = A2*Y0"],
+        "paper_section": "Section 4.2, Eq. (21)",
+        "confidence": 0.9
+      },
+      {
+        "id": "eq_residual_F",
+        "name": "Semismooth residual for the active-set/Newton reformulation",
+        "latex": "F(p) := (I-\\gamma A_1)p - \\gamma D_\\Lambda(p) - b,\\quad (D_\\Lambda(p))_i = -\\frac{\\Lambda_{i+1/2}(p)-\\Lambda_{i-1/2}(p)}{h}",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["gamma"],
+        "undefined_symbols": [],
+        "paper_section": "Section 5.2, Eq. (24)",
+        "confidence": 0.9
+      },
+      {
+        "id": "eq_generalized_jacobian",
+        "name": "Generalized Jacobian for a fixed clamp pattern S",
+        "latex": "V_S = I - \\gamma(A_1+C_S)",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["gamma"],
+        "undefined_symbols": ["C_S = correction operator restricted to the free interfaces of pattern S"],
+        "paper_section": "Section 5.2, Eq. (25)-(26)",
+        "confidence": 0.9
+      },
+      {
+        "id": "eq_backward_euler_resolvent",
+        "name": "Backward-Euler resolvent positivity window (imported)",
+        "latex": "(I-\\gamma A_2)^{-1} > 0 \\ \\text{entrywise for all}\\ \\gamma \\ge \\gamma_0",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["gamma_0 (computed by bisection, per companion paper)"],
+        "undefined_symbols": [],
+        "paper_section": "Section 5.1 (result of [Itkin and Kazbek, 2026])",
+        "confidence": 0.7
+      },
+      {
+        "id": "eq_pade02",
+        "name": "Pade(0,2) positivity window (imported)",
+        "latex": "r_{02}(\\gamma A_2) = (I-\\gamma A_2+\\tfrac{\\gamma^2}{2}A_2^2)^{-1} > 0 \\ \\text{entrywise for all}\\ \\gamma\\ge\\gamma_r",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": ["gamma_r (computed by bisection, per companion paper)"],
+        "undefined_symbols": [],
+        "paper_section": "Section 5.1 (result of [Itkin and Kazbek, 2026])",
+        "confidence": 0.7
+      },
+      {
+        "id": "eq_condition_a",
+        "name": "Coverage condition (a): positivity+conservation at all step sizes",
+        "latex": "\\gamma_{pic} \\ge \\min(\\gamma_0,\\gamma_r),\\quad \\gamma_{pic} := h/(2\\bar\\mu)",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": [],
+        "undefined_symbols": [],
+        "paper_section": "Section 5.1, Eq. (22), Corollary 4(a)",
+        "confidence": 0.92
+      },
+      {
+        "id": "eq_condition_b",
+        "name": "Coverage condition (b): full 2nd order in time and space at all step sizes",
+        "latex": "\\gamma_{pic} \\ge \\gamma_r",
+        "role": "other",
+        "used_in": "inference",
+        "hyperparameters": [],
+        "undefined_symbols": [],
+        "paper_section": "Section 5.1, Eq. (23), Corollary 4(b)",
+        "confidence": 0.92
+      }
+    ],
+    "theoretical_results": [
+      {
+        "id": "proposition_1",
+        "name": "Proposition 1 (Scheme FCDF-B)",
+        "statement_summary": "For every gamma>0: (i) unconditional positivity of every iterate; (ii) exact conservation (1^T p^[k] = 1^T b) for every limiter value; (iii) contraction: ||(I-gamma A1)^-1||_1 = 1 exactly, limited flux is nonexpansive clamp, sweep map is Lipschitz with constant q=2*gamma*mu_bar/h; contracts geometrically for gamma < gamma_pic=h/(2*mu_bar); (iv) conditional consistency: wherever both adjacent caps are slack at the fixed point, the row coincides with the full 2nd-order system; if slack everywhere, p* is exactly the unlimited 2nd-order solution.",
+        "dependencies": ["eq_A1_rows (M-matrix core, Lemma 3)", "eq_zalesak_limiter (clamp form, Lemma 4)", "eq_fcdfB_sweep"],
+        "proof_location": "Appendix A",
+        "confidence": 0.92
+      },
+      {
+        "id": "proposition_2",
+        "name": "Proposition 2 (Peclet-uniform L1 error bound)",
+        "statement_summary": "Under three structural assumptions (bounded step gamma<=kappa*gamma_pic; a bounded set of at most N_L 'layer interfaces' capturing boundary rows and the active limiter set; bounded layer strength S_L), ||p*-u||_{1,h} <= C(kappa)*[M_S*|Omega|*h^2 + N_L*S_L*h]. (a) If layer density scale S_L<=C0*h (positivity-limiting regime), error is O(h^2) uniformly in Peclet number. (b) If an unresolved front has O(1) height, bound degrades to O(h), confined to the N_L layer interfaces; smooth contribution remains O(h^2).",
+        "dependencies": ["proposition_1 (core resolvent norm = 1, inverse-positivity)", "Taylor truncation-error analysis of both numerical fluxes"],
+        "proof_location": "Appendix B",
+        "confidence": 0.85,
+        "notes": "A third regime (sub-cell boundary mass accumulation, density scale ~1/ell blowing up) is explicitly excluded from this bound by the bounded-layer-strength assumption and must be assessed by cellwise mass rather than nodal L1 -- important caveat for any reproduction that reports pointwise/nodal errors."
+      },
+      {
+        "id": "proposition_3",
+        "name": "Proposition 3 (FCDF-DC)",
+        "statement_summary": "For every dt>0, with the combined-clamp realization: (i) unconditional positivity of every iterate of both stages and both stage fixed points; (ii) exact conservation and l1 stability (||p^{n+1}||_1=||p^n||_1 on the nonnegative cone); (iii) same contraction constant q=2*dt*mu_bar/h as Proposition 1(iii) (fixed defect fluxes cancel in differences); (iv) conditional 2nd-order-in-time consistency wherever caps are slack at both stage fixed points, degrading to backward-Euler-floor order exactly where the spatial limiter is also active.",
+        "dependencies": ["proposition_1", "eq_predictor", "eq_corrector", "eq_defect_identity", "eq_combined_clamp", "Lemma 5 (clamp-with-fixed-offset, translation invariance)"],
+        "proof_location": "Appendix C",
+        "confidence": 0.85
+      },
+      {
+        "id": "corollary_4",
+        "name": "Corollary 4 (Coverage)",
+        "statement_summary": "(a) If gamma_pic >= min(gamma_0,gamma_r), the directional step admits a realization that is entrywise nonnegative, exactly conservative, and 2nd-order consistent in space wherever resolved, for every step size (FCDF-B below gamma_pic, linear map above min(gamma_0,gamma_r)). (b) If additionally gamma_pic >= gamma_r, the realization can be chosen 2nd-order in time as well (FCDF-DC below gamma_pic, Pade(0,2) above gamma_r).",
+        "dependencies": ["proposition_1", "proposition_3", "eq_backward_euler_resolvent", "eq_pade02"],
+        "empirical_finding": "On the OU benchmark (Table 2, Section 6.1), condition (a) holds from n=101 onward but condition (b) fails on every tested mesh (gamma_r grows without bound as deep-tail stationary mass shrinks under refinement) -- so full 2nd order at large steps is delivered by the active-set solver, not the Pade window.",
+        "confidence": 0.9
+      },
+      {
+        "id": "proposition_5",
+        "name": "Proposition 5 (Nonsingularity of mixed-pattern Newton matrices) + Lemma 2 (separated clamped interfaces)",
+        "statement_summary": "(a) For gamma<=gamma_pic, all pattern matrices V_S are uniformly nonsingular (Neumann series, since ||gamma*M^-1*C_S||_1 <= 2*gamma*mu_bar/h < 1). (b) For gamma in (gamma_pic, gamma_r), patterns whose clamped interfaces form blocks separated by at least one free interface yield nonsingular V_S (block-diagonal argument, Lemma 2, Appendix D). (c) For gamma<=gamma_r, both the all-free (Vfree=I-gamma*A2, inverse-positive per companion paper) and all-clamped (M) matrices are nonsingular. Nonsingularity for arbitrary mixed patterns when gamma>gamma_pic is stated as an OPEN theoretical question -- only checked numerically (no failure observed across tested range).",
+        "dependencies": ["eq_generalized_jacobian", "proposition_1 (core resolvent bound)"],
+        "proof_location": "Appendix D (Lemma 2 only); Proposition 5(a),(c) proved in main text",
+        "confidence": 0.8,
+        "notes": "IMPORTANT for reproduction: general mixed-pattern nonsingularity above gamma_pic is NOT proved, only empirically unfalsified. A faithful implementation should treat this as an assumption/risk, not a guarantee, and should include a runtime singularity check with fallback."
+      },
+      {
+        "id": "lemma_1",
+        "name": "Lemma 1 (Defect identity)",
+        "statement_summary": "If Y0 solves the predictor exactly, its residual in the trapezoidal equation equals (dt^2/2)*A2^2*Y0 -- proved by direct algebraic substitution.",
+        "dependencies": ["eq_predictor"],
+        "confidence": 0.95
+      },
+      {
+        "id": "godunov_barrier_context",
+        "name": "Godunov's theorem / Bolley-Crouzeix theorem (background barriers, not proved in this paper)",
+        "statement_summary": "Godunov (1959): a linear monotone (positivity-preserving) FD scheme is at most 1st-order accurate. Bolley & Crouzeix (1978): any rational one-step method giving unconditional positivity for all linear positive systems is restricted to 1st order in time. These are the motivating barriers that force the nonlinear (Picard/limiter) construction; the paper does not re-derive them, only cites and works around them.",
+        "dependencies": [],
+        "confidence": 0.9
+      }
+    ]
+  },
+
+  "tensor_semantics": {
+    "confidence": 0.85,
+    "note": "No neural-network tensors. 'Tensors' here are the numerical-PDE state vectors, operators, and per-run scalar thresholds used across the pipeline.",
+    "tensors": [
+      { "name": "p (or p^n, p^[k])", "shape": "[n]", "dtype": "float64", "tensor_type": "intermediate/output", "role": "nodal probability density values on the 1D grid at a given time level / Picard iterate" },
+      { "name": "A1", "shape": "[n, n] (tridiagonal/banded)", "dtype": "float64", "tensor_type": "parameter", "role": "monotone M-matrix core operator" },
+      { "name": "A2", "shape": "[n, n] (pentadiagonal-ish banded, one wrong-signed band)", "dtype": "float64", "tensor_type": "parameter", "role": "full 2nd-order DF operator" },
+      { "name": "C", "shape": "[n, n] (sparse, flux-form)", "dtype": "float64", "tensor_type": "parameter", "role": "antidiffusive correction operator, C = A2 - A1" },
+      { "name": "d_{i+1/2}(p)", "shape": "[n-1]", "dtype": "float64", "tensor_type": "intermediate", "role": "unlimited antidiffusive interface flux" },
+      { "name": "theta_{i+1/2}", "shape": "[n-1]", "dtype": "float64 in [0,1]", "tensor_type": "intermediate", "role": "per-interface Zalesak limiter" },
+      { "name": "Lambda_{i+1/2}(p)", "shape": "[n-1]", "dtype": "float64", "tensor_type": "intermediate", "role": "clamped/limited interface flux" },
+      { "name": "b", "shape": "[n]", "dtype": "float64, >=0", "tensor_type": "input", "role": "right-hand side of the implicit step (previous time level for backward Euler)" },
+      { "name": "gamma, gamma_pic, gamma_0, gamma_r", "shape": "scalar", "dtype": "float64", "tensor_type": "parameter", "role": "implicit step parameter and its three coverage thresholds (Picard contraction, resolvent positivity, Pade positivity)" },
+      { "name": "clamp pattern S", "shape": "[n-1] categorical (lower/free/upper)", "dtype": "enum", "tensor_type": "intermediate", "role": "active-set label per interface for the semismooth Newton solver" },
+      { "name": "V_S", "shape": "[n, n] (banded)", "dtype": "float64", "tensor_type": "intermediate", "role": "generalized Jacobian for pattern S" }
+    ]
+  },
+
+  "training_pipeline": {
+    "confidence": 0.55,
+    "is_ml_training": false,
+    "description": "There is no learned/trained model. The analogous 'pipeline' is the per-time-step nonlinear solve procedure (Picard sweeps or active-set Newton updates) plus the outer time-marching loop used for the numerical experiments.",
+    "solve_procedure": {
+      "outer_loop": "March forward in time with the theta-scheme (theta=1 for FCDF-B/backward-Euler branch; two-stage predictor-corrector for FCDF-DC) at fixed dt per experiment.",
+      "inner_loop_FCDF_B": "Picard sweep (I-gamma*A1)p^[k+1] = b + gamma*C_theta(p^[k]) with limiters recomputed every sweep, iterate until converged (contraction guaranteed for gamma<gamma_pic).",
+      "inner_loop_active_set": "Solve the unlimited system first; if nonnegative, accept (zero pattern updates); otherwise resolve via semismooth Newton on F(p)=0, one banded solve per pattern update.",
+      "mesh": "Uniform 1D grid, zero-flux boundary conditions at both ends (conservative closure), grid sizes n in {51,101,201,401,801,1601} across experiments.",
+      "benchmarks": [
+        "Ornstein-Uhlenbeck process: dX_t = -alpha*X_t dt + sigma dW_t, alpha=sigma=1, domain spans 6 stationary std devs either side of 0 (sign-changing drift at the center).",
+        "Advection-diffusion with a compactly-supported / plateau initial density (front benchmark), used to probe unresolved fronts and the Peclet sweep."
+      ]
+    },
+    "hyperparameters_used_in_experiments": {
+      "OU_process": { "alpha": 1, "sigma": 1 },
+      "OU_initial_condition": { "x0": 0.5, "v0": 1e-2 },
+      "OU_integration_horizon_T": 0.2,
+      "small_dt": 2.0e-4,
+      "large_dt": 5.0e-2,
+      "mesh_sizes_overlap_check": [51, 101, 201, 401],
+      "mesh_sizes_accuracy_study": [101, "...", 801],
+      "front_benchmark": { "mu": 1, "D": 1.0e-4, "plateau_support": [0.1, 0.4] },
+      "peclet_sweep_D_values": [1.0e-1, 1.0e-2, 1.0e-3, 3.0e-4],
+      "peclet_sweep_mesh_range": [101, 801],
+      "active_set_step_sweep_gamma_over_gamma_pic": [0.01, 0.1, 0.5, 1, 2, 5, 10, 100, 1000, 10000]
+    },
+    "optimizer": { "name": null, "learning_rate": null, "beta1": null, "beta2": null, "weight_decay": null, "confidence": 0.0, "note": "Not applicable (no gradient-based training)." },
+    "lr_schedule": { "type": null, "warmup_steps": null, "total_steps": null, "confidence": 0.0 },
+    "batch_size": null,
+    "effective_batch_size": null,
+    "training_steps": null,
+    "epochs": null,
+    "mixed_precision": null,
+    "gradient_clipping": null,
+    "data_augmentation": [],
+    "curriculum": null
+  },
+
+  "evaluation_protocol": {
+    "confidence": 0.9,
+    "datasets": [
+      { "name": "Ornstein-Uhlenbeck analytic-solution benchmark", "split": "N/A (semi-analytic ground truth: exact Gaussian mean/variance evolution)", "size": null, "publicly_available": false },
+      { "name": "Advection-diffusion smooth-Gaussian benchmark", "split": "N/A (exact free-space Gaussian solution)", "size": null, "publicly_available": false },
+      { "name": "Advection-dominated unresolved-front benchmark (plateau IC)", "split": "N/A (no closed-form reference; monotone-floor comparison)", "size": null, "publicly_available": false }
+    ],
+    "metrics": [
+      "Discrete L1 norm ||v||_{1,h} = h * sum_i |v_i| against analytic/semi-analytic solution",
+      "Observed successive-halving convergence order (not single least-squares slope)",
+      "Discrete mass invariant 1^T p (conservation check, tracked as mass defect)",
+      "Most negative nodal value (positivity check)",
+      "Number of semismooth-Newton pattern updates per step (active-set solver cost)",
+      "Fraction of interfaces with active limiter / mass fraction inside limited region (localization diagnostic)"
+    ],
+    "reported_results": [
+      { "metric": "coverage_condition_a_holds_from_n", "dataset": "OU benchmark", "value": 101, "is_primary": true, "notes": "gamma_pic >= min(gamma_0,gamma_r) holds from n=101 upward; fails only at n=51 (Table 2)." },
+      { "metric": "coverage_condition_b_holds", "dataset": "OU benchmark", "value": 0, "is_primary": true, "notes": "gamma_pic >= gamma_r fails on every tested mesh n in {51,101,201,401} (Table 2); boolean encoded as 0=false." },
+      { "metric": "FCDF-DC_spatial_L1_order_finest_mesh", "dataset": "OU benchmark, dt=2e-4", "value": 1.98, "is_primary": true, "notes": "Table 3, h=1.061e-2." },
+      { "metric": "FCDF-DC_temporal_L1_order_settled", "dataset": "OU benchmark, n=401", "value": 1.99, "is_primary": true, "notes": "Table 4, settles at 1.92 then 1.99 after a pre-asymptotic >3 phase." },
+      { "metric": "A2_spatial_order_smooth_advection_worst_Peclet", "dataset": "Smooth advection-diffusion benchmark, Peh~3.79", "value": 1.99, "is_primary": true, "notes": "Table 5: DF/A2 stencil holds ~1.99 across the whole Peclet sweep." },
+      { "metric": "CC_spatial_order_smooth_advection_worst_Peclet", "dataset": "Smooth advection-diffusion benchmark, Peh~3.79", "value": 1.21, "is_primary": true, "notes": "Table 5: Chang-Cooper degrades to 1.21 at high Peclet, 21.9x larger absolute error than A2 on finest mesh." },
+      { "metric": "FCDF-B_order_unresolved_front_finest", "dataset": "Front benchmark (D=1e-4)", "value": 1.47, "is_primary": false, "notes": "Section 6.3; CC gets 0.85 on the same case; FCDF-B error 5x smaller on finest mesh." },
+      { "metric": "long_time_front_smearing_FCDF_B_order_T0.4", "dataset": "Front benchmark, 2000 steps", "value": 1.25, "is_primary": false, "notes": "Table 6; monotone core settles near 0.67, drifting toward the O(h^{1/2}) Kuznetsov/Sabac floor; absolute-error ratio 8x at longest horizon." },
+      { "metric": "unlimited_scheme_most_negative_value_front_small_dt", "dataset": "Front benchmark, small dt", "value": -0.255, "is_primary": true, "notes": "Table 7; the only tested scheme that goes negative, confirming Godunov-barrier failure mode exactly where predicted." },
+      { "metric": "max_mass_defect_all_schemes_all_cases", "dataset": "All Table 7 cases", "value": 2.2e-11, "is_primary": false },
+      { "metric": "active_set_pattern_updates_up_to_2x_gamma_pic", "dataset": "Front problem, n=401", "value": 1, "is_primary": true, "notes": "Table 8; from 5x gamma_pic onward, 0 updates (unlimited solve accepted directly)." },
+      { "metric": "active_set_pattern_updates_in_coverage_gap", "dataset": "Front problem, gamma=sqrt(gamma_pic*gamma_0)", "value": 1, "is_primary": true, "notes": "Table 9; gamma_0/gamma_pic ratio stays near 4 across meshes n in {101,...,801}, gap does not close under refinement." }
+    ],
+    "baselines": [
+      "Unlimited linear scheme (backward Euler on the full A2 operator, included specifically to demonstrate positivity failure)",
+      "Monotone core alone (backward Euler on A1, the first-order positivity floor)",
+      "Chang-Cooper (CC) exponentially-fitted scheme, assembled interface-by-interface for variable/sign-changing drift"
+    ],
+    "compute": null,
+    "special_conditions": [
+      "A fixed-dt spatial-order study only measures the true spatial order while the temporal error stays below the spatial error; all first-order-in-time schemes (FCDF-B, unlimited, monotone core, CC) show apparent order decay on the finest meshes purely from this effect, not from stencil degradation -- explicitly flagged by the authors as a methodological caveat.",
+      "Where a pure stencil (not scheme) statement is needed, the semi-discrete solution e^{TA}p0 is compared to the analytic density to remove time discretization entirely (used for Table 5).",
+      "gamma_0 and gamma_r are determined per mesh by bisection on the most negative entry of the corresponding resolvent map (operational/numerical procedure, not closed-form)."
+    ]
+  },
+
+  "implementation_assumptions": [
+    {
+      "assumption": "The two linear companion-paper thresholds gamma_0 (backward-Euler resolvent positivity window) and gamma_r (Pade(0,2) positivity window) must be computed numerically by bisection on the sign of the most negative entry of the respective resolvent/rational map, applied to the assembled A2 for the specific benchmark and mesh.",
+      "basis": "Explicitly stated methodology in Section 6.1 ('determined by bisection on the most negative entry of the corresponding resolvent map'); the closed-form characterizations live in the companion paper [Itkin and Kazbek, 2026], which is 'in preparation' and not available to cross-check.",
+      "confidence": 0.6,
+      "alternatives": ["Reproduce companion paper's eigenvalue/eventual-positivity threshold formulas exactly if that preprint becomes available", "Approximate via a coarser grid search instead of bisection if bisection convergence is ill-behaved near the threshold"],
+      "affects_section": "architecture / evaluation_protocol (Section 5.1, 6.1)"
+    },
+    {
+      "assumption": "Near-boundary rows (where x_{i-2} falls outside the grid) use a first-order upwind stencil, and boundary rows are modified so discrete fluxes through the first/last interface vanish (zero-flux closure) -- taken as a literal, exact specification from the text rather than inferred.",
+      "basis": "Explicitly stated in Section 2 ('the near-boundary row ... discretized by the first-order upwind stencil, and the boundary rows modified so that the discrete fluxes ... vanish')",
+      "confidence": 0.85,
+      "alternatives": ["Ghost-node extrapolation instead of first-order downgrade near boundaries (would break the exact 1^T A2=0 conservation the paper relies on -- NOT recommended)"],
+      "affects_section": "architecture (Operator core-correction split)"
+    },
+    {
+      "assumption": "Zalesak limiter budget split uses the 'even' split kappa_j = 2 (each of the two adjacent interfaces may draw at most half of a node's budget) throughout the paper and all propositions; this is the only split analyzed.",
+      "basis": "Stated explicitly as the convention used for Proposition 1 and all appendix proofs (kappa_j ≡ 2).",
+      "confidence": 0.92,
+      "alternatives": ["Unequal/adaptive budget splits (mentioned nowhere in the paper as an alternative -- would require re-deriving the positivity/contraction bounds)"],
+      "affects_section": "mathematical_spec (eq_zalesak_limiter), architecture (FCDF-B)"
+    },
+    {
+      "assumption": "The semismooth Newton solver's global well-posedness (uniqueness of zeros for gamma strictly between gamma_pic and min(gamma_0,gamma_r)) and its local superlinear convergence rate are assumed 'in the form standard for complementarity problems' (citing Qi & Sun 1993; Hintermuller, Ito & Kunisch 2002) rather than proved from scratch for this specific banded/clamped system.",
+      "basis": "Explicitly flagged as an open question by the authors in Section 7 ('deserve a dedicated proof in this setting') and in Proposition 5 ('Nonsingularity of VS for arbitrary mixed patterns when gamma>gamma_pic remains an open theoretical question').",
+      "confidence": 0.7,
+      "alternatives": ["Implement with a runtime nonsingularity/convergence check and a fallback to the Picard iteration or a smaller sub-step if the Newton solve fails or the matrix is (near-)singular"],
+      "affects_section": "architecture (Active-set semismooth Newton solver)"
+    },
+    {
+      "assumption": "Numerical linear algebra: every banded solve (M-matrix core M=I-gamma*A1, or a pattern-specific V_S) is intended to be solved by a direct banded solver (Thomas-algorithm-like, O(n) per solve for a tridiagonal/narrow-banded system), consistent with the paper's repeated claim of 'O(n) banded solve' cost.",
+      "basis": "Explicitly stated cost claims throughout (e.g. 'each sweep being one banded M-matrix solve at O(n) cost'; 'For every pattern VS is banded with the bandwidth of A2').",
+      "confidence": 0.85,
+      "alternatives": ["Iterative Krylov solver (would not match the stated O(n) exact-solve cost and is not what the paper describes)"],
+      "affects_section": "architecture (all iterative solvers)"
+    },
+    {
+      "assumption": "Convergence tolerance for the Picard/Newton inner iterations is not given numerically in the main text (only residual magnitudes ~1e-13 to 1e-15 are reported in Tables 8-9 as achieved values, not as a stated target tolerance).",
+      "basis": "Table 8/9 report residual values but the paper does not state the solver's stopping tolerance explicitly.",
+      "confidence": 0.5,
+      "alternatives": ["Assume a tolerance of 1e-12 to 1e-13 on ||F(p)||_1 or on the Picard increment, consistent with the achieved residuals reported"],
+      "affects_section": "training_pipeline (solve_procedure)"
+    },
+    {
+      "assumption": "Domain length for the OU benchmark ('six stationary standard deviations on either side of the origin') is taken literally as [-6*sigma_stat, 6*sigma_stat] with sigma_stat = sigma/sqrt(2*alpha) = 1/sqrt(2) for alpha=sigma=1.",
+      "basis": "Direct quote from Section 6.1.",
+      "confidence": 0.85,
+      "alternatives": ["Domain centered differently, or padding measured from a different reference (unlikely given explicit wording)"],
+      "affects_section": "evaluation_protocol (OU benchmark)"
+    }
+  ],
+
+  "ambiguities": [
+    {
+      "location": "Section 5.1 and Section 6.1",
+      "description": "The exact closed-form definitions/derivations of gamma_0 (backward-Euler resolvent threshold) and gamma_r (Pade(0,2) threshold) are not given in this paper; they are results of the companion paper [Itkin and Kazbek, 2026], described here only as 'in preparation' and used purely as bisection-computed numbers (Table 2). A standalone reproduction of this paper cannot derive gamma_0/gamma_r analytically from this text alone.",
+      "primary_assumption": "Compute gamma_0 and gamma_r numerically per mesh via bisection on the sign of the most negative entry of (I-gamma*A2)^-1 and of r02(gamma*A2) respectively, exactly as Section 6.1 describes operationally.",
+      "alternatives": ["Treat gamma_0, gamma_r as unavailable and restrict any reproduction strictly to the FCDF-B / FCDF-DC / active-set branches (which are fully self-contained in this paper) plus a placeholder/mocked linear-window check", "Wait for or separately reproduce [Itkin and Kazbek, 2026] if it becomes available on arXiv"],
+      "confidence": 0.55
+    },
+    {
+      "location": "Section 4 / Eq. (20) discussion",
+      "description": "The paper states FCDF-DC is not intended to compete with Pade(0,2) at large steps because the unlimited two-stage linear map has only a bounded positivity window, invoking an 'r(infinity) criterion' from the companion paper without restating that criterion's definition in this paper.",
+      "primary_assumption": "Interpret the r(infinity) criterion as: a rational stability function R(z) with R(infinity) != 0 or with a sign that is not persistently nonnegative as z->infinity implies only a bounded (not semi-infinite) linear positivity window -- consistent with standard eventually-positive-operator theory referenced (Noutsos & Tsatsomeros 2008; Daners, Gluck & Kennedy 2016).",
+      "alternatives": ["Treat this criterion as an unreproducible external fact and simply take its stated consequence (bounded window) as given without re-deriving it"],
+      "confidence": 0.55
+    },
+    {
+      "location": "Section 6, Table 8/9 experimental protocol",
+      "description": "It is not fully specified whether the 'free fraction' and 'residual' columns in Table 8 are measured after full Newton convergence in every row, or whether some rows (e.g. gamma/gamma_pic=1) sit exactly at the Picard threshold where contraction rate ->1 and convergence could stall; the paper reports exactly 1 pattern update at that row without discussing stall risk.",
+      "primary_assumption": "Assume the reported pattern-update counts are post-convergence (residual columns in Table 8/9, ~1e-13 to 1e-15, are the converged residuals) and that the solver used a maximum-iteration safeguard not described in the text.",
+      "alternatives": ["The single pattern update at gamma=gamma_pic might reflect a specific lucky data-dependent pattern rather than a generic guarantee near the threshold"],
+      "confidence": 0.5
+    },
+    {
+      "location": "Sections 3-4, general",
+      "description": "Sign convention: the paper assumes mu(x,t) > 0 throughout the main derivation of the upwind stencil and correction flux, stating the mu<0 case is 'fully symmetric' and sign-changing drift is handled 'directionally at each node,' but does not give the sign-changing-node stencil explicitly (needed for the OU benchmark, which has sign-changing drift at its center by construction).",
+      "primary_assumption": "At each node, determine the local upwind direction from the sign of mu_i (or of the interface-averaged drift) and apply the mu>0 stencil or its mirror image accordingly, with the correction-flux donor node chosen per Section 3's rule (j=i for d>0, j=i+1 for d<0) applied per-interface in the same directional sense.",
+      "alternatives": ["A single globally-fixed upwind direction (would be inconsistent with the stated OU benchmark, which explicitly changes drift sign at the domain center) -- ruled out", "A blended/central treatment exactly at the sign-change node (not described, but plausible for the single node closest to mu=0)"],
+      "confidence": 0.6
+    }
+  ],
+
+  "confidence_annotations": {
+    "architecture": 0.9,
+    "mathematical_spec": 0.94,
+    "tensor_semantics": 0.85,
+    "training_pipeline": 0.55,
+    "evaluation_protocol": 0.9,
+    "implementation_assumptions": 0.72,
+    "overall_sir_confidence": 0.84
+  }
+}

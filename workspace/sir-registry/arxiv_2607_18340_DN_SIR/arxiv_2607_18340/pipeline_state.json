@@ -1,0 +1,57 @@
+{
+  "paper_id": "arxiv_2607_18340",
+  "paper_title": "Quantum Cryptanalysis on IBM Quantum Hardware: Extending Even-Mansour Period Recovery from N=4 to N=10",
+  "current_stage": 6,
+  "stages_completed": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "stage_timestamps": {
+    "1": "2026-07-22T08:58:13Z",
+    "2": "2026-07-22T08:58:13Z",
+    "3": "2026-07-22T10:30:00Z",
+    "4": "2026-07-22T10:30:00Z",
+    "5": "2026-07-22T10:30:00Z",
+    "6": "2026-07-22T10:30:00Z"
+  },
+  "stage_confidence": {
+    "1": 0.58,
+    "2": 1.0,
+    "3": 0.75,
+    "4": 0.85,
+    "5": 0.85,
+    "6": 0.7
+  },
+  "sir_path": "sir-registry/arxiv_2607_18340/sir.json",
+  "repo_path": "paper-repos/arxiv_2607_18340/",
+  "artifacts": {
+    "sir": "sir-registry/arxiv_2607_18340/sir.json",
+    "architecture_plan": "sir-registry/arxiv_2607_18340/architecture_plan.json",
+    "repo_initialized": true,
+    "notebook_path": "paper-repos/arxiv_2607_18340/notebooks/reproduce_arxiv_2607_18340.ipynb",
+    "comparison_report": "paper-repos/arxiv_2607_18340/comparison/full_comparison_report.json"
+  },
+  "confidence_flags": {
+    "architecture": 0.62,
+    "implementation_assumptions": 0.45,
+    "training_pipeline": 0.15
+  },
+  "human_review_required": true,
+  "human_review_reasons": [
+    "Overall SIR confidence (0.58) is below the 0.65 quality bar.",
+    "CRITICAL: the paper explicitly withholds the core 'hardware-aware circuit-conditioning and readout post-selection technique' that its own text says is required for the headline real-hardware result (Even-Mansour recovery at N=6-10). This cannot be reproduced from the paper as written -- see SIR ambiguities[0].",
+    "Per-job shot counts, referenced as living in 'Supplementary Table S1', appear only as literal '[measurement]' placeholders in the provided document's Table 4 -- this experimental detail is not actually recoverable from the given PDF.",
+    "The Grover-attack's target SPN construction (S-box, rounds, key schedule) is never defined in the paper.",
+    "training_pipeline confidence (0.15) reflects that this paper has no classical training loop -- it is a quantum-circuit-execution + classical-post-processing pipeline, not a neural-network training pipeline; downstream stages should not force a training-loop shape onto this.",
+    "Stage 6 complete: reproducibility_score=0.704 (medium confidence). All 5 disclosed algorithms reproduce cleanly (16/16); the paper's withheld real-hardware technique remains untestable; a likely error was found in the paper's stated CBC-MAC forgery period formula (verified via direct testing) and should be flagged to the authors."
+  ],
+  "loop_count": 0,
+  "retry_history": [],
+  "created_at": "2026-07-22T08:58:13Z",
+  "last_updated": "2026-07-22T10:30:00Z",
+  "pipeline_complete": true
+}

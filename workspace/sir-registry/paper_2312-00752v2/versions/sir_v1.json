@@ -1,0 +1,320 @@
+{
+  "paper_id": "paper_2312-00752v2",
+  "sir_version": 1,
+  "provenance": {
+    "title": "Mamba: Linear-Time Sequence Modeling with Selective State Spaces",
+    "authors": ["Albert Gu", "Tri Dao"],
+    "affiliations": ["Carnegie Mellon University", "Princeton University"],
+    "arxiv_id": "2312.00752v2",
+    "doi": null,
+    "submission_date": "2023-12",
+    "abstract": "Foundation models, now powering most of the exciting applications in deep learning, are almost universally based on the Transformer architecture and its core attention module. Many subquadratic-time architectures such as linear attention, gated convolution and recurrent models, and structured state space models (SSMs) have been developed to address Transformers' computational inefficiency on long sequences, but they have not performed as well as attention on important modalities such as language.",
+    "domain": "NLP",
+    "key_claims": [
+      "Letting SSM parameters be functions of the input allows content-based reasoning.",
+      "Hardware-aware parallel algorithm computes model recurrently with scan, avoiding slow IO.",
+      "Simplified architecture combines SSM and MLP into a single block without attention.",
+      "Mamba achieves 5x higher throughput than Transformers and linear scaling in sequence length.",
+      "Mamba-3B outperforms Transformers of the same size and matches Transformers twice its size."
+    ],
+    "parsed_at": "2026-07-27T02:01:36+05:30",
+    "arxivist_version": "1.0"
+  },
+  "architecture": {
+    "primary_variant": "Mamba-3B",
+    "modules": [
+      {
+        "name": "Mamba Block",
+        "operation_type": "combination of H3 and MLP blocks",
+        "input_shape": null,
+        "output_shape": null,
+        "parameters": {"expansion_factor": 2},
+        "paper_section": "3.4",
+        "confidence": 0.9,
+        "notes": "Repeated homogeneously with normalization and residual connections"
+      },
+      {
+        "name": "Input Projections",
+        "operation_type": "Linear projection",
+        "input_shape": "[B, L, D]",
+        "output_shape": "[B, L, E]",
+        "parameters": {"E": "expansion factor * D"},
+        "paper_section": "3.4",
+        "confidence": 0.8,
+        "notes": "Projects input dimension D to expanded dimension E"
+      },
+      {
+        "name": "1D Convolution",
+        "operation_type": "Depthwise 1D Convolution",
+        "input_shape": "[B, L, E]",
+        "output_shape": "[B, L, E]",
+        "parameters": {},
+        "paper_section": "3.4",
+        "confidence": 0.75,
+        "notes": "Applied before the selective SSM"
+      },
+      {
+        "name": "Selective SSM (S6)",
+        "operation_type": "Time-varying State Space Model",
+        "input_shape": "[B, L, E]",
+        "output_shape": "[B, L, E]",
+        "parameters": {"state_dimension_N": 16},
+        "paper_section": "3.2",
+        "confidence": 0.95,
+        "notes": "Uses input-dependent parameters B, C, Delta"
+      },
+      {
+        "name": "Nonlinearity",
+        "operation_type": "SiLU / Swish",
+        "input_shape": "[B, L, E]",
+        "output_shape": "[B, L, E]",
+        "parameters": {},
+        "paper_section": "3.4",
+        "confidence": 0.95,
+        "notes": "Applied on both branches, similar to SwiGLU"
+      },
+      {
+        "name": "Output Projection",
+        "operation_type": "Linear projection",
+        "input_shape": "[B, L, E]",
+        "output_shape": "[B, L, D]",
+        "parameters": {},
+        "paper_section": "3.4",
+        "confidence": 0.9,
+        "notes": "Projects expanded dimension back to original model dimension"
+      }
+    ],
+    "connections": [
+      {
+        "from": "Input Projections",
+        "to": "1D Convolution",
+        "tensor_name": "expanded_input"
+      },
+      {
+        "from": "1D Convolution",
+        "to": "Selective SSM (S6)",
+        "tensor_name": "conv_out"
+      },
+      {
+        "from": "Selective SSM (S6)",
+        "to": "Nonlinearity",
+        "tensor_name": "ssm_out"
+      },
+      {
+        "from": "Nonlinearity",
+        "to": "Output Projection",
+        "tensor_name": "activation_out"
+      }
+    ],
+    "variants": [
+      {
+        "name": "Mamba-130M",
+        "differences": {"parameters": "130M"}
+      },
+      {
+        "name": "Mamba-370M",
+        "differences": {"parameters": "370M"}
+      },
+      {
+        "name": "Mamba-790M",
+        "differences": {"parameters": "790M"}
+      },
+      {
+        "name": "Mamba-1.4B",
+        "differences": {"parameters": "1.4B"}
+      },
+      {
+        "name": "Mamba-2.8B",
+        "differences": {"parameters": "2.8B"}
+      }
+    ]
+  },
+  "mathematical_spec": [
+    {
+      "name": "ZOH Discretization",
+      "latex": "\\bar{B} = (I - \\exp(\\Delta A))^{-1} \\Delta B, \\quad \\bar{A} = \\exp(\\Delta A)",
+      "role": "other",
+      "used_in": "both",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "2",
+      "confidence": 0.95
+    },
+    {
+      "name": "Linear Recurrence",
+      "latex": "h_t = \\bar{A} h_{t-1} + \\bar{B} x_t, \\quad y_t = C h_t",
+      "role": "other",
+      "used_in": "inference",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "2",
+      "confidence": 0.95
+    },
+    {
+      "name": "Selection Mechanism",
+      "latex": "B_t = \\text{Linear}(x_t), \\quad C_t = \\text{Linear}(x_t), \\quad \\Delta_t = \\text{softplus}(\\text{Parameter} + \\text{Linear}(x_t))",
+      "role": "other",
+      "used_in": "both",
+      "hyperparameters": [],
+      "undefined_symbols": [],
+      "paper_section": "3.2",
+      "confidence": 0.95
+    }
+  ],
+  "tensor_semantics": [
+    {
+      "name": "x",
+      "shape_notation": "[B, L, D]",
+      "dtype": null,
+      "tensor_type": "input",
+      "module": "Selective SSM",
+      "confidence": 0.95
+    },
+    {
+      "name": "h",
+      "shape_notation": "[B, L, D, N]",
+      "dtype": null,
+      "tensor_type": "intermediate",
+      "module": "Selective SSM",
+      "confidence": 0.9
+    },
+    {
+      "name": "B",
+      "shape_notation": "[B, L, N]",
+      "dtype": null,
+      "tensor_type": "parameter",
+      "module": "Selection Mechanism",
+      "confidence": 0.9
+    },
+    {
+      "name": "C",
+      "shape_notation": "[B, L, N]",
+      "dtype": null,
+      "tensor_type": "parameter",
+      "module": "Selection Mechanism",
+      "confidence": 0.9
+    },
+    {
+      "name": "\\Delta",
+      "shape_notation": "[B, L, D]",
+      "dtype": null,
+      "tensor_type": "parameter",
+      "module": "Selection Mechanism",
+      "confidence": 0.9
+    }
+  ],
+  "training_pipeline": {
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.002,
+      "beta1": 0.9,
+      "beta2": 0.95,
+      "weight_decay": 0.1,
+      "confidence": 0.9
+    },
+    "lr_schedule": {
+      "type": "warmup",
+      "warmup_steps": 20000,
+      "total_steps": 200000,
+      "confidence": 0.8
+    },
+    "batch_size": null,
+    "effective_batch_size": 1024,
+    "training_steps": 200000,
+    "epochs": null,
+    "mixed_precision": "bfloat16 (assumed from BF16 mention)",
+    "gradient_clipping": 0.1,
+    "data_augmentation": [],
+    "curriculum": null,
+    "confidence": 0.8
+  },
+  "evaluation_protocol": {
+    "datasets": [
+      {
+        "name": "The Pile",
+        "split": "validation",
+        "size": null,
+        "publicly_available": true
+      },
+      {
+        "name": "HG38",
+        "split": "train",
+        "size": null,
+        "publicly_available": true
+      },
+      {
+        "name": "YouTubeMix",
+        "split": "train",
+        "size": null,
+        "publicly_available": true
+      },
+      {
+        "name": "SC09",
+        "split": "train",
+        "size": null,
+        "publicly_available": true
+      }
+    ],
+    "metrics": [
+      "Perplexity",
+      "Accuracy",
+      "BPB",
+      "FID",
+      "IS"
+    ],
+    "reported_results": [
+      {
+        "metric": "Perplexity",
+        "dataset": "The Pile",
+        "split": "validation",
+        "value": 6.22,
+        "is_primary": true
+      }
+    ],
+    "baselines": [
+      "Transformer++",
+      "Pythia",
+      "RWKV",
+      "Hyena",
+      "H3",
+      "RetNet"
+    ],
+    "compute": "A100 80GB PCIe GPU",
+    "special_conditions": [],
+    "confidence": 0.9
+  },
+  "implementation_assumptions": [
+    {
+      "assumption": "Batch size 1024 is used across some modalities",
+      "basis": "Mentioned in DNA modeling and implied by token counts",
+      "confidence": 0.7,
+      "alternatives": ["Smaller batch sizes with gradient accumulation"],
+      "affects_section": "training_pipeline"
+    },
+    {
+      "assumption": "1D Depthwise Convolution kernel size is likely 4",
+      "basis": "Standard practice in H3/Mamba for sequence modeling",
+      "confidence": 0.6,
+      "alternatives": ["3", "5"],
+      "affects_section": "architecture"
+    }
+  ],
+  "ambiguities": [
+    {
+      "location": "Section 4.3.1",
+      "description": "Exact batch size for language modeling is not specified clearly for all scales, only for DNA modeling (1024)",
+      "primary_assumption": "Batch size scales similarly to GPT-3",
+      "alternatives": ["1024", "512", "2048"],
+      "confidence": 0.6
+    }
+  ],
+  "confidence_annotations": {
+    "architecture": 0.85,
+    "mathematical_spec": 0.95,
+    "tensor_semantics": 0.9,
+    "training_pipeline": 0.8,
+    "evaluation_protocol": 0.9,
+    "implementation_assumptions": 0.65,
+    "overall_sir_confidence": 0.85
+  }
+}

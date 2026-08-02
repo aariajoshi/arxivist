@@ -1,0 +1,20 @@
+name: improving_rf_smoothing
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch>=2.0.0
+  - torchvision
+  - torchaudio
+  - pytorch-cuda=11.8
+  - scikit-learn>=1.2.0
+  - pandas>=2.0.0
+  - numpy
+  - pip
+  - pip:
+    - omegaconf>=2.3.0
+    - pytest>=7.0.0
+    - black>=23.0.0
